@@ -8,6 +8,7 @@ interface StatisticsProps {
   ownedStarships: number;
   factionBreakdown: { [key: string]: { total: number; owned: number } };
   editionBreakdown: { [key: string]: { total: number; owned: number } };
+  viewMode?: 'all' | 'editions' | 'factions' | 'summary';
 }
 
 type SortOption = 'total-desc' | 'total-asc' | 'owned-desc' | 'owned-asc' | 'percentage-desc' | 'percentage-asc' | 'name-asc' | 'name-desc';
@@ -16,7 +17,8 @@ const Statistics: React.FC<StatisticsProps> = ({
   totalStarships,
   ownedStarships,
   factionBreakdown,
-  editionBreakdown
+  editionBreakdown,
+  viewMode = 'all'
 }) => {
   const [editionSortOption, setEditionSortOption] = useState<SortOption>('total-desc');
   const [factionSortOption, setFactionSortOption] = useState<SortOption>('owned-desc');
@@ -91,52 +93,56 @@ const Statistics: React.FC<StatisticsProps> = ({
 
   return (
     <div className="mb-4">
-      <h3 className="mb-3">Collection Statistics</h3>
+      {(viewMode === 'all' || viewMode === 'summary') && (
+        <>
+          <h3 className="mb-3">Collection Statistics</h3>
+          
+          <Row>
+            <Col md={3} sm={6} className="mb-3">
+              <Card className="h-100">
+                <Card.Body className="text-center">
+                  <FontAwesomeIcon icon={faList} size="2x" className="mb-2 text-primary" />
+                  <h5>Total Starships</h5>
+                  <div className="display-4">{totalStarships}</div>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={3} sm={6} className="mb-3">
+              <Card className="h-100">
+                <Card.Body className="text-center">
+                  <FontAwesomeIcon icon={faCheck} size="2x" className="mb-2 text-success" />
+                  <h5>Owned Starships</h5>
+                  <div className="display-4">{ownedStarships}</div>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} sm={12} className="mb-3">
+              <Card className="h-100">
+                <Card.Body>
+                  <div className="text-center">
+                    <FontAwesomeIcon icon={faPercentage} size="2x" className="mb-2 text-info" />
+                    <h5>Collection Completion</h5>
+                  </div>
+                  <div className="display-4 text-center mb-2">{ownedPercentage}%</div>
+                  <ProgressBar 
+                    now={ownedPercentage} 
+                    variant={getProgressVariant(ownedPercentage)} 
+                    className="mb-0"
+                    style={{ height: '25px' }}
+                  />
+                  <div className="text-center mt-2">
+                    <strong>{ownedStarships}</strong> of <strong>{totalStarships}</strong> starships owned
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </>
+      )}
       
-      <Row>
-        <Col md={3} sm={6} className="mb-3">
-          <Card className="h-100">
-            <Card.Body className="text-center">
-              <FontAwesomeIcon icon={faList} size="2x" className="mb-2 text-primary" />
-              <h5>Total Starships</h5>
-              <div className="display-4">{totalStarships}</div>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={3} sm={6} className="mb-3">
-          <Card className="h-100">
-            <Card.Body className="text-center">
-              <FontAwesomeIcon icon={faCheck} size="2x" className="mb-2 text-success" />
-              <h5>Owned Starships</h5>
-              <div className="display-4">{ownedStarships}</div>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        <Col md={6} sm={12} className="mb-3">
-          <Card className="h-100">
-            <Card.Body>
-              <div className="text-center">
-                <FontAwesomeIcon icon={faPercentage} size="2x" className="mb-2 text-info" />
-                <h5>Collection Completion</h5>
-              </div>
-              <div className="display-4 text-center mb-2">{ownedPercentage}%</div>
-              <ProgressBar 
-                now={ownedPercentage} 
-                variant={getProgressVariant(ownedPercentage)} 
-                className="mb-0"
-                style={{ height: '25px' }}
-              />
-              <div className="text-center mt-2">
-                <strong>{ownedStarships}</strong> of <strong>{totalStarships}</strong> starships owned
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      
-      {Object.keys(editionBreakdown).length > 0 && (
+      {(viewMode === 'all' || viewMode === 'editions') && Object.keys(editionBreakdown).length > 0 && (
         <Card className="mb-4">
           <Card.Header className="d-flex justify-content-between align-items-center">
             <h5 className="mb-0">Edition Breakdown</h5>
@@ -227,7 +233,7 @@ const Statistics: React.FC<StatisticsProps> = ({
         </Card>
       )}
       
-      {Object.keys(factionBreakdown).length > 0 && (
+      {(viewMode === 'all' || viewMode === 'factions') && Object.keys(factionBreakdown).length > 0 && (
         <Card>
           <Card.Header className="d-flex justify-content-between align-items-center">
             <h5 className="mb-0">Faction Breakdown</h5>

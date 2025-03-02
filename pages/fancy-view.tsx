@@ -25,6 +25,7 @@ const FancyViewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentEdition, setCurrentEdition] = useState<string>('Regular');
 
   const fetchStarships = async () => {
     setLoading(true);
@@ -86,6 +87,21 @@ const FancyViewPage: React.FC = () => {
     setShowModal(false);
   };
 
+  const handleEditionChange = (edition: string) => {
+    setCurrentEdition(edition);
+  };
+
+  const handleRefreshStarships = async (edition?: string) => {
+    await fetchStarships();
+    // Close the modal after refresh
+    setShowModal(false);
+    
+    // If an edition was passed, update the current edition
+    if (edition) {
+      setCurrentEdition(edition);
+    }
+  };
+
   return (
     <div>
       <Head>
@@ -128,6 +144,8 @@ const FancyViewPage: React.FC = () => {
                 starships={starships}
                 onToggleOwned={handleToggleOwned}
                 onSelectStarship={handleSelectStarship}
+                onEditionChange={handleEditionChange}
+                currentEdition={currentEdition}
               />
             )}
           </Col>
@@ -147,7 +165,8 @@ const FancyViewPage: React.FC = () => {
             <StarshipDetails 
               starship={selectedStarship}
               onToggleOwned={handleToggleOwned}
-              onRefresh={fetchStarships}
+              onRefresh={handleRefreshStarships}
+              currentEdition={currentEdition}
             />
           )}
         </Modal.Body>

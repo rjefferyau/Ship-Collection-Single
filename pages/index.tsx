@@ -35,6 +35,7 @@ const Home: React.FC = () => {
   const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('collection');
+  const [currentEdition, setCurrentEdition] = useState<string>('Regular');
   const [statistics, setStatistics] = useState<StatisticsData>({
     totalStarships: 0,
     ownedStarships: 0,
@@ -148,6 +149,21 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleRefreshStarships = async (edition?: string) => {
+    await fetchStarships();
+    // Close the modal after refresh
+    setShowModal(false);
+    
+    // If an edition was passed, update the current edition
+    if (edition) {
+      setCurrentEdition(edition);
+    }
+  };
+
+  const handleEditionChange = (edition: string) => {
+    setCurrentEdition(edition);
+  };
+
   return (
     <div>
       <Head>
@@ -221,6 +237,8 @@ const Home: React.FC = () => {
                     starships={starships}
                     onToggleOwned={handleToggleOwned}
                     onSelectStarship={handleSelectStarship}
+                    onEditionChange={handleEditionChange}
+                    currentEdition={currentEdition}
                   />
                 )}
               </Col>
@@ -262,7 +280,8 @@ const Home: React.FC = () => {
             <StarshipDetails 
               starship={selectedStarship}
               onToggleOwned={handleToggleOwned}
-              onRefresh={fetchStarships}
+              onRefresh={handleRefreshStarships}
+              currentEdition={currentEdition}
             />
           )}
         </Modal.Body>

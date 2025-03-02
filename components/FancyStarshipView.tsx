@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Button, Form, InputGroup, Dropdown, DropdownButton } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Button, Form, InputGroup, Dropdown, DropdownButton, Nav } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faSearch, faFilter, faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons';
 
@@ -30,23 +30,28 @@ interface FancyStarshipViewProps {
   starships: Starship[];
   onToggleOwned: (id: string) => Promise<void>;
   onSelectStarship: (starship: Starship) => void;
+  onEditionChange?: (edition: string) => void;
+  currentEdition?: string;
 }
 
 const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   starships,
   onToggleOwned,
-  onSelectStarship
+  onSelectStarship,
+  onEditionChange,
+  currentEdition = 'Regular'
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'issue', direction: 'asc' });
   const [filters, setFilters] = useState<Filters>({
     search: '',
     faction: [],
-    edition: ['Regular'],
+    edition: [currentEdition],
     owned: 'all'
   });
   const [filteredStarships, setFilteredStarships] = useState<Starship[]>(starships || []);
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
+  const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
 
   // Extract unique factions and editions
   useEffect(() => {
@@ -149,11 +154,18 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     // Set default sorting to issue ascending
     setSortConfig({ key: 'issue', direction: 'asc' });
     
-    // Set default filter to Regular edition
-    if (availableEditions.includes('Regular')) {
-      setFilters(prev => ({ ...prev, edition: ['Regular'] }));
+    // Set filter to current edition
+    if (availableEditions.includes(currentEdition)) {
+      setFilters(prev => ({ ...prev, edition: [currentEdition] }));
+      setActiveEdition(currentEdition);
     }
-  }, [availableEditions]);
+  }, [availableEditions, currentEdition]);
+
+  // Update activeEdition when currentEdition prop changes
+  useEffect(() => {
+    setActiveEdition(currentEdition);
+    setFilters(prev => ({ ...prev, edition: [currentEdition] }));
+  }, [currentEdition]);
 
   const handleSort = (key: keyof Starship) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -179,14 +191,16 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     });
   };
 
-  const toggleEditionFilter = (edition: string) => {
-    setFilters(prev => {
-      const newEditions = prev.edition.includes(edition)
-        ? prev.edition.filter(e => e !== edition)
-        : [...prev.edition, edition];
-      
-      return { ...prev, edition: newEditions };
-    });
+  const handleEditionSelect = (edition: string) => {
+    setActiveEdition(edition);
+    setFilters(prev => ({
+      ...prev,
+      edition: [edition]
+    }));
+    
+    if (onEditionChange) {
+      onEditionChange(edition);
+    }
   };
 
   const setOwnedFilter = (value: 'all' | 'owned' | 'not-owned') => {
@@ -202,49 +216,20 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   return (
     <div>
       <div className="mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <InputGroup.Text>
-              <FontAwesomeIcon icon={faSearch} />
-            </InputGroup.Text>
-            <Form.Control
-              placeholder="Search by ship name or issue"
-              value={filters.search}
-              onChange={handleSearchChange}
-            />
-          </InputGroup>
-          
-          <div className="d-flex">
-            <DropdownButton 
-              id="dropdown-sort" 
-              title={
-                <span>
-                  {sortConfig.direction === 'asc' 
-                    ? <FontAwesomeIcon icon={faSortUp} className="me-1" /> 
-                    : <FontAwesomeIcon icon={faSortDown} className="me-1" />
-                  }
-                  Sort: {sortConfig.key.charAt(0).toUpperCase() + sortConfig.key.slice(1)}
-                </span>
-              }
-              variant="outline-secondary"
-              className="me-2"
-            >
-              <Dropdown.Item onClick={() => handleSort('issue')}>
-                Issue {sortConfig.key === 'issue' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => handleSort('edition')}>
-                Edition {sortConfig.key === 'edition' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => handleSort('shipName')}>
-                Ship Name {sortConfig.key === 'shipName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => handleSort('faction')}>
-                Faction {sortConfig.key === 'faction' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </Dropdown.Item>
-              <Dropdown.Item onClick={() => handleSort('releaseDate')}>
-                Release Date {sortConfig.key === 'releaseDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
-              </Dropdown.Item>
-            </DropdownButton>
+        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
+          <div className="d-flex flex-wrap align-items-center">
+            <InputGroup className="me-2 mb-2" style={{ width: 'auto' }}>
+              <InputGroup.Text>
+                <FontAwesomeIcon icon={faSearch} />
+              </InputGroup.Text>
+              <Form.Control
+                type="text"
+                placeholder="Search ships..."
+                value={filters.search}
+                onChange={handleSearchChange}
+                style={{ width: '200px' }}
+              />
+            </InputGroup>
             
             <DropdownButton 
               id="dropdown-faction-filter" 
@@ -257,7 +242,7 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                 </span>
               }
               variant="outline-secondary"
-              className="me-2"
+              className="me-2 mb-2"
             >
               {availableFactions.map(faction => (
                 <Dropdown.Item 
@@ -278,76 +263,57 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
               )}
             </DropdownButton>
             
-            <DropdownButton 
-              id="dropdown-edition-filter" 
-              title={
-                <span>
-                  <FontAwesomeIcon icon={faFilter} /> Edition
-                  {filters.edition.length > 0 && (
-                    <Badge bg="primary" className="ms-1">{filters.edition.length}</Badge>
-                  )}
-                </span>
-              }
-              variant="outline-secondary"
-              className="me-2"
-            >
-              {availableEditions.map(edition => (
+            <Dropdown className="me-2 mb-2">
+              <Dropdown.Toggle variant="outline-secondary" id="dropdown-owned-filter">
+                {filters.owned === 'all' ? 'All Ships' : 
+                 filters.owned === 'owned' ? 'Owned Only' : 'Not Owned Only'}
+              </Dropdown.Toggle>
+              <Dropdown.Menu>
                 <Dropdown.Item 
-                  key={edition} 
-                  onClick={() => toggleEditionFilter(edition)}
-                  active={filters.edition.includes(edition)}
+                  onClick={() => setOwnedFilter('all')}
+                  active={filters.owned === 'all'}
                 >
-                  {edition}
+                  All Ships
                 </Dropdown.Item>
-              ))}
-              {filters.edition.length > 0 && (
                 <Dropdown.Item 
-                  onClick={() => setFilters(prev => ({ ...prev, edition: [] }))}
-                  className="text-danger"
+                  onClick={() => setOwnedFilter('owned')}
+                  active={filters.owned === 'owned'}
                 >
-                  Clear Edition Filters
+                  Owned Only
                 </Dropdown.Item>
-              )}
-            </DropdownButton>
-            
-            <DropdownButton 
-              id="dropdown-owned-filter" 
-              title={
-                <span>
-                  <FontAwesomeIcon icon={faFilter} /> Ownership
-                </span>
-              }
-              variant="outline-secondary"
-            >
-              <Dropdown.Item 
-                onClick={() => setOwnedFilter('all')}
-                active={filters.owned === 'all'}
-              >
-                All Starships
-              </Dropdown.Item>
-              <Dropdown.Item 
-                onClick={() => setOwnedFilter('owned')}
-                active={filters.owned === 'owned'}
-              >
-                Owned Only
-              </Dropdown.Item>
-              <Dropdown.Item 
-                onClick={() => setOwnedFilter('not-owned')}
-                active={filters.owned === 'not-owned'}
-              >
-                Not Owned Only
-              </Dropdown.Item>
-            </DropdownButton>
+                <Dropdown.Item 
+                  onClick={() => setOwnedFilter('not-owned')}
+                  active={filters.owned === 'not-owned'}
+                >
+                  Not Owned Only
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </div>
+          
+          <div className="mb-2">
+            <Badge bg="primary" className="me-2">
+              {filteredStarships.length} ships
+            </Badge>
+            <Badge bg="success">
+              {filteredStarships.filter(s => s.owned).length} owned
+            </Badge>
           </div>
         </div>
         
-        {(filters.faction.length > 0 || filters.edition.length > 0 || filters.owned !== 'all') && (
-          <div className="mb-3">
-            <small className="text-muted">
-              Filtered results: {filteredStarships.length} of {starships.length} starships
-            </small>
-          </div>
-        )}
+        {/* Edition Tabs */}
+        <Nav variant="tabs" className="mb-3">
+          {availableEditions.map(edition => (
+            <Nav.Item key={edition}>
+              <Nav.Link 
+                active={activeEdition === edition}
+                onClick={() => handleEditionSelect(edition)}
+              >
+                {edition}
+              </Nav.Link>
+            </Nav.Item>
+          ))}
+        </Nav>
       </div>
       
       <Row xs={1} sm={2} md={3} lg={4} className="g-4">

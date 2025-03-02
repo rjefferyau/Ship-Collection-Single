@@ -27,14 +27,24 @@ export default async function handler(
       break;
     case 'PUT':
       try {
-        const starship = await Starship.findByIdAndUpdate(id, req.body, {
+        // Extract currentEdition from request body if present
+        const { currentEdition, ...updateData } = req.body;
+        
+        const starship = await Starship.findByIdAndUpdate(id, updateData, {
           new: true,
           runValidators: true,
         });
+        
         if (!starship) {
           return res.status(404).json({ success: false, error: 'Starship not found' });
         }
-        res.status(200).json({ success: true, data: starship });
+        
+        // Return the currentEdition in the response for the client to use
+        res.status(200).json({ 
+          success: true, 
+          data: starship,
+          currentEdition: currentEdition || null
+        });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }

@@ -29,13 +29,15 @@ interface Starship {
 interface StarshipDetailsProps {
   starship: Starship;
   onToggleOwned: (id: string) => Promise<void>;
-  onRefresh: () => void;
+  onRefresh: (edition?: string) => void;
+  currentEdition?: string;
 }
 
 const StarshipDetails: React.FC<StarshipDetailsProps> = ({ 
   starship, 
   onToggleOwned,
-  onRefresh
+  onRefresh,
+  currentEdition
 }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -155,7 +157,10 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editFormData),
+        body: JSON.stringify({
+          ...editFormData,
+          currentEdition
+        }),
       });
 
       if (!response.ok) {
@@ -163,9 +168,13 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
         throw new Error(errorData.message || 'Failed to update starship');
       }
 
+      const result = await response.json();
+      
       setSaveSuccess(true);
       setIsEditing(false);
-      onRefresh(); // Refresh to get updated starship data
+      
+      // Pass the currentEdition back to the parent component
+      onRefresh(currentEdition);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {

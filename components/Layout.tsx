@@ -1,9 +1,18 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { Container, Row, Col, Form } from 'react-bootstrap';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faSpaceShuttle, faChartBar, faImages, faCog, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
-import { useTheme } from '../contexts/ThemeContext';
+import { 
+  faHome, 
+  faSpaceShuttle, 
+  faChartBar, 
+  faImages, 
+  faCog, 
+  faBars,
+  faTachometerAlt,
+  faDatabase,
+  faWrench
+} from '@fortawesome/free-solid-svg-icons';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,58 +20,91 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) => {
-  const { theme, toggleTheme } = useTheme();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
   
   return (
     <div className="d-flex flex-column min-vh-100">
+      {/* Mobile header with menu toggle */}
+      <div className="d-md-none bg-primary text-white p-2 d-flex align-items-center">
+        <button 
+          className="btn btn-link text-white p-0 me-3" 
+          onClick={toggleSidebar}
+        >
+          <FontAwesomeIcon icon={faBars} />
+        </button>
+        <h5 className="mb-0">Starship Collection</h5>
+      </div>
+      
       {/* Sidebar */}
-      <div className="sidebar p-3">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h4 className="mb-0">Starship Collection</h4>
-          <div className="theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
-            <FontAwesomeIcon 
-              icon={theme === 'light' ? faMoon : faSun} 
-              className={`theme-icon ${theme === 'light' ? 'text-dark' : 'text-warning'}`} 
-            />
+      <div className={`sidebar ${sidebarOpen ? 'show' : ''}`}>
+        <div className="sidebar-header d-flex align-items-center justify-content-between">
+          <h4 className="sidebar-brand">Starship Collection</h4>
+        </div>
+        
+        <div className="nav-section">
+          <div className="nav-section-title">Main</div>
+          <div className="nav flex-column nav-pills">
+            <Link 
+              href="/" 
+              className={`nav-link ${activeTab === 'collection' ? 'active' : ''}`}
+            >
+              <FontAwesomeIcon icon={faSpaceShuttle} className="me-2" /> 
+              <span>Collection</span>
+            </Link>
+            <Link 
+              href="/fancy-view" 
+              className={`nav-link ${activeTab === 'fancy-view' ? 'active' : ''}`}
+            >
+              <FontAwesomeIcon icon={faImages} className="me-2" /> 
+              <span>Gallery</span>
+            </Link>
           </div>
         </div>
-        <div className="nav flex-column nav-pills">
-          <Link 
-            href="/" 
-            className={`nav-link ${activeTab === 'collection' ? 'active' : ''}`}
-          >
-            <FontAwesomeIcon icon={faSpaceShuttle} className="me-2" /> Collection
-          </Link>
-          <Link 
-            href="/fancy-view" 
-            className={`nav-link ${activeTab === 'fancy-view' ? 'active' : ''}`}
-          >
-            <FontAwesomeIcon icon={faImages} className="me-2" /> Gallery
-          </Link>
-          <Link 
-            href="/statistics" 
-            className={`nav-link ${activeTab === 'statistics' ? 'active' : ''}`}
-          >
-            <FontAwesomeIcon icon={faChartBar} className="me-2" /> Statistics
-          </Link>
-          <Link 
-            href="/setup" 
-            className={`nav-link ${activeTab === 'setup' ? 'active' : ''}`}
-          >
-            <FontAwesomeIcon icon={faCog} className="me-2" /> Setup
-          </Link>
+        
+        <div className="nav-section">
+          <div className="nav-section-title">Analytics</div>
+          <div className="nav flex-column nav-pills">
+            <Link 
+              href="/statistics" 
+              className={`nav-link ${activeTab === 'statistics' ? 'active' : ''}`}
+            >
+              <FontAwesomeIcon icon={faChartBar} className="me-2" /> 
+              <span>Statistics</span>
+            </Link>
+          </div>
+        </div>
+        
+        <div className="nav-section">
+          <div className="nav-section-title">Configuration</div>
+          <div className="nav flex-column nav-pills">
+            <Link 
+              href="/setup" 
+              className={`nav-link ${activeTab === 'setup' ? 'active' : ''}`}
+            >
+              <FontAwesomeIcon icon={faCog} className="me-2" /> 
+              <span>Setup</span>
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Main content area */}
-      <div className="content-area">
+      <div className="main-content">
         {children}
       </div>
 
       {/* Footer */}
-      <footer className="bg-dark text-light p-3 text-center">
+      <footer className="footer">
         <Container>
-          <p className="mb-0">Starship Collection Manager &copy; {new Date().getFullYear()}</p>
+          <Row>
+            <Col className="text-center">
+              <p className="mb-0">Starship Collection Manager &copy; {new Date().getFullYear()}</p>
+            </Col>
+          </Row>
         </Container>
       </footer>
     </div>

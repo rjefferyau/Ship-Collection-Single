@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Modal, Alert, Spinner, Card, Badge } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faPlus, faSave, faTimes, faCheck, faDownload, faSync } from '@fortawesome/free-solid-svg-icons';
+import DataTable from './DataTable';
 
 interface Faction {
   _id: string;
@@ -372,7 +373,19 @@ const FactionManager: React.FC = () => {
               No factions found. Click "Add New Faction" to create one or "Import Existing" to import from your starship collection.
             </Alert>
           ) : (
-            <Table striped bordered hover responsive>
+            <DataTable 
+              id="factions-table"
+              striped
+              bordered
+              hover
+              responsive
+              options={{
+                paging: true,
+                info: true,
+                lengthChange: true,
+                pageLength: 10
+              }}
+            >
               <thead>
                 <tr>
                   <th>Name</th>
@@ -431,7 +444,7 @@ const FactionManager: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
-            </Table>
+            </DataTable>
           )}
         </Card.Body>
       </Card>

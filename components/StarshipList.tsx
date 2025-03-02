@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Form, InputGroup, Button, Dropdown, DropdownButton, Badge, Nav } from 'react-bootstrap';
+import { Form, InputGroup, Button, Dropdown, DropdownButton, Badge, Nav, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter } from '@fortawesome/free-solid-svg-icons';
+import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus } from '@fortawesome/free-solid-svg-icons';
+import DataTable from './DataTable';
 
 interface Starship {
   _id: string;
@@ -52,6 +53,11 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
+  
+  // Add state for image modal
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
+  const [selectedShipName, setSelectedShipName] = useState<string>('');
 
   // Extract unique factions and editions
   useEffect(() => {
@@ -286,6 +292,15 @@ const StarshipList: React.FC<StarshipListProps> = ({
     return new Date(date).toLocaleDateString();
   };
 
+  // Add handler for image click
+  const handleImageClick = (imageUrl: string | undefined, shipName: string) => {
+    if (imageUrl) {
+      setSelectedImage(imageUrl);
+      setSelectedShipName(shipName);
+      setShowImageModal(true);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4">
@@ -389,7 +404,19 @@ const StarshipList: React.FC<StarshipListProps> = ({
         </Nav>
       </div>
       
-      <Table striped hover responsive>
+      <DataTable 
+        id="starships-table"
+        striped
+        hover
+        responsive
+        options={{
+          ordering: false, // We'll handle sorting ourselves
+          searching: false, // We have our own search input
+          paging: true,
+          info: true,
+          lengthChange: true
+        }}
+      >
         <thead>
           <tr>
             <th onClick={() => handleSort('issue')} style={{ cursor: 'pointer' }}>
@@ -424,8 +451,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
                   <img 
                     src={starship.imageUrl} 
                     alt={starship.shipName}
-                    style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+                    style={{ width: '60px', height: '60px', objectFit: 'contain', cursor: 'pointer' }}
                     className="img-thumbnail"
+                    onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                    title="Click to view larger image"
                   />
                 ) : (
                   <div 
@@ -451,28 +480,56 @@ const StarshipList: React.FC<StarshipListProps> = ({
                   variant="outline-primary" 
                   size="sm"
                   onClick={() => onSelectStarship(starship)}
+                  title="View Details"
+                  className="me-2"
                 >
-                  Details
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
                 </Button>
                 <Button 
                   variant={starship.owned ? "outline-danger" : "outline-success"} 
                   size="sm"
-                  className="ms-2"
                   onClick={() => onToggleOwned(starship._id)}
+                  title={starship.owned ? "Remove from Collection" : "Add to Collection"}
                 >
-                  {starship.owned ? 'Remove' : 'Add to Collection'}
+                  <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
                 </Button>
               </td>
             </tr>
           ))}
         </tbody>
-      </Table>
+      </DataTable>
       
       {filteredStarships.length === 0 && (
         <div className="text-center p-4 bg-light rounded">
           <p className="mb-0">No starships match your current filters.</p>
         </div>
       )}
+      
+      {/* Image Modal */}
+      <Modal 
+        show={showImageModal} 
+        onHide={() => setShowImageModal(false)} 
+        size="lg" 
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedShipName}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          {selectedImage && (
+            <img 
+              src={selectedImage} 
+              alt={selectedShipName} 
+              style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '12px', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)' }} 
+            />
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowImageModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

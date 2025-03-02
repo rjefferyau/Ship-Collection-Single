@@ -41,29 +41,6 @@ class MyDocument extends Document {
             crossOrigin="anonymous" 
             referrerPolicy="no-referrer" 
           />
-          
-          {/* Theme initialization script - runs before the page renders */}
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function() {
-                  try {
-                    const savedTheme = localStorage.getItem('theme');
-                    if (savedTheme) {
-                      document.documentElement.setAttribute('data-theme', savedTheme);
-                    } else {
-                      // Check for system preference
-                      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-                      localStorage.setItem('theme', prefersDark ? 'dark' : 'light');
-                    }
-                  } catch (e) {
-                    console.error('Error setting initial theme:', e);
-                  }
-                })();
-              `,
-            }}
-          />
         </Head>
         <body>
           <Main />

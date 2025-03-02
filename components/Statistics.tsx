@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, ProgressBar, Form, Button, Badge, Dropdown, Modal, Table } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faShip, faCheck, faPercentage, faList, faSort, faChevronRight, faFilter, faSearch, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import DataTable from './DataTable';
 
 interface Starship {
   _id: string;
@@ -517,7 +518,18 @@ const Statistics: React.FC<StatisticsProps> = ({
                 <FontAwesomeIcon icon={faExclamationTriangle} className="text-warning me-2" />
                 You are missing {missingShips.length} ships from this category.
               </p>
-              <Table striped hover responsive>
+              <DataTable 
+                id="missing-ships-table"
+                striped
+                hover
+                responsive
+                options={{
+                  paging: true,
+                  info: true,
+                  lengthChange: true,
+                  pageLength: 5
+                }}
+              >
                 <thead>
                   <tr>
                     <th>Issue</th>
@@ -536,7 +548,7 @@ const Statistics: React.FC<StatisticsProps> = ({
                     </tr>
                   ))}
                 </tbody>
-              </Table>
+              </DataTable>
             </>
           )}
         </Modal.Body>

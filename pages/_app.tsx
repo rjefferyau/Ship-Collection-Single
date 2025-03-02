@@ -1,8 +1,20 @@
 import { AppProps } from 'next/app';
 import Head from 'next/head';
 import '../styles/globals.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { useRouter } from 'next/router';
+import Layout from '../components/Layout';
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const path = router.pathname;
+  
+  // Determine active tab based on current path
+  let activeTab = 'collection';
+  if (path === '/fancy-view') activeTab = 'fancy-view';
+  else if (path === '/statistics') activeTab = 'statistics';
+  else if (path === '/setup') activeTab = 'setup';
+  
   return (
     <>
       <Head>
@@ -11,7 +23,9 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="keywords" content="Star Trek, starships, collection, manager, tracking" />
         <title>Starship Collection Manager</title>
       </Head>
-      <Component {...pageProps} />
+      <Layout activeTab={activeTab}>
+        <Component {...pageProps} />
+      </Layout>
     </>
   );
 }

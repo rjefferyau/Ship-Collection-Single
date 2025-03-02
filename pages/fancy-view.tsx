@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { Container, Row, Col, Modal, Button, Spinner, Alert, Breadcrumb } from 'react-bootstrap';
+import { Row, Col, Modal, Button, Spinner, Alert, Breadcrumb, Card } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHome, faTimes, faSpaceShuttle } from '@fortawesome/free-solid-svg-icons';
 
@@ -103,66 +103,57 @@ const FancyViewPage: React.FC = () => {
   };
 
   return (
-    <div>
+    <>
       <Head>
-        <title>Fancy View - Starship Collection Manager</title>
-        <meta name="description" content="Visual gallery of your Star Trek starship collection" />
+        <title>Gallery - Starship Collection Manager</title>
       </Head>
 
-      <Container fluid className="py-4">
-        <Row className="mb-4">
-          <Col>
-            <Breadcrumb>
-              <Breadcrumb.Item linkAs={Link} href="/">
-                <FontAwesomeIcon icon={faHome} className="me-1" /> Home
-              </Breadcrumb.Item>
-              <Breadcrumb.Item active>
-                <FontAwesomeIcon icon={faSpaceShuttle} className="me-1" /> Fancy View
-              </Breadcrumb.Item>
-            </Breadcrumb>
-            
-            <h1 className="display-4">Starship Gallery</h1>
-            <p className="lead">
-              A visual showcase of your Star Trek starship collection
-            </p>
-          </Col>
-        </Row>
+      <div className="mb-4">
+        <Breadcrumb>
+          <Breadcrumb.Item>
+            <Link href="/" className="text-decoration-none">
+              <FontAwesomeIcon icon={faHome} className="me-2" />
+              Home
+            </Link>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item active>Gallery</Breadcrumb.Item>
+        </Breadcrumb>
+        <h1>Gallery View</h1>
+      </div>
 
-        <Row>
-          <Col>
-            {loading ? (
-              <div className="text-center p-5">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-3">Loading starships...</p>
-              </div>
-            ) : error ? (
-              <Alert variant="danger">
-                {error}
-              </Alert>
-            ) : (
-              <FancyStarshipView 
-                starships={starships}
-                onToggleOwned={handleToggleOwned}
-                onSelectStarship={handleSelectStarship}
-                onEditionChange={handleEditionChange}
-                currentEdition={currentEdition}
-              />
-            )}
-          </Col>
-        </Row>
-      </Container>
+      <Card className="mb-4">
+        <Card.Body>
+          {loading ? (
+            <div className="text-center p-5">
+              <Spinner animation="border" role="status" variant="primary">
+                <span className="visually-hidden">Loading...</span>
+              </Spinner>
+              <p className="mt-3">Loading starships...</p>
+            </div>
+          ) : error ? (
+            <Alert variant="danger">{error}</Alert>
+          ) : (
+            <FancyStarshipView
+              starships={starships}
+              onToggleOwned={handleToggleOwned}
+              onSelectStarship={handleSelectStarship}
+              onEditionChange={handleEditionChange}
+              currentEdition={currentEdition}
+            />
+          )}
+        </Card.Body>
+      </Card>
 
-      <Modal 
-        show={showModal} 
-        onHide={handleCloseModal}
-        size="lg"
-      >
+      {/* Modal for starship details */}
+      <Modal show={!!selectedStarship} onHide={() => setSelectedStarship(null)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Starship Details</Modal.Title>
+          <Modal.Title>
+            {selectedStarship?.shipName} - {selectedStarship?.edition} #{selectedStarship?.issue}
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedStarship && (
-            <StarshipDetails 
+            <StarshipDetails
               starship={selectedStarship}
               onToggleOwned={handleToggleOwned}
               onRefresh={handleRefreshStarships}
@@ -170,14 +161,8 @@ const FancyViewPage: React.FC = () => {
             />
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            <FontAwesomeIcon icon={faTimes} className="me-2" />
-            Close
-          </Button>
-        </Modal.Footer>
       </Modal>
-    </div>
+    </>
   );
 };
 

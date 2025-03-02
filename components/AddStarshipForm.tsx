@@ -1,5 +1,19 @@
-import React, { useState } from 'react';
-import { Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+
+interface Faction {
+  _id: string;
+  name: string;
+  description?: string;
+}
+
+interface Edition {
+  _id: string;
+  name: string;
+  description?: string;
+}
 
 interface StarshipFormData {
   issue: string;
@@ -30,9 +44,59 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [factions, setFactions] = useState<Faction[]>([]);
+  const [loadingFactions, setLoadingFactions] = useState(false);
+  const [editions, setEditions] = useState<Edition[]>([]);
+  const [loadingEditions, setLoadingEditions] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  // Fetch factions and editions on component mount
+  useEffect(() => {
+    fetchFactions();
+    fetchEditions();
+  }, []);
+
+  const fetchFactions = async () => {
+    setLoadingFactions(true);
+    
+    try {
+      const response = await fetch('/api/factions');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch factions');
+      }
+      
+      const data = await response.json();
+      setFactions(data.data || []);
+    } catch (err) {
+      console.error('Error fetching factions:', err);
+    } finally {
+      setLoadingFactions(false);
+    }
+  };
+
+  const fetchEditions = async () => {
+    setLoadingEditions(true);
+    
+    try {
+      const response = await fetch('/api/editions');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch editions');
+      }
+      
+      const data = await response.json();
+      setEditions(data.data || []);
+    } catch (err) {
+      console.error('Error fetching editions:', err);
+    } finally {
+      setLoadingEditions(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
+    
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value
@@ -121,13 +185,36 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
           <Col md={6}>
             <Form.Group className="mb-3">
               <Form.Label>Edition</Form.Label>
-              <Form.Control
-                type="text"
-                name="edition"
-                value={formData.edition}
-                onChange={handleChange}
-                required
-              />
+              <div className="d-flex">
+                <Form.Select
+                  name="edition"
+                  value={formData.edition}
+                  onChange={handleChange}
+                  required
+                  disabled={loadingEditions}
+                  className="me-2"
+                >
+                  <option value="">Select an edition</option>
+                  {editions.map(edition => (
+                    <option key={edition._id} value={edition.name}>
+                      {edition.name}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Button 
+                  variant="outline-secondary" 
+                  size="sm"
+                  onClick={() => window.open('/setup?tab=editions', '_blank')}
+                  title="Manage editions"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </Button>
+              </div>
+              {loadingEditions && (
+                <div className="mt-2">
+                  <Spinner animation="border" size="sm" /> Loading editions...
+                </div>
+              )}
             </Form.Group>
           </Col>
         </Row>
@@ -149,13 +236,36 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
           <Col md={6}>
             <Form.Group className="mb-3">
               <Form.Label>Race/Faction</Form.Label>
-              <Form.Control
-                type="text"
-                name="faction"
-                value={formData.faction}
-                onChange={handleChange}
-                required
-              />
+              <div className="d-flex">
+                <Form.Select
+                  name="faction"
+                  value={formData.faction}
+                  onChange={handleChange}
+                  required
+                  disabled={loadingFactions}
+                  className="me-2"
+                >
+                  <option value="">Select a faction</option>
+                  {factions.map(faction => (
+                    <option key={faction._id} value={faction.name}>
+                      {faction.name}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Button 
+                  variant="outline-secondary" 
+                  size="sm"
+                  onClick={() => window.open('/setup?tab=factions', '_blank')}
+                  title="Manage factions"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </Button>
+              </div>
+              {loadingFactions && (
+                <div className="mt-2">
+                  <Spinner animation="border" size="sm" /> Loading factions...
+                </div>
+              )}
             </Form.Group>
           </Col>
         </Row>
@@ -204,7 +314,19 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
           type="submit" 
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Adding...' : 'Add Starship'}
+          {isSubmitting ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+              Adding...
+            </>
+          ) : 'Add Starship'}
         </Button>
       </Form>
     </div>

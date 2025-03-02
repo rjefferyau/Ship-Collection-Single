@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { Container, Row, Col, Tabs, Tab, Modal, Button, Nav } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTimes, faImages } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTimes, faImages, faCog, faFileImport } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 
 import StarshipList from '../components/StarshipList';
 import StarshipDetails from '../components/StarshipDetails';
 import AddStarshipForm from '../components/AddStarshipForm';
-import CsvUpload from '../components/CsvUpload';
 import Statistics from '../components/Statistics';
 
 interface Starship {
@@ -164,11 +163,23 @@ const Home: React.FC = () => {
             <p className="lead">
               Track, manage, and explore your Star Trek starship collection
             </p>
-            <div className="mb-3">
+            <div className="mb-3 d-flex">
               <Link href="/fancy-view" passHref>
-                <Button variant="outline-primary">
+                <Button variant="outline-primary" className="me-2">
                   <FontAwesomeIcon icon={faImages} className="me-2" />
                   View Gallery
+                </Button>
+              </Link>
+              <Link href="/setup" passHref>
+                <Button variant="outline-secondary" className="me-2">
+                  <FontAwesomeIcon icon={faCog} className="me-2" />
+                  Setup
+                </Button>
+              </Link>
+              <Link href="/setup?tab=import" passHref>
+                <Button variant="outline-info">
+                  <FontAwesomeIcon icon={faFileImport} className="me-2" />
+                  Import/Export
                 </Button>
               </Link>
             </div>
@@ -218,11 +229,20 @@ const Home: React.FC = () => {
           
           <Tab eventKey="add" title="Add Starship">
             <Row>
-              <Col lg={6}>
+              <Col lg={12}>
                 <AddStarshipForm onStarshipAdded={fetchStarships} />
-              </Col>
-              <Col lg={6}>
-                <CsvUpload onUploadComplete={fetchStarships} />
+                <div className="mt-4 p-3 border rounded bg-light">
+                  <h4>Need to import multiple starships?</h4>
+                  <p>
+                    You can import starships from a CSV file using our import tool.
+                  </p>
+                  <Link href="/setup?tab=import" passHref>
+                    <Button variant="primary">
+                      <FontAwesomeIcon icon={faFileImport} className="me-2" />
+                      Go to Import/Export
+                    </Button>
+                  </Link>
+                </div>
               </Col>
             </Row>
           </Tab>

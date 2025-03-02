@@ -1,0 +1,40 @@
+{
+  "name": "starship-collection-manager",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.4.0",
+    "@fortawesome/free-solid-svg-icons": "^6.4.0",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "@types/formidable": "^2.0.5",
+    "@types/mongoose": "^5.11.97",
+    "@types/node": "^18.15.11",
+    "@types/react": "^18.0.33",
+    "@types/react-dom": "^18.0.11",
+    "bootstrap": "^5.2.3",
+    "csv-parser": "^3.0.0",
+    "eslint": "^8.37.0",
+    "eslint-config-next": "^13.2.4",
+    "formidable": "^2.1.1",
+    "mongoose": "^7.0.3",
+    "next": "^13.2.4",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.7.2",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.1.0",
+    "typescript": "^5.3.3"
+  }
+} 

@@ -1,0 +1,84 @@
+/* Custom global styles */
+
+/* Add some padding to the body */
+body {
+  padding-bottom: 2rem;
+}
+
+/* Custom card styling */
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Table hover effect */
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Custom button styling */
+.btn {
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom form control styling */
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Custom badge styling */
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+/* Custom progress bar styling */
+.progress {
+  height: 0.8rem;
+  border-radius: 0.25rem;
+}
+
+/* Custom modal styling */
+.modal-content {
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom tab styling */
+.nav-tabs .nav-link {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link.active {
+  font-weight: 500;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+/* Create uploads directory if it doesn't exist */
+.uploads-directory {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .lead {
+    font-size: 1.1rem;
+  }
+} 

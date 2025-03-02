@@ -91,14 +91,14 @@ const StatisticsPage: React.FC = () => {
         <title>Statistics - Starship Collection Manager</title>
       </Head>
 
-      <div className="mb-4">
+      <div className="page-header">
         <h1>Collection Statistics</h1>
         <Breadcrumb>
-          <Breadcrumb.Item>
-            <Link href="/" className="text-decoration-none">
+          <Link href="/" passHref legacyBehavior>
+            <Breadcrumb.Item>
               <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-            </Link>
-          </Breadcrumb.Item>
+            </Breadcrumb.Item>
+          </Link>
           <Breadcrumb.Item active>
             <FontAwesomeIcon icon={faChartBar} className="me-2" /> Statistics
           </Breadcrumb.Item>

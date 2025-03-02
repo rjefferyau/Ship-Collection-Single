@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { Row, Col, Modal, Button, Card } from 'react-bootstrap';
+import { Row, Col, Modal, Button, Card, Breadcrumb } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faImages } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faImages, faHome } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 
 import StarshipList from '../components/StarshipList';
@@ -104,11 +104,18 @@ const Home: React.FC = () => {
         <title>Starship Collection Manager</title>
       </Head>
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      <div className="page-header">
         <h1>Starship Collection Manager</h1>
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          <FontAwesomeIcon icon={faPlus} /> Add New Starship
-        </Button>
+        <Breadcrumb>
+          <Breadcrumb.Item active>
+            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
+          </Breadcrumb.Item>
+        </Breadcrumb>
+        <div className="d-flex justify-content-end mt-3">
+          <Button variant="primary" onClick={() => setShowAddModal(true)}>
+            <FontAwesomeIcon icon={faPlus} /> Add New Starship
+          </Button>
+        </div>
       </div>
       
       <Row className="mb-4">

@@ -10,6 +10,21 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
+          {/* Google Fonts - Montserrat */}
+          <link 
+            rel="preconnect" 
+            href="https://fonts.googleapis.com" 
+          />
+          <link 
+            rel="preconnect" 
+            href="https://fonts.gstatic.com" 
+            crossOrigin="anonymous" 
+          />
+          <link 
+            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" 
+            rel="stylesheet" 
+          />
+          
           {/* Bootstrap CSS */}
           <link 
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" 
@@ -25,6 +40,29 @@ class MyDocument extends Document {
             integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
             crossOrigin="anonymous" 
             referrerPolicy="no-referrer" 
+          />
+          
+          {/* Theme initialization script - runs before the page renders */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme) {
+                      document.documentElement.setAttribute('data-theme', savedTheme);
+                    } else {
+                      // Check for system preference
+                      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+                      localStorage.setItem('theme', prefersDark ? 'dark' : 'light');
+                    }
+                  } catch (e) {
+                    console.error('Error setting initial theme:', e);
+                  }
+                })();
+              `,
+            }}
           />
         </Head>
         <body>

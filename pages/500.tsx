@@ -32,11 +32,9 @@ const Custom500: React.FC = () => {
               Try Again
             </Button>
             
-            <Link href="/" passHref>
-              <Button variant="primary" size="lg">
-                <FontAwesomeIcon icon={faHome} className="me-2" />
-                Return to Bridge
-              </Button>
+            <Link href="/" className="btn btn-primary btn-lg">
+              <FontAwesomeIcon icon={faHome} className="me-2" />
+              Return to Bridge
             </Link>
           </div>
         </Col>

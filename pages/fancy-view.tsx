@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Row, Col, Modal, Button, Spinner, Alert, Breadcrumb, Card } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faTimes, faSpaceShuttle } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faTimes, faSpaceShuttle, faImages } from '@fortawesome/free-solid-svg-icons';
 
 import FancyStarshipView from '../components/FancyStarshipView';
 import StarshipDetails from '../components/StarshipDetails';
@@ -108,17 +108,19 @@ const FancyViewPage: React.FC = () => {
         <title>Gallery - Starship Collection Manager</title>
       </Head>
 
-      <div className="mb-4">
+      <div className="page-header">
+        <h1>Gallery View</h1>
         <Breadcrumb>
-          <Breadcrumb.Item>
-            <Link href="/" className="text-decoration-none">
+          <Link href="/" passHref legacyBehavior>
+            <Breadcrumb.Item>
               <FontAwesomeIcon icon={faHome} className="me-2" />
               Home
-            </Link>
+            </Breadcrumb.Item>
+          </Link>
+          <Breadcrumb.Item active>
+            <FontAwesomeIcon icon={faImages} className="me-2" /> Gallery
           </Breadcrumb.Item>
-          <Breadcrumb.Item active>Gallery</Breadcrumb.Item>
         </Breadcrumb>
-        <h1>Gallery View</h1>
       </div>
 
       <Card className="mb-4">

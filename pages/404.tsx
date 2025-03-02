@@ -22,11 +22,9 @@ const Custom404: React.FC = () => {
             Our sensors cannot locate the requested page in this sector of space.
           </p>
           
-          <Link href="/" passHref>
-            <Button variant="primary" size="lg">
-              <FontAwesomeIcon icon={faHome} className="me-2" />
-              Return to Starfleet
-            </Button>
+          <Link href="/" className="btn btn-primary btn-lg">
+            <FontAwesomeIcon icon={faHome} className="me-2" />
+            Return to Starfleet
           </Link>
         </Col>
       </Row>

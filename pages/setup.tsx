@@ -36,14 +36,14 @@ const SetupPage: React.FC = () => {
         <title>Setup - Starship Collection Manager</title>
       </Head>
 
-      <div className="mb-4">
+      <div className="page-header">
         <h1>Setup & Configuration</h1>
         <Breadcrumb>
-          <Breadcrumb.Item>
-            <Link href="/" className="text-decoration-none">
+          <Link href="/" passHref legacyBehavior>
+            <Breadcrumb.Item>
               <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-            </Link>
-          </Breadcrumb.Item>
+            </Breadcrumb.Item>
+          </Link>
           <Breadcrumb.Item active>
             <FontAwesomeIcon icon={faCog} className="me-2" /> Setup
           </Breadcrumb.Item>

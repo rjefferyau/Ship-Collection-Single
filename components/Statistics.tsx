@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
-import { Card, Row, Col, ProgressBar, Form, Button, Badge, Dropdown, Modal } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, ProgressBar, Form, Button, Badge, Dropdown, Modal, Table } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShip, faCheck, faPercentage, faList, faSort, faChevronRight, faFilter, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faShip, faCheck, faPercentage, faList, faSort, faChevronRight, faFilter, faSearch, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+
+interface Starship {
+  _id: string;
+  issue: string;
+  edition: string;
+  shipName: string;
+  faction: string;
+  releaseDate?: Date;
+  imageUrl?: string;
+  owned: boolean;
+}
 
 interface StatisticsProps {
   totalStarships: number;
@@ -27,6 +38,13 @@ const Statistics: React.FC<StatisticsProps> = ({
   const [showEmptyEditions, setShowEmptyEditions] = useState(true);
   const [showEmptyFactions, setShowEmptyFactions] = useState(true);
   const [showAllFactionsModal, setShowAllFactionsModal] = useState(false);
+  
+  // New state for missing ships modal
+  const [missingShips, setMissingShips] = useState<Starship[]>([]);
+  const [showMissingShipsModal, setShowMissingShipsModal] = useState(false);
+  const [selectedTitle, setSelectedTitle] = useState('');
+  const [loadingMissingShips, setLoadingMissingShips] = useState(false);
+  const [missingShipsError, setMissingShipsError] = useState<string | null>(null);
 
   const ownedPercentage = totalStarships > 0 
     ? Math.round((ownedStarships / totalStarships) * 100) 
@@ -89,6 +107,50 @@ const Statistics: React.FC<StatisticsProps> = ({
       case 'name-desc': return 'Name (Z to A)';
       default: return 'Sort by';
     }
+  };
+
+  // Function to fetch missing ships for a specific edition or faction
+  const fetchMissingShips = async (type: 'edition' | 'faction', name: string) => {
+    setLoadingMissingShips(true);
+    setMissingShipsError(null);
+    setSelectedTitle(name);
+    
+    try {
+      const response = await fetch('/api/starships');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch starships');
+      }
+      
+      const data = await response.json();
+      const starships = data.data || [];
+      
+      // Filter for missing ships (not owned) of the selected edition or faction
+      const filtered = starships.filter((ship: Starship) => {
+        if (type === 'edition') {
+          return ship.edition === name && !ship.owned;
+        } else {
+          return ship.faction === name && !ship.owned;
+        }
+      });
+      
+      setMissingShips(filtered);
+      setShowMissingShipsModal(true);
+    } catch (err) {
+      setMissingShipsError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoadingMissingShips(false);
+    }
+  };
+
+  // Handle click on edition title
+  const handleEditionClick = (edition: string) => {
+    fetchMissingShips('edition', edition);
+  };
+
+  // Handle click on faction title
+  const handleFactionClick = (faction: string) => {
+    fetchMissingShips('faction', faction);
   };
 
   return (
@@ -197,7 +259,14 @@ const Statistics: React.FC<StatisticsProps> = ({
                     <Card className="h-100 border-0 shadow-sm">
                       <Card.Body>
                         <h6 className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="text-truncate" title={edition}>{edition}</span>
+                          <span 
+                            className="text-truncate cursor-pointer" 
+                            title={`Click to see missing ships for ${edition}`}
+                            onClick={() => handleEditionClick(edition)}
+                            style={{ cursor: 'pointer', color: '#0d6efd', textDecoration: 'underline' }}
+                          >
+                            {edition}
+                          </span>
                           <Badge bg={getProgressVariant(percentage)}>
                             {percentage}%
                           </Badge>
@@ -279,7 +348,14 @@ const Statistics: React.FC<StatisticsProps> = ({
                     <Card className="h-100 border-0 shadow-sm">
                       <Card.Body>
                         <h6 className="d-flex justify-content-between align-items-center mb-2">
-                          <span className="text-truncate" title={faction}>{faction}</span>
+                          <span 
+                            className="text-truncate cursor-pointer" 
+                            title={`Click to see missing ships for ${faction}`}
+                            onClick={() => handleFactionClick(faction)}
+                            style={{ cursor: 'pointer', color: '#0d6efd', textDecoration: 'underline' }}
+                          >
+                            {faction}
+                          </span>
                           <Badge bg={getProgressVariant(percentage)}>
                             {percentage}%
                           </Badge>
@@ -358,7 +434,14 @@ const Statistics: React.FC<StatisticsProps> = ({
                   <Card className="h-100 border-0 shadow-sm">
                     <Card.Body>
                       <h6 className="d-flex justify-content-between align-items-center mb-2">
-                        <span className="text-truncate" title={faction}>{faction}</span>
+                        <span 
+                          className="text-truncate cursor-pointer" 
+                          title={`Click to see missing ships for ${faction}`}
+                          onClick={() => handleFactionClick(faction)}
+                          style={{ cursor: 'pointer', color: '#0d6efd', textDecoration: 'underline' }}
+                        >
+                          {faction}
+                        </span>
                         <Badge bg={getProgressVariant(percentage)}>
                           {percentage}%
                         </Badge>
@@ -393,6 +476,72 @@ const Statistics: React.FC<StatisticsProps> = ({
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowAllFactionsModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* New Modal for showing missing ships */}
+      <Modal 
+        show={showMissingShipsModal} 
+        onHide={() => setShowMissingShipsModal(false)}
+        size="lg"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Missing Ships - {selectedTitle}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {loadingMissingShips ? (
+            <div className="text-center p-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3">Loading missing ships...</p>
+            </div>
+          ) : missingShipsError ? (
+            <div className="alert alert-danger" role="alert">
+              {missingShipsError}
+            </div>
+          ) : missingShips.length === 0 ? (
+            <div className="text-center p-4">
+              <FontAwesomeIcon icon={faCheck} size="3x" className="text-success mb-3" />
+              <h5>Congratulations!</h5>
+              <p>You own all ships in this category.</p>
+            </div>
+          ) : (
+            <>
+              <p>
+                <FontAwesomeIcon icon={faExclamationTriangle} className="text-warning me-2" />
+                You are missing {missingShips.length} ships from this category.
+              </p>
+              <Table striped hover responsive>
+                <thead>
+                  <tr>
+                    <th>Issue</th>
+                    <th>Ship Name</th>
+                    <th>Edition</th>
+                    <th>Faction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {missingShips.map(ship => (
+                    <tr key={ship._id}>
+                      <td>{ship.issue}</td>
+                      <td>{ship.shipName}</td>
+                      <td>{ship.edition}</td>
+                      <td>{ship.faction}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowMissingShipsModal(false)}>
             Close
           </Button>
         </Modal.Footer>

@@ -1,8 +1,9 @@
 import React, { ReactNode } from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Form } from 'react-bootstrap';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faSpaceShuttle, faChartBar, faImages, faCog } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faSpaceShuttle, faChartBar, faImages, faCog, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,11 +11,21 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) => {
+  const { theme, toggleTheme } = useTheme();
+  
   return (
     <div className="d-flex flex-column min-vh-100">
       {/* Sidebar */}
       <div className="sidebar p-3">
-        <h4 className="text-center mb-4">Starship Collection</h4>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 className="mb-0">Starship Collection</h4>
+          <div className="theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
+            <FontAwesomeIcon 
+              icon={theme === 'light' ? faMoon : faSun} 
+              className={`theme-icon ${theme === 'light' ? 'text-dark' : 'text-warning'}`} 
+            />
+          </div>
+        </div>
         <div className="nav flex-column nav-pills">
           <Link 
             href="/" 

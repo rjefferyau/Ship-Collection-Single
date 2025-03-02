@@ -4,6 +4,7 @@ import '../styles/globals.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import { ThemeProvider } from '../contexts/ThemeContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -16,7 +17,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   else if (path === '/setup') activeTab = 'setup';
   
   return (
-    <>
+    <ThemeProvider>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Starship Collection Manager - Track and manage your Star Trek starship collection" />
@@ -26,7 +27,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Layout activeTab={activeTab}>
         <Component {...pageProps} />
       </Layout>
-    </>
+    </ThemeProvider>
   );
 }
 

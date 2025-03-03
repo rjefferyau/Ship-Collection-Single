@@ -8,6 +8,11 @@ export interface IStarship extends Document {
   releaseDate?: Date; // "Release Date" from CSV
   imageUrl?: string;  // "Image" field
   owned: boolean;
+  wishlist: boolean; // Added to wishlist for future purchase
+  wishlistPriority?: number; // Priority in the wishlist (lower number = higher priority)
+  onOrder: boolean; // Whether the item is currently on order
+  pricePaid?: number; // Price paid for the order
+  orderDate?: Date; // When the order was placed
   retailPrice?: number; // Recommended Retail Price
   purchasePrice?: number; // My Purchase Price
   marketValue?: number; // Current Market Value
@@ -21,6 +26,11 @@ const StarshipSchema: Schema = new Schema({
   releaseDate: { type: Date },
   imageUrl: { type: String },
   owned: { type: Boolean, default: false },
+  wishlist: { type: Boolean, default: false },
+  wishlistPriority: { type: Number },
+  onOrder: { type: Boolean, default: false },
+  pricePaid: { type: Number },
+  orderDate: { type: Date },
   retailPrice: { type: Number },
   purchasePrice: { type: Number },
   marketValue: { type: Number }

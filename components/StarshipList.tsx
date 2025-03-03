@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Form, InputGroup, Button, Dropdown, DropdownButton, Badge, Nav, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus, faStar as faStarSolid, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import DataTable from './DataTable';
 
 interface Starship {
@@ -13,6 +14,11 @@ interface Starship {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  wishlist: boolean;
+  wishlistPriority?: number;
+  onOrder: boolean;
+  pricePaid?: number;
+  orderDate?: Date;
   retailPrice?: number;
   purchasePrice?: number;
   marketValue?: number;
@@ -34,6 +40,7 @@ interface StarshipListProps {
   starships: Starship[];
   onToggleOwned: (id: string) => Promise<void>;
   onSelectStarship: (starship: Starship) => void;
+  onToggleWishlist?: (id: string) => Promise<void>;
   onEditionChange?: (edition: string) => void;
   currentEdition?: string;
 }
@@ -42,6 +49,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
   starships, 
   onToggleOwned,
   onSelectStarship,
+  onToggleWishlist,
   onEditionChange,
   currentEdition = 'Regular'
 }) => {
@@ -473,6 +481,9 @@ const StarshipList: React.FC<StarshipListProps> = ({
             <th onClick={() => handleSort('owned')} style={{ cursor: 'pointer' }}>
               Owned {getSortIcon('owned')}
             </th>
+            <th onClick={() => handleSort('wishlist')} style={{ cursor: 'pointer' }}>
+              Wishlist {getSortIcon('wishlist')}
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -513,6 +524,28 @@ const StarshipList: React.FC<StarshipListProps> = ({
                 )}
               </td>
               <td>
+                {starship.owned ? (
+                  <span className="text-muted">-</span>
+                ) : starship.onOrder ? (
+                  <Badge bg="primary" className="on-order-badge">
+                    <FontAwesomeIcon icon={faShoppingCart} className="me-1" /> On Order
+                  </Badge>
+                ) : onToggleWishlist ? (
+                  <span 
+                    style={{ cursor: 'pointer' }} 
+                    onClick={() => onToggleWishlist(starship._id)}
+                    title={starship.wishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                  >
+                    <FontAwesomeIcon 
+                      icon={starship.wishlist ? faStarSolid : faStarRegular} 
+                      className={starship.wishlist ? "text-warning" : "text-secondary"} 
+                    />
+                  </span>
+                ) : (
+                  <span className="text-muted">-</span>
+                )}
+              </td>
+              <td>
                 <Button 
                   variant="outline-primary" 
                   size="sm"
@@ -527,6 +560,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
                   size="sm"
                   onClick={() => onToggleOwned(starship._id)}
                   title={starship.owned ? "Remove from Collection" : "Add to Collection"}
+                  className="me-2"
                 >
                   <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
                 </Button>

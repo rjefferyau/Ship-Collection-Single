@@ -8,6 +8,7 @@ const navigationItems = [
   { id: 'fancy-view', label: 'Gallery', defaultIcon: 'fa-images' },
   { id: 'statistics', label: 'Statistics', defaultIcon: 'fa-chart-bar' },
   { id: 'price-vault', label: 'Price Vault', defaultIcon: 'fa-dollar-sign' },
+  { id: 'wishlist', label: 'Wishlist', defaultIcon: 'fa-star' },
   { id: 'setup', label: 'Setup', defaultIcon: 'fa-cog' }
 ];
 

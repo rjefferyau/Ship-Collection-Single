@@ -18,6 +18,14 @@ interface Starship {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  wishlist: boolean;
+  wishlistPriority?: number;
+  onOrder: boolean;
+  pricePaid?: number;
+  orderDate?: Date;
+  retailPrice?: number;
+  purchasePrice?: number;
+  marketValue?: number;
 }
 
 const Home: React.FC = () => {
@@ -79,6 +87,42 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleToggleWishlist = async (id: string) => {
+    try {
+      const response = await fetch(`/api/starships/toggle-wishlist/${id}`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update wishlist status');
+      }
+      
+      const result = await response.json();
+      
+      // Update the starship in the local state
+      setStarships(prevStarships => 
+        prevStarships.map(ship => 
+          ship._id === id ? { 
+            ...ship, 
+            wishlist: result.data.wishlist,
+            wishlistPriority: result.data.wishlistPriority 
+          } : ship
+        )
+      );
+      
+      // If the selected starship is the one being updated, update it too
+      if (selectedStarship && selectedStarship._id === id) {
+        setSelectedStarship(prev => prev ? { 
+          ...prev, 
+          wishlist: result.data.wishlist,
+          wishlistPriority: result.data.wishlistPriority 
+        } : null);
+      }
+    } catch (err) {
+      console.error('Error toggling wishlist:', err);
+    }
+  };
+
   const handleSelectStarship = (starship: Starship) => {
     setSelectedStarship(starship);
   };
@@ -134,6 +178,7 @@ const Home: React.FC = () => {
                 starships={starships}
                 onToggleOwned={handleToggleOwned}
                 onSelectStarship={handleSelectStarship}
+                onToggleWishlist={handleToggleWishlist}
                 onEditionChange={handleEditionChange}
                 currentEdition={currentEdition}
               />
@@ -165,6 +210,7 @@ const Home: React.FC = () => {
               starship={selectedStarship}
               onToggleOwned={handleToggleOwned}
               onRefresh={handleRefreshStarships}
+              onToggleWishlist={handleToggleWishlist}
               currentEdition={currentEdition}
             />
           )}

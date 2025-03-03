@@ -15,6 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
     'fancy-view': 'fa-images',
     statistics: 'fa-chart-bar',
     'price-vault': 'fa-dollar-sign',
+    wishlist: 'fa-star',
     setup: 'fa-cog'
   });
   
@@ -92,6 +93,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             >
               <i className={`fa-solid ${navIcons['fancy-view']} me-2`}></i>
               <span>Gallery</span>
+            </Link>
+            <Link 
+              href="/wishlist" 
+              className={`nav-link ${activeTab === 'wishlist' ? 'active' : ''}`}
+            >
+              <i className={`fa-solid ${navIcons.wishlist} me-2`}></i>
+              <span>Wishlist</span>
             </Link>
           </div>
         </div>

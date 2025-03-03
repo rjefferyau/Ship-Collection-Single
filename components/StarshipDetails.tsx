@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Form, Alert, Row, Col, Spinner, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 
 interface Faction {
   _id: string;
@@ -24,6 +25,11 @@ interface Starship {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  wishlist: boolean;
+  wishlistPriority?: number;
+  onOrder: boolean;
+  pricePaid?: number;
+  orderDate?: Date;
   retailPrice?: number;
   purchasePrice?: number;
   marketValue?: number;
@@ -33,6 +39,7 @@ interface StarshipDetailsProps {
   starship: Starship;
   onToggleOwned: (id: string) => Promise<void>;
   onRefresh: (edition?: string) => void;
+  onToggleWishlist?: (id: string) => Promise<void>;
   currentEdition?: string;
 }
 
@@ -40,6 +47,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   starship, 
   onToggleOwned,
   onRefresh,
+  onToggleWishlist,
   currentEdition
 }) => {
   const [uploading, setUploading] = useState(false);
@@ -53,6 +61,11 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     faction: starship.faction,
     releaseDate: starship.releaseDate,
     imageUrl: starship.imageUrl,
+    wishlist: starship.wishlist,
+    wishlistPriority: starship.wishlistPriority,
+    onOrder: starship.onOrder,
+    pricePaid: starship.pricePaid,
+    orderDate: starship.orderDate,
     retailPrice: starship.retailPrice,
     purchasePrice: starship.purchasePrice,
     marketValue: starship.marketValue
@@ -60,10 +73,18 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [orderStatusMessage, setOrderStatusMessage] = useState<string | null>(null);
   const [factions, setFactions] = useState<Faction[]>([]);
   const [loadingFactions, setLoadingFactions] = useState(false);
   const [editions, setEditions] = useState<Edition[]>([]);
   const [loadingEditions, setLoadingEditions] = useState(false);
+  const [onOrderData, setOnOrderData] = useState({
+    onOrder: starship.onOrder || false,
+    pricePaid: starship.pricePaid || '',
+    orderDate: starship.orderDate ? new Date(starship.orderDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+  });
+  const [showOnOrderForm, setShowOnOrderForm] = useState(false);
+  const [savingOrderStatus, setSavingOrderStatus] = useState(false);
 
   // Fetch factions and editions when entering edit mode
   useEffect(() => {
@@ -197,6 +218,11 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       faction: starship.faction,
       releaseDate: starship.releaseDate,
       imageUrl: starship.imageUrl,
+      wishlist: starship.wishlist,
+      wishlistPriority: starship.wishlistPriority,
+      onOrder: starship.onOrder,
+      pricePaid: starship.pricePaid,
+      orderDate: starship.orderDate,
       retailPrice: starship.retailPrice,
       purchasePrice: starship.purchasePrice,
       marketValue: starship.marketValue
@@ -244,8 +270,72 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     }
   }, [isEditing, editFormData.edition]);
 
+  // Handle toggling on order status
+  const handleToggleOnOrder = async () => {
+    if (!showOnOrderForm) {
+      setShowOnOrderForm(true);
+      return;
+    }
+    
+    setSavingOrderStatus(true);
+    setSaveError(null);
+    setOrderStatusMessage(null);
+    
+    try {
+      const response = await fetch(`/api/starships/${starship._id}/toggle-order`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          onOrder: !starship.onOrder,
+          pricePaid: onOrderData.pricePaid === '' ? null : Number(onOrderData.pricePaid),
+          orderDate: onOrderData.orderDate || new Date().toISOString().split('T')[0]
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+      
+      setOrderStatusMessage('Order status updated successfully');
+      setTimeout(() => setOrderStatusMessage(null), 3000);
+      onRefresh(currentEdition);
+      setShowOnOrderForm(false);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setSavingOrderStatus(false);
+    }
+  };
+
+  // Handle marking an ordered item as received (adds to collection)
+  const handleMarkAsReceived = async () => {
+    setSavingOrderStatus(true);
+    setSaveError(null);
+    setOrderStatusMessage(null);
+    
+    try {
+      const response = await fetch(`/api/starships/${starship._id}/mark-received`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to mark item as received');
+      }
+      
+      setOrderStatusMessage('Item marked as received and added to your collection');
+      setTimeout(() => setOrderStatusMessage(null), 3000);
+      onRefresh(currentEdition);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setSavingOrderStatus(false);
+    }
+  };
+
   return (
-    <div className="mb-4">
+    <div className="starship-details">
       <Card className="mb-3">
         <Card.Header className="d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Issue {starship.issue}</h5>
@@ -571,6 +661,111 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
           </Form.Group>
         </Card.Body>
       </Card>
+      
+      <Row className="mb-3">
+        <Col>
+          <Card>
+            <Card.Header>Actions</Card.Header>
+            <Card.Body>
+              <div className="d-flex flex-wrap gap-2">
+                <Button 
+                  variant={starship.owned ? "outline-danger" : "outline-success"} 
+                  onClick={() => onToggleOwned(starship._id)}
+                >
+                  <FontAwesomeIcon icon={starship.owned ? faTimes : faCheck} className="me-2" />
+                  {starship.owned ? "Remove from Collection" : "Add to Collection"}
+                </Button>
+                
+                {onToggleWishlist && !starship.owned && !starship.onOrder && (
+                  <Button 
+                    variant={starship.wishlist ? "warning" : "outline-secondary"} 
+                    onClick={() => onToggleWishlist(starship._id)}
+                  >
+                    <FontAwesomeIcon 
+                      icon={starship.wishlist ? faStarSolid : faStarRegular} 
+                      className="me-2" 
+                    />
+                    {starship.wishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                  </Button>
+                )}
+                
+                {!starship.owned && (
+                  <>
+                    {starship.onOrder ? (
+                      <Button 
+                        variant="primary" 
+                        onClick={handleMarkAsReceived}
+                        disabled={savingOrderStatus}
+                      >
+                        {savingOrderStatus ? (
+                          <>
+                            <Spinner as="span" animation="border" size="sm" className="me-2" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faBoxOpen} className="me-2" />
+                            Mark as Received
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="info" 
+                        onClick={handleToggleOnOrder}
+                        disabled={savingOrderStatus}
+                      >
+                        {savingOrderStatus ? (
+                          <>
+                            <Spinner as="span" animation="border" size="sm" className="me-2" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
+                            {showOnOrderForm ? "Save Order Details" : "Mark as On Order"}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+      
+      {showOnOrderForm && !starship.onOrder && !starship.owned && (
+        <div className="mt-3 p-3 border rounded bg-light">
+          <h5>Order Details</h5>
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3}>Price Paid</Form.Label>
+            <Col sm={9}>
+              <InputGroup>
+                <InputGroup.Text>£</InputGroup.Text>
+                <Form.Control 
+                  type="number" 
+                  step="0.01" 
+                  value={onOrderData.pricePaid} 
+                  onChange={(e) => setOnOrderData({...onOrderData, pricePaid: e.target.value})}
+                  placeholder="Enter price paid"
+                />
+              </InputGroup>
+            </Col>
+          </Form.Group>
+          <Form.Group as={Row} className="mb-3">
+            <Form.Label column sm={3}>Order Date</Form.Label>
+            <Col sm={9}>
+              <Form.Control 
+                type="date" 
+                value={onOrderData.orderDate} 
+                onChange={(e) => setOnOrderData({...onOrderData, orderDate: e.target.value})}
+              />
+            </Col>
+          </Form.Group>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,95 +1,177 @@
 import React from 'react';
-import { Row, Col, Card, Button } from 'react-bootstrap';
-import Link from 'next/link';
-import Layout from '../components/Layout';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { Container, Row, Col, Card, Button, Breadcrumb } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faHome, faCog, faIcons, faUsers, 
+  faBookOpen, faFileImport, faDollarSign, faArrowRight
+} from '@fortawesome/free-solid-svg-icons';
 
 const SetupPage: React.FC = () => {
+  const router = useRouter();
+
+  const navigateTo = (path: string) => {
+    router.push(path);
+  };
+
   return (
-    <Layout activeTab="setup">
+    <>
+      <Head>
+        <title>Setup - Starship Collection Manager</title>
+      </Head>
+      
       <div className="page-header">
-        <h1 className="mb-4">Setup & Configuration</h1>
-        <p className="mb-4">
-          Configure various aspects of your Starship Collection Manager. Click on a card to access the specific configuration page.
-        </p>
+        <h1>Setup</h1>
+        <Breadcrumb>
+          <Breadcrumb.Item href="/">
+            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
+          </Breadcrumb.Item>
+          <Breadcrumb.Item active>
+            <FontAwesomeIcon icon={faCog} className="me-2" /> Setup
+          </Breadcrumb.Item>
+        </Breadcrumb>
       </div>
       
+      <p className="lead mb-4">
+        Configure your collection manager settings and preferences.
+      </p>
+      
       <Row>
+        {/* Icon Setup */}
         <Col md={4} className="mb-4">
           <Card className="h-100">
-            <Card.Body className="text-center d-flex flex-column">
-              <div className="flex-grow-1">
-                <i className="fa-solid fa-icons fa-3x mb-3 text-primary"></i>
-                <h5>Navigation Icons</h5>
-                <p>Customize the icons used in the navigation menu.</p>
+            <Card.Body className="d-flex flex-column align-items-center text-center">
+              <div className="icon-container mb-3">
+                <FontAwesomeIcon icon={faIcons} size="2x" />
               </div>
-              <Link href="/icon-setup" passHref>
-                <Button variant="primary">Configure Icons</Button>
-              </Link>
+              <h4>Icon Setup</h4>
+              <p className="text-muted">
+                Customize the icons used throughout the application.
+              </p>
+              <div className="mt-auto">
+                <Button 
+                  variant="primary" 
+                  className="d-flex align-items-center mx-auto"
+                  onClick={() => navigateTo('/icon-setup')}
+                >
+                  Configure Icons <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         
+        {/* Faction Setup */}
         <Col md={4} className="mb-4">
           <Card className="h-100">
-            <Card.Body className="text-center d-flex flex-column">
-              <div className="flex-grow-1">
-                <i className="fa-solid fa-users fa-3x mb-3 text-primary"></i>
-                <h5>Factions</h5>
-                <p>Manage factions for your starship collection.</p>
+            <Card.Body className="d-flex flex-column align-items-center text-center">
+              <div className="icon-container mb-3">
+                <FontAwesomeIcon icon={faUsers} size="2x" />
               </div>
-              <Link href="/faction-setup" passHref>
-                <Button variant="primary">Manage Factions</Button>
-              </Link>
+              <h4>Faction Setup</h4>
+              <p className="text-muted">
+                Manage factions and races for your starship collection.
+              </p>
+              <div className="mt-auto">
+                <Button 
+                  variant="primary" 
+                  className="d-flex align-items-center mx-auto"
+                  onClick={() => navigateTo('/faction-setup')}
+                >
+                  Manage Factions <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         
+        {/* Edition Setup */}
         <Col md={4} className="mb-4">
           <Card className="h-100">
-            <Card.Body className="text-center d-flex flex-column">
-              <div className="flex-grow-1">
-                <i className="fa-solid fa-book fa-3x mb-3 text-primary"></i>
-                <h5>Editions</h5>
-                <p>Configure editions for your starship collection.</p>
+            <Card.Body className="d-flex flex-column align-items-center text-center">
+              <div className="icon-container mb-3">
+                <FontAwesomeIcon icon={faBookOpen} size="2x" />
               </div>
-              <Link href="/edition-setup" passHref>
-                <Button variant="primary">Manage Editions</Button>
-              </Link>
+              <h4>Edition Setup</h4>
+              <p className="text-muted">
+                Manage editions and series for your starship collection.
+              </p>
+              <div className="mt-auto">
+                <Button 
+                  variant="primary" 
+                  className="d-flex align-items-center mx-auto"
+                  onClick={() => navigateTo('/edition-setup')}
+                >
+                  Manage Editions <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         
+        {/* Import/Export */}
         <Col md={4} className="mb-4">
           <Card className="h-100">
-            <Card.Body className="text-center d-flex flex-column">
-              <div className="flex-grow-1">
-                <i className="fa-solid fa-file-import fa-3x mb-3 text-primary"></i>
-                <h5>Import/Export</h5>
-                <p>Import or export your starship collection data.</p>
+            <Card.Body className="d-flex flex-column align-items-center text-center">
+              <div className="icon-container mb-3">
+                <FontAwesomeIcon icon={faFileImport} size="2x" />
               </div>
-              <Link href="/import-export" passHref>
-                <Button variant="primary">Import/Export Data</Button>
-              </Link>
+              <h4>Import/Export</h4>
+              <p className="text-muted">
+                Import or export your collection data.
+              </p>
+              <div className="mt-auto">
+                <Button 
+                  variant="primary" 
+                  className="d-flex align-items-center mx-auto"
+                  onClick={() => navigateTo('/import-export')}
+                >
+                  Import/Export Data <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         
+        {/* Currency Setup */}
         <Col md={4} className="mb-4">
           <Card className="h-100">
-            <Card.Body className="text-center d-flex flex-column">
-              <div className="flex-grow-1">
-                <i className="fa-solid fa-money-bill-wave fa-3x mb-3 text-primary"></i>
-                <h5>Currency Settings</h5>
-                <p>Set your preferred currency for prices throughout the application.</p>
+            <Card.Body className="d-flex flex-column align-items-center text-center">
+              <div className="icon-container mb-3">
+                <FontAwesomeIcon icon={faDollarSign} size="2x" />
               </div>
-              <Link href="/currency-setup" passHref>
-                <Button variant="primary">Configure Currency</Button>
-              </Link>
+              <h4>Currency Setup</h4>
+              <p className="text-muted">
+                Configure your preferred currency for prices.
+              </p>
+              <div className="mt-auto">
+                <Button 
+                  variant="primary" 
+                  className="d-flex align-items-center mx-auto"
+                  onClick={() => navigateTo('/currency-setup')}
+                >
+                  Configure Currency <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </Col>
       </Row>
-    </Layout>
+      
+      <style jsx>{`
+        .icon-container {
+          width: 70px;
+          height: 70px;
+          border-radius: 50%;
+          background-color: #f8f9fa;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #007bff;
+        }
+      `}</style>
+    </>
   );
 };
 

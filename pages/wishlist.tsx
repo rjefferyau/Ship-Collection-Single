@@ -3,7 +3,6 @@ import Head from 'next/head';
 import { Row, Col, Card, Button, Breadcrumb, Alert, Form, Badge, Tabs, Tab, Modal, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faHome, faArrowUp, faArrowDown, faGripVertical, faShoppingCart, faBoxOpen, faCheck, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
-import Layout from '../components/Layout';
 import { DragDropContext, Draggable, DropResult, DroppableStateSnapshot } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 
@@ -290,7 +289,7 @@ const WishlistPage: React.FC = () => {
   };
 
   return (
-    <Layout activeTab="wishlist">
+    <>
       <Head>
         <title>Wishlist - Starship Collection Manager</title>
       </Head>
@@ -676,7 +675,7 @@ const WishlistPage: React.FC = () => {
           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

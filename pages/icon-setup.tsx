@@ -1,187 +1,234 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, ListGroup } from 'react-bootstrap';
-import Layout from '../components/Layout';
+import Head from 'next/head';
+import { Container, Row, Col, Card, Button, Form, Alert, Breadcrumb } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHome, faIcons, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
 
-// Define navigation items
-const navigationItems = [
-  { id: 'collection', label: 'Collection', defaultIcon: 'fa-space-shuttle' },
-  { id: 'fancy-view', label: 'Gallery', defaultIcon: 'fa-images' },
-  { id: 'statistics', label: 'Statistics', defaultIcon: 'fa-chart-bar' },
-  { id: 'price-vault', label: 'Price Vault', defaultIcon: 'fa-dollar-sign' },
-  { id: 'wishlist', label: 'Wishlist', defaultIcon: 'fa-star' },
-  { id: 'setup', label: 'Setup', defaultIcon: 'fa-cog' }
-];
-
-// Popular Font Awesome icons that might be suitable for navigation
-const popularIcons = [
-  'fa-space-shuttle', 'fa-rocket', 'fa-star', 'fa-planet-ringed', 'fa-galaxy',
-  'fa-starship', 'fa-starfighter', 'fa-satellite', 'fa-user-astronaut',
-  'fa-space-station-moon', 'fa-meteor', 'fa-moon', 'fa-sun', 'fa-solar-system',
-  'fa-alien', 'fa-robot', 'fa-ufo', 'fa-radar', 'fa-telescope',
-  'fa-images', 'fa-image', 'fa-photo-film', 'fa-camera', 'fa-film',
-  'fa-chart-bar', 'fa-chart-line', 'fa-chart-pie', 'fa-chart-simple', 'fa-analytics',
-  'fa-cog', 'fa-gear', 'fa-wrench', 'fa-screwdriver-wrench', 'fa-sliders',
-  'fa-home', 'fa-dashboard', 'fa-tachometer-alt', 'fa-gauge', 'fa-compass'
-];
+interface IconOption {
+  value: string;
+  label: string;
+}
 
 const IconSetupPage: React.FC = () => {
-  // State to store selected icons for each navigation item
-  const [selectedIcons, setSelectedIcons] = useState<Record<string, string>>({});
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredIcons, setFilteredIcons] = useState(popularIcons);
-  const [selectedNavItem, setSelectedNavItem] = useState<string | null>(null);
+  const [navIcons, setNavIcons] = useState<Record<string, string>>({
+    collection: 'fa-space-shuttle',
+    'fancy-view': 'fa-images',
+    statistics: 'fa-chart-bar',
+    'price-vault': 'fa-dollar-sign',
+    wishlist: 'fa-star',
+    setup: 'fa-cog'
+  });
   
-  // Load saved icons from localStorage on component mount
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Icon options for each navigation item
+  const iconOptions: Record<string, IconOption[]> = {
+    collection: [
+      { value: 'fa-space-shuttle', label: 'Space Shuttle' },
+      { value: 'fa-rocket', label: 'Rocket' },
+      { value: 'fa-ship', label: 'Ship' },
+      { value: 'fa-database', label: 'Database' },
+      { value: 'fa-list', label: 'List' }
+    ],
+    'fancy-view': [
+      { value: 'fa-images', label: 'Images' },
+      { value: 'fa-image', label: 'Image' },
+      { value: 'fa-th', label: 'Grid' },
+      { value: 'fa-th-large', label: 'Large Grid' },
+      { value: 'fa-camera', label: 'Camera' }
+    ],
+    statistics: [
+      { value: 'fa-chart-bar', label: 'Bar Chart' },
+      { value: 'fa-chart-pie', label: 'Pie Chart' },
+      { value: 'fa-chart-line', label: 'Line Chart' },
+      { value: 'fa-analytics', label: 'Analytics' },
+      { value: 'fa-tachometer-alt', label: 'Dashboard' }
+    ],
+    'price-vault': [
+      { value: 'fa-dollar-sign', label: 'Dollar Sign' },
+      { value: 'fa-money-bill-wave', label: 'Money Bill' },
+      { value: 'fa-coins', label: 'Coins' },
+      { value: 'fa-piggy-bank', label: 'Piggy Bank' },
+      { value: 'fa-cash-register', label: 'Cash Register' }
+    ],
+    wishlist: [
+      { value: 'fa-star', label: 'Star' },
+      { value: 'fa-heart', label: 'Heart' },
+      { value: 'fa-bookmark', label: 'Bookmark' },
+      { value: 'fa-shopping-cart', label: 'Shopping Cart' },
+      { value: 'fa-gift', label: 'Gift' }
+    ],
+    setup: [
+      { value: 'fa-cog', label: 'Cog' },
+      { value: 'fa-tools', label: 'Tools' },
+      { value: 'fa-sliders-h', label: 'Sliders' },
+      { value: 'fa-wrench', label: 'Wrench' },
+      { value: 'fa-screwdriver', label: 'Screwdriver' }
+    ]
+  };
+  
+  // Load icons from localStorage on component mount
   useEffect(() => {
-    const savedIcons = localStorage.getItem('navIcons');
-    if (savedIcons) {
-      setSelectedIcons(JSON.parse(savedIcons));
-    } else {
-      // Initialize with default icons
-      const defaults = navigationItems.reduce((acc, item) => {
-        acc[item.id] = item.defaultIcon;
-        return acc;
-      }, {} as Record<string, string>);
-      setSelectedIcons(defaults);
+    if (typeof window !== 'undefined') {
+      const savedIcons = localStorage.getItem('navIcons');
+      if (savedIcons) {
+        setNavIcons(JSON.parse(savedIcons));
+      }
     }
   }, []);
   
-  // Filter icons based on search term
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredIcons(popularIcons);
-      return;
-    }
-    
-    const filtered = popularIcons.filter(icon => 
-      icon.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredIcons(filtered);
-  }, [searchTerm]);
-  
-  // Handle icon selection
-  const handleIconSelect = (navId: string, iconClass: string) => {
-    const newSelectedIcons = { ...selectedIcons, [navId]: iconClass };
-    setSelectedIcons(newSelectedIcons);
-    localStorage.setItem('navIcons', JSON.stringify(newSelectedIcons));
+  // Handle icon change
+  const handleIconChange = (navItem: string, iconValue: string) => {
+    setNavIcons({
+      ...navIcons,
+      [navItem]: iconValue
+    });
   };
   
-  // Handle save all changes
-  const handleSaveChanges = () => {
-    localStorage.setItem('navIcons', JSON.stringify(selectedIcons));
-    alert('Navigation icons saved successfully!');
+  // Save icons to localStorage
+  const saveIcons = () => {
+    try {
+      localStorage.setItem('navIcons', JSON.stringify(navIcons));
+      setSuccess('Icons saved successfully. Changes will take effect immediately.');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError('Failed to save icons. Please try again.');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+  
+  // Reset to defaults
+  const resetToDefaults = () => {
+    const defaultIcons = {
+      collection: 'fa-space-shuttle',
+      'fancy-view': 'fa-images',
+      statistics: 'fa-chart-bar',
+      'price-vault': 'fa-dollar-sign',
+      wishlist: 'fa-star',
+      setup: 'fa-cog'
+    };
+    
+    setNavIcons(defaultIcons);
+    localStorage.setItem('navIcons', JSON.stringify(defaultIcons));
+    setSuccess('Icons reset to defaults.');
+    setTimeout(() => setSuccess(null), 3000);
   };
   
   return (
-    <Layout activeTab="icon-setup">
+    <>
+      <Head>
+        <title>Icon Setup - Starship Collection Manager</title>
+      </Head>
+      
       <div className="page-header">
-        <h1 className="mb-4">Navigation Icon Setup</h1>
-        <p className="mb-4">
-          Select Font Awesome icons for each navigation item. Changes are automatically saved to your browser's local storage.
-        </p>
+        <h1>Icon Setup</h1>
+        <Breadcrumb>
+          <Breadcrumb.Item href="/">
+            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
+          </Breadcrumb.Item>
+          <Breadcrumb.Item href="/setup">
+            Setup
+          </Breadcrumb.Item>
+          <Breadcrumb.Item active>
+            <FontAwesomeIcon icon={faIcons} className="me-2" /> Icon Setup
+          </Breadcrumb.Item>
+        </Breadcrumb>
       </div>
       
-      <Row className="mb-4">
-        <Col>
-          <div className="alert alert-info">
-            <i className="fa-solid fa-info-circle me-2"></i>
-            {selectedNavItem ? (
-              <>
-                Select an icon for <strong>{navigationItems.find(item => item.id === selectedNavItem)?.label}</strong>. 
-                Current icon: <i className={`fa-solid ${selectedIcons[selectedNavItem] || navigationItems.find(item => item.id === selectedNavItem)?.defaultIcon} ms-2`}></i>
-              </>
-            ) : (
-              <>Click on a navigation item to change its icon.</>
-            )}
-          </div>
-        </Col>
-      </Row>
+      {success && (
+        <Alert variant="success" className="mb-4">
+          {success}
+        </Alert>
+      )}
       
-      <Row>
-        <Col md={4} className="mb-4">
-          <Card>
-            <Card.Header>Navigation Items</Card.Header>
-            <ListGroup variant="flush">
-              {navigationItems.map(item => (
-                <ListGroup.Item 
-                  key={item.id}
-                  action
-                  active={selectedNavItem === item.id}
-                  onClick={() => setSelectedNavItem(item.id)}
-                  className="d-flex align-items-center"
-                >
-                  <i className={`fa-solid ${selectedIcons[item.id] || item.defaultIcon} me-2`}></i>
-                  <span>{item.label}</span>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </Card>
-        </Col>
-        
-        <Col md={8}>
-          <Card>
-            <Card.Header>
-              <div className="d-flex justify-content-between align-items-center">
-                <span>Available Icons</span>
-                <Form.Control 
-                  type="text" 
-                  placeholder="Search icons..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-50"
-                />
-              </div>
-            </Card.Header>
-            <Card.Body>
-              <div className="icon-grid">
-                <Row>
-                  {filteredIcons.map(icon => (
-                    <Col key={icon} xs={4} sm={3} md={2} className="mb-3 text-center">
-                      <div 
-                        className={`icon-item p-2 ${selectedNavItem && selectedIcons[selectedNavItem] === icon ? 'selected' : ''}`}
-                        onClick={() => selectedNavItem && handleIconSelect(selectedNavItem, icon)}
-                      >
-                        <i className={`fa-solid ${icon} fa-2x mb-2`}></i>
-                        <div className="small text-truncate">{icon}</div>
+      {error && (
+        <Alert variant="danger" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">Navigation Icons</h5>
+        </Card.Header>
+        <Card.Body>
+          <p>
+            Customize the icons used in the navigation menu. Changes will take effect immediately after saving.
+          </p>
+          
+          <Row>
+            {Object.keys(navIcons).map((navItem) => (
+              <Col md={4} key={navItem} className="mb-4">
+                <Card>
+                  <Card.Header>
+                    <h6 className="mb-0 text-capitalize">
+                      {navItem === 'fancy-view' ? 'Gallery' : 
+                       navItem === 'price-vault' ? 'Price Vault' : navItem}
+                    </h6>
+                  </Card.Header>
+                  <Card.Body>
+                    <div className="text-center mb-3">
+                      <div className="icon-preview">
+                        <i className={`fa-solid ${navIcons[navItem]} fa-2x`}></i>
                       </div>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-            </Card.Body>
-            <Card.Footer className="text-end">
-              <Button variant="primary" onClick={handleSaveChanges}>
-                Save Changes
-              </Button>
-            </Card.Footer>
-          </Card>
-        </Col>
-      </Row>
+                    </div>
+                    
+                    <Form.Group>
+                      <Form.Label>Select Icon</Form.Label>
+                      <Form.Select
+                        value={navIcons[navItem]}
+                        onChange={(e) => handleIconChange(navItem, e.target.value)}
+                      >
+                        {iconOptions[navItem].map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+          
+          <div className="d-flex justify-content-between mt-4">
+            <Button 
+              variant="secondary" 
+              onClick={resetToDefaults}
+              className="d-flex align-items-center"
+            >
+              <FontAwesomeIcon icon={faUndo} className="me-2" />
+              Reset to Defaults
+            </Button>
+            
+            <Button 
+              variant="primary" 
+              onClick={saveIcons}
+              className="d-flex align-items-center"
+            >
+              <FontAwesomeIcon icon={faSave} className="me-2" />
+              Save Changes
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
       
       <style jsx>{`
-        .icon-grid {
-          max-height: 400px;
-          overflow-y: auto;
-        }
-        
-        .icon-item {
-          cursor: pointer;
-          border-radius: 4px;
-          transition: all 0.2s;
-        }
-        
-        .icon-item:hover {
-          background-color: #f8f9fa;
-          transform: scale(1.05);
-        }
-        
-        .icon-item.selected {
-          background-color: #e9f5ff;
-          border: 2px solid #0d6efd !important;
-          transform: scale(1.05);
+        .icon-preview {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background-color: #007bff;
+          color: white;
+          margin: 0 auto;
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

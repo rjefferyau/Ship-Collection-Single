@@ -75,6 +75,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
       <div className={`sidebar ${sidebarOpen ? 'show' : ''}`}>
         <div className="sidebar-header d-flex align-items-center justify-content-between">
           <h4 className="sidebar-brand">Starship Collection</h4>
+          {/* Close button for mobile view */}
+          <button 
+            className="btn btn-link text-white p-0 d-md-none" 
+            onClick={toggleSidebar}
+          >
+            <i className="fa-solid fa-times"></i>
+          </button>
         </div>
         
         <div className="nav-section">
@@ -200,6 +207,119 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
       <div className="main-content">
         {children}
       </div>
+      
+      <style jsx>{`
+        .wrapper {
+          display: flex;
+          min-height: 100vh;
+        }
+        
+        .sidebar {
+          width: 250px;
+          background-color: #343a40;
+          color: #fff;
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          z-index: 100;
+          transition: all 0.3s;
+          overflow-y: auto;
+          padding: 1rem 0;
+        }
+        
+        @media (max-width: 767.98px) {
+          .sidebar {
+            margin-left: -250px;
+          }
+          
+          .sidebar.show {
+            margin-left: 0;
+          }
+        }
+        
+        .sidebar-header {
+          padding: 0 1rem 1rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 1rem;
+        }
+        
+        .sidebar-brand {
+          margin-bottom: 0;
+          font-size: 1.25rem;
+          color: #fff;
+        }
+        
+        .nav-section {
+          margin-bottom: 1.5rem;
+        }
+        
+        .nav-section-title {
+          text-transform: uppercase;
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.5);
+          padding: 0 1rem;
+          margin-bottom: 0.5rem;
+        }
+        
+        .nav-link {
+          color: rgba(255, 255, 255, 0.75);
+          padding: 0.5rem 1rem;
+          transition: all 0.2s;
+        }
+        
+        .nav-link:hover {
+          color: #fff;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-link.active {
+          color: #fff;
+          background-color: #007bff;
+        }
+        
+        .custom-submenu {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease-out;
+        }
+        
+        .custom-submenu.show {
+          max-height: 500px;
+        }
+        
+        .custom-submenu-link {
+          display: block;
+          padding: 0.5rem 1rem 0.5rem 2.5rem;
+          color: rgba(255, 255, 255, 0.75);
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+        
+        .custom-submenu-link:hover {
+          color: #fff;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .custom-submenu-link.active {
+          color: #fff;
+          background-color: rgba(0, 123, 255, 0.5);
+        }
+        
+        .main-content {
+          flex: 1;
+          padding: 2rem;
+          margin-left: 250px;
+          transition: all 0.3s;
+        }
+        
+        @media (max-width: 767.98px) {
+          .main-content {
+            margin-left: 0;
+            padding-top: 4rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -8,6 +8,9 @@ export interface IStarship extends Document {
   releaseDate?: Date; // "Release Date" from CSV
   imageUrl?: string;  // "Image" field
   owned: boolean;
+  retailPrice?: number; // Recommended Retail Price
+  purchasePrice?: number; // My Purchase Price
+  marketValue?: number; // Current Market Value
 }
 
 const StarshipSchema: Schema = new Schema({
@@ -17,7 +20,10 @@ const StarshipSchema: Schema = new Schema({
   faction: { type: String, required: true },
   releaseDate: { type: Date },
   imageUrl: { type: String },
-  owned: { type: Boolean, default: false }
+  owned: { type: Boolean, default: false },
+  retailPrice: { type: Number },
+  purchasePrice: { type: Number },
+  marketValue: { type: Number }
 }, {
   timestamps: true
 });

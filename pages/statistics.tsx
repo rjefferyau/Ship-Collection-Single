@@ -105,7 +105,7 @@ const StatisticsPage: React.FC = () => {
         </Breadcrumb>
       </div>
 
-      <Card>
+      <Card className="mb-4">
         <Card.Body>
           {loading ? (
             <div className="text-center p-5">

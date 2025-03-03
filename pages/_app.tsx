@@ -14,6 +14,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   let activeTab = 'collection';
   if (path === '/fancy-view') activeTab = 'fancy-view';
   else if (path === '/statistics') activeTab = 'statistics';
+  else if (path === '/price-vault') activeTab = 'price-vault';
   else if (path === '/setup') activeTab = 'setup';
   else if (path === '/icon-setup') activeTab = 'icon-setup';
   else if (path === '/faction-setup') activeTab = 'faction-setup';

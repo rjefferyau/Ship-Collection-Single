@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Form, ListGroup, Badge, Spinner, Alert, Modal } from 'react-bootstrap';
+import { Button, Form, ListGroup, Badge, Spinner, Alert, Modal, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faPlus, faSync, faMagic } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faPlus, faSync, faMagic, faDollarSign, faRefresh } from '@fortawesome/free-solid-svg-icons';
 
 interface Edition {
   _id: string;
   name: string;
   description?: string;
+  retailPrice?: number;
 }
 
 const EditionManager: React.FC = () => {
@@ -18,12 +19,16 @@ const EditionManager: React.FC = () => {
   const [updateStatus, setUpdateStatus] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
+  const [priceUpdateStatus, setPriceUpdateStatus] = useState('');
+  const [updateStarshipPrices, setUpdateStarshipPrices] = useState(false);
 
   // Form state
   const [editMode, setEditMode] = useState(false);
   const [currentEdition, setCurrentEdition] = useState<Edition | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [retailPrice, setRetailPrice] = useState<string>('');
 
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -53,37 +58,34 @@ const EditionManager: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError('');
+    setSuccess('');
+
     try {
-      setLoading(true);
-      setError('');
-      setSuccess('');
+      const endpoint = editMode && currentEdition 
+        ? `/api/editions/${currentEdition._id}${updateStarshipPrices ? '?updateStarships=true' : ''}` 
+        : '/api/editions';
       
-      const editionData = {
-        name,
-        description: description || undefined
-      };
+      const method = editMode ? 'PUT' : 'POST';
       
-      let url = '/api/editions';
-      let method = 'POST';
-      
-      if (editMode && currentEdition) {
-        url = `/api/editions/${currentEdition._id}`;
-        method = 'PUT';
-      }
-      
-      const res = await fetch(url, {
+      const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editionData),
+        body: JSON.stringify({ 
+          name, 
+          description,
+          retailPrice: retailPrice ? parseFloat(retailPrice) : null
+        }),
       });
-      
-      const data = await res.json();
-      
+
+      const data = await response.json();
+
       if (data.success) {
-        setSuccess(editMode ? 'Edition updated successfully' : 'Edition added successfully');
+        setSuccess(editMode 
+          ? `Edition updated successfully!${updateStarshipPrices ? ' Starship prices have been updated.' : ''}` 
+          : 'Edition added successfully!');
         resetForm();
         fetchEditions();
       } else {
@@ -91,8 +93,6 @@ const EditionManager: React.FC = () => {
       }
     } catch (err) {
       setError('Error connecting to the server');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -100,7 +100,9 @@ const EditionManager: React.FC = () => {
     setCurrentEdition(edition);
     setName(edition.name);
     setDescription(edition.description || '');
+    setRetailPrice(edition.retailPrice?.toString() || '');
     setEditMode(true);
+    setUpdateStarshipPrices(false);
   };
 
   const confirmDelete = (edition: Edition) => {
@@ -138,10 +140,12 @@ const EditionManager: React.FC = () => {
   };
 
   const resetForm = () => {
+    setCurrentEdition(null);
     setName('');
     setDescription('');
+    setRetailPrice('');
     setEditMode(false);
-    setCurrentEdition(null);
+    setUpdateStarshipPrices(false);
   };
 
   const handleImport = async () => {
@@ -197,6 +201,44 @@ const EditionManager: React.FC = () => {
     }
   };
 
+  const handleUpdatePrices = async (edition: Edition) => {
+    if (!edition.retailPrice) {
+      setError('This edition does not have a retail price set.');
+      return;
+    }
+
+    try {
+      setIsUpdatingPrices(true);
+      setPriceUpdateStatus('');
+      setError('');
+      setSuccess('');
+
+      const response = await fetch('/api/editions/update-prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          editionName: edition.name,
+          retailPrice: edition.retailPrice
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPriceUpdateStatus(`Updated retail price for ${data.modifiedCount} starships in ${edition.name} edition.`);
+        setSuccess(`Updated retail price for ${data.modifiedCount} starships in ${edition.name} edition.`);
+      } else {
+        setError(data.error || 'Failed to update starship prices');
+      }
+    } catch (err) {
+      setError('Error connecting to the server');
+    } finally {
+      setIsUpdatingPrices(false);
+    }
+  };
+
   return (
     <div className="edition-manager">
       <h2>Manage Editions</h2>
@@ -243,6 +285,7 @@ const EditionManager: React.FC = () => {
       
       {importStatus && <Alert variant="info" className="mb-3">{importStatus}</Alert>}
       {updateStatus && <Alert variant="info" className="mb-3">{updateStatus}</Alert>}
+      {priceUpdateStatus && <Alert variant="info" className="mb-3">{priceUpdateStatus}</Alert>}
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {success && <Alert variant="success" className="mb-3">{success}</Alert>}
       
@@ -265,8 +308,32 @@ const EditionManager: React.FC = () => {
                     <div>
                       <div className="fw-bold">{edition.name}</div>
                       {edition.description && <small className="text-muted">{edition.description}</small>}
+                      {edition.retailPrice && (
+                        <div>
+                          <small className="text-muted">
+                            <FontAwesomeIcon icon={faDollarSign} className="me-1" />
+                            RRP: ${edition.retailPrice.toFixed(2)}
+                          </small>
+                        </div>
+                      )}
                     </div>
                     <div>
+                      {edition.retailPrice && (
+                        <Button 
+                          variant="outline-success" 
+                          size="sm"
+                          className="me-2"
+                          onClick={() => handleUpdatePrices(edition)}
+                          disabled={isUpdatingPrices}
+                          title="Update all starships in this edition with this retail price"
+                        >
+                          {isUpdatingPrices ? (
+                            <Spinner animation="border" size="sm" />
+                          ) : (
+                            <FontAwesomeIcon icon={faRefresh} />
+                          )}
+                        </Button>
+                      )}
                       <Button 
                         variant="outline-primary" 
                         size="sm" 
@@ -313,29 +380,46 @@ const EditionManager: React.FC = () => {
               />
             </Form.Group>
             
-            <div className="d-flex">
-              <Button 
-                variant="primary" 
-                type="submit" 
-                className="me-2"
-                disabled={loading}
-              >
-                {loading ? (
-                  <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faPlus} className="me-2" />
-                    {editMode ? 'Update Edition' : 'Add Edition'}
-                  </>
-                )}
+            <Form.Group className="mb-3" controlId="editionRetailPrice">
+              <Form.Label>Collection Retail Price (RRP)</Form.Label>
+              <InputGroup>
+                <InputGroup.Text>
+                  <FontAwesomeIcon icon={faDollarSign} />
+                </InputGroup.Text>
+                <Form.Control 
+                  type="number" 
+                  placeholder="Enter retail price (optional)" 
+                  value={retailPrice}
+                  onChange={(e) => setRetailPrice(e.target.value)}
+                  step="0.01"
+                  min="0"
+                />
+              </InputGroup>
+              <Form.Text className="text-muted">
+                This will be used as the default RRP for starships in this edition
+              </Form.Text>
+            </Form.Group>
+            
+            {editMode && retailPrice && (
+              <Form.Group className="mb-3" controlId="updateStarshipPrices">
+                <Form.Check 
+                  type="checkbox"
+                  label="Update all starships in this edition with this retail price"
+                  checked={updateStarshipPrices}
+                  onChange={(e) => setUpdateStarshipPrices(e.target.checked)}
+                />
+                <Form.Text className="text-muted">
+                  This will only update starships that don't already have a retail price set
+                </Form.Text>
+              </Form.Group>
+            )}
+            
+            <div className="d-flex justify-content-between">
+              <Button variant="primary" type="submit">
+                {editMode ? 'Update Edition' : 'Add Edition'}
               </Button>
-              
               {editMode && (
-                <Button 
-                  variant="secondary" 
-                  onClick={resetForm}
-                  disabled={loading}
-                >
+                <Button variant="secondary" onClick={resetForm}>
                   Cancel
                 </Button>
               )}

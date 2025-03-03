@@ -14,6 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
     collection: 'fa-space-shuttle',
     'fancy-view': 'fa-images',
     statistics: 'fa-chart-bar',
+    'price-vault': 'fa-dollar-sign',
     setup: 'fa-cog'
   });
   
@@ -24,6 +25,15 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
       if (savedIcons) {
         setNavIcons(JSON.parse(savedIcons));
       }
+      
+      // Set default currency if not already set
+      if (!localStorage.getItem('currencySettings')) {
+        localStorage.setItem('currencySettings', JSON.stringify({
+          currency: 'GBP',
+          symbol: '£',
+          locale: 'en-GB'
+        }));
+      }
     }
   }, []);
   
@@ -33,7 +43,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
         activeTab === 'icon-setup' || 
         activeTab === 'faction-setup' || 
         activeTab === 'edition-setup' || 
-        activeTab === 'import-export') {
+        activeTab === 'import-export' ||
+        activeTab === 'currency-setup') {
       setSetupSubmenuOpen(true);
     }
   }, [activeTab]);
@@ -95,6 +106,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
               <i className={`fa-solid ${navIcons.statistics} me-2`}></i>
               <span>Statistics</span>
             </Link>
+            <Link 
+              href="/price-vault" 
+              className={`nav-link ${activeTab === 'price-vault' ? 'active' : ''}`}
+            >
+              <i className={`fa-solid ${navIcons['price-vault']} me-2`}></i>
+              <span>Price Vault</span>
+            </Link>
           </div>
         </div>
         
@@ -108,7 +126,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                   activeTab === 'icon-setup' || 
                   activeTab === 'faction-setup' || 
                   activeTab === 'edition-setup' || 
-                  activeTab === 'import-export' ? 'active' : ''
+                  activeTab === 'import-export' ||
+                  activeTab === 'currency-setup' ? 'active' : ''
                 }`}
                 onClick={toggleSetupSubmenu}
                 style={{ cursor: 'pointer' }}
@@ -155,6 +174,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                 >
                   <i className="fa-solid fa-file-import me-2"></i>
                   <span>Import/Export</span>
+                </Link>
+                <Link 
+                  href="/currency-setup" 
+                  className={`custom-submenu-link ${activeTab === 'currency-setup' ? 'active' : ''}`}
+                >
+                  <i className="fa-solid fa-dollar-sign me-2"></i>
+                  <span>Currency</span>
                 </Link>
               </div>
             </div>

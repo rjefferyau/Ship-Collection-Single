@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IEdition extends Document {
   name: string;
   description?: string;
+  retailPrice?: number; // Recommended Retail Price for the collection
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +19,10 @@ const EditionSchema: Schema = new Schema(
     description: {
       type: String,
       trim: true
+    },
+    retailPrice: {
+      type: Number,
+      default: null
     }
   },
   {

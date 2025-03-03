@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Form, Alert, Row, Col, Spinner } from 'react-bootstrap';
+import { Card, Button, Form, Alert, Row, Col, Spinner, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus } from '@fortawesome/free-solid-svg-icons';
 
@@ -24,6 +24,9 @@ interface Starship {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  retailPrice?: number;
+  purchasePrice?: number;
+  marketValue?: number;
 }
 
 interface StarshipDetailsProps {
@@ -49,7 +52,10 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     shipName: starship.shipName,
     faction: starship.faction,
     releaseDate: starship.releaseDate,
-    imageUrl: starship.imageUrl
+    imageUrl: starship.imageUrl,
+    retailPrice: starship.retailPrice,
+    purchasePrice: starship.purchasePrice,
+    marketValue: starship.marketValue
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -190,9 +196,13 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       shipName: starship.shipName,
       faction: starship.faction,
       releaseDate: starship.releaseDate,
-      imageUrl: starship.imageUrl
+      imageUrl: starship.imageUrl,
+      retailPrice: starship.retailPrice,
+      purchasePrice: starship.purchasePrice,
+      marketValue: starship.marketValue
     });
     setSaveError(null);
+    setSaveSuccess(false);
   };
 
   // Format date for display
@@ -207,6 +217,32 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     const d = new Date(date);
     return d.toISOString().split('T')[0];
   };
+
+  // Fetch edition details to get default RRP
+  const fetchEditionDetails = async (editionName: string) => {
+    try {
+      const response = await fetch(`/api/editions/by-name?name=${encodeURIComponent(editionName)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.retailPrice && !editFormData.retailPrice) {
+          // Only set the retail price if it's not already set for this starship
+          setEditFormData(prev => ({
+            ...prev,
+            retailPrice: data.data.retailPrice
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching edition details:", error);
+    }
+  };
+
+  // When edition changes in the edit form, fetch its default RRP
+  useEffect(() => {
+    if (isEditing && editFormData.edition) {
+      fetchEditionDetails(editFormData.edition);
+    }
+  }, [isEditing, editFormData.edition]);
 
   return (
     <div className="mb-4">
@@ -272,6 +308,22 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                   
                   <dt className="col-sm-4">Release Date:</dt>
                   <dd className="col-sm-8">{formatDate(starship.releaseDate)}</dd>
+
+                  {/* Pricing Information */}
+                  <dt className="col-sm-4">Retail Price:</dt>
+                  <dd className="col-sm-8">
+                    {starship.retailPrice ? `$${starship.retailPrice.toFixed(2)}` : 'Not set'}
+                  </dd>
+                  
+                  <dt className="col-sm-4">Purchase Price:</dt>
+                  <dd className="col-sm-8">
+                    {starship.purchasePrice ? `$${starship.purchasePrice.toFixed(2)}` : 'Not set'}
+                  </dd>
+                  
+                  <dt className="col-sm-4">Market Value:</dt>
+                  <dd className="col-sm-8">
+                    {starship.marketValue ? `$${starship.marketValue.toFixed(2)}` : 'Not set'}
+                  </dd>
                 </dl>
               </Col>
               
@@ -389,6 +441,66 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                       onChange={handleEditChange}
                     />
                   </Form.Group>
+                  
+                  {/* Add pricing fields to the form */}
+                  <hr className="my-4" />
+                  <h5>Pricing Information</h5>
+                  
+                  <Row>
+                    <Col md={4}>
+                      <Form.Group className="mb-3" controlId="formRetailPrice">
+                        <Form.Label>Retail Price (RRP)</Form.Label>
+                        <InputGroup>
+                          <InputGroup.Text>$</InputGroup.Text>
+                          <Form.Control 
+                            type="number" 
+                            name="retailPrice"
+                            value={editFormData.retailPrice || ''}
+                            onChange={handleEditChange}
+                            step="0.01"
+                            min="0"
+                            placeholder="Retail price"
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                    </Col>
+                    
+                    <Col md={4}>
+                      <Form.Group className="mb-3" controlId="formPurchasePrice">
+                        <Form.Label>Purchase Price</Form.Label>
+                        <InputGroup>
+                          <InputGroup.Text>$</InputGroup.Text>
+                          <Form.Control 
+                            type="number" 
+                            name="purchasePrice"
+                            value={editFormData.purchasePrice || ''}
+                            onChange={handleEditChange}
+                            step="0.01"
+                            min="0"
+                            placeholder="Your purchase price"
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                    </Col>
+                    
+                    <Col md={4}>
+                      <Form.Group className="mb-3" controlId="formMarketValue">
+                        <Form.Label>Market Value</Form.Label>
+                        <InputGroup>
+                          <InputGroup.Text>$</InputGroup.Text>
+                          <Form.Control 
+                            type="number" 
+                            name="marketValue"
+                            value={editFormData.marketValue || ''}
+                            onChange={handleEditChange}
+                            step="0.01"
+                            min="0"
+                            placeholder="Current market value"
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                    </Col>
+                  </Row>
                   
                   <Button 
                     variant="primary" 

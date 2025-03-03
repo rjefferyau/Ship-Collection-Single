@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Form, Button, Row, Col, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
@@ -13,6 +13,7 @@ interface Edition {
   _id: string;
   name: string;
   description?: string;
+  retailPrice?: number;
 }
 
 interface StarshipFormData {
@@ -23,6 +24,9 @@ interface StarshipFormData {
   releaseDate?: string;
   imageUrl?: string;
   owned: boolean;
+  retailPrice?: number;
+  purchasePrice?: number;
+  marketValue?: number;
 }
 
 interface AddStarshipFormProps {
@@ -37,7 +41,10 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
     faction: '',
     releaseDate: '',
     imageUrl: '',
-    owned: false
+    owned: false,
+    retailPrice: undefined,
+    purchasePrice: undefined,
+    marketValue: undefined
   };
 
   const [formData, setFormData] = useState<StarshipFormData>(initialFormData);
@@ -75,32 +82,62 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
   };
 
   const fetchEditions = async () => {
-    setLoadingEditions(true);
-    
     try {
-      const response = await fetch('/api/editions');
+      setLoadingEditions(true);
+      const res = await fetch('/api/editions');
+      const data = await res.json();
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch editions');
+      if (data.success) {
+        setEditions(data.data);
+      } else {
+        setError('Failed to fetch editions');
       }
-      
-      const data = await response.json();
-      setEditions(data.data || []);
     } catch (err) {
-      console.error('Error fetching editions:', err);
+      setError('Error connecting to the server');
     } finally {
       setLoadingEditions(false);
     }
   };
 
+  // Fetch edition details to get default RRP
+  const fetchEditionDetails = async (editionName: string) => {
+    try {
+      const response = await fetch(`/api/editions/by-name?name=${encodeURIComponent(editionName)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data.retailPrice) {
+          // Set the retail price from the edition
+          setFormData(prev => ({
+            ...prev,
+            retailPrice: data.data.retailPrice
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching edition details:", error);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
     
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    if (type === 'checkbox') {
+      const target = e.target as HTMLInputElement;
+      setFormData({
+        ...formData,
+        [name]: target.checked
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+
+      // If edition changed, fetch its default RRP
+      if (name === 'edition' && value) {
+        fetchEditionDetails(value);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,8 +198,8 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
   };
 
   return (
-    <div className="mb-4 p-3 border rounded">
-      <h3>Add New Starship</h3>
+    <div className="add-starship-form">
+      <h3 className="mb-3">Add New Starship</h3>
       
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
@@ -309,25 +346,100 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
           />
         </Form.Group>
 
-        <Button 
-          variant="primary" 
-          type="submit" 
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Spinner
-                as="span"
-                animation="border"
-                size="sm"
-                role="status"
-                aria-hidden="true"
-                className="me-2"
-              />
-              Adding...
-            </>
-          ) : 'Add Starship'}
-        </Button>
+        {/* Add pricing fields */}
+        <hr className="my-4" />
+        <h5>Pricing Information</h5>
+        
+        <Row>
+          <Col md={4}>
+            <Form.Group className="mb-3" controlId="formRetailPrice">
+              <Form.Label>Retail Price (RRP)</Form.Label>
+              <InputGroup>
+                <InputGroup.Text>$</InputGroup.Text>
+                <Form.Control 
+                  type="number" 
+                  name="retailPrice"
+                  value={formData.retailPrice || ''}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="Retail price"
+                />
+              </InputGroup>
+            </Form.Group>
+          </Col>
+          
+          <Col md={4}>
+            <Form.Group className="mb-3" controlId="formPurchasePrice">
+              <Form.Label>Purchase Price</Form.Label>
+              <InputGroup>
+                <InputGroup.Text>$</InputGroup.Text>
+                <Form.Control 
+                  type="number" 
+                  name="purchasePrice"
+                  value={formData.purchasePrice || ''}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="Your purchase price"
+                />
+              </InputGroup>
+            </Form.Group>
+          </Col>
+          
+          <Col md={4}>
+            <Form.Group className="mb-3" controlId="formMarketValue">
+              <Form.Label>Market Value</Form.Label>
+              <InputGroup>
+                <InputGroup.Text>$</InputGroup.Text>
+                <Form.Control 
+                  type="number" 
+                  name="marketValue"
+                  value={formData.marketValue || ''}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="Current market value"
+                />
+              </InputGroup>
+            </Form.Group>
+          </Col>
+        </Row>
+        
+        <div className="d-flex justify-content-between">
+          <Button 
+            variant="primary" 
+            type="submit" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                  className="me-2"
+                />
+                Saving...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faPlus} className="me-2" />
+                Add Starship
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            variant="secondary" 
+            type="button" 
+            onClick={() => setFormData(initialFormData)}
+          >
+            Reset Form
+          </Button>
+        </div>
       </Form>
     </div>
   );

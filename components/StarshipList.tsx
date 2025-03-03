@@ -13,6 +13,9 @@ interface Starship {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  retailPrice?: number;
+  purchasePrice?: number;
+  marketValue?: number;
 }
 
 interface SortConfig {
@@ -53,11 +56,26 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
+  const [currencySettings, setCurrencySettings] = useState({
+    currency: 'GBP',
+    symbol: '£',
+    locale: 'en-GB'
+  });
   
   // Add state for image modal
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const [selectedShipName, setSelectedShipName] = useState<string>('');
+
+  // Load currency settings from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('currencySettings');
+      if (savedSettings) {
+        setCurrencySettings(JSON.parse(savedSettings));
+      }
+    }
+  }, []);
 
   // Extract unique factions and editions
   useEffect(() => {
@@ -292,6 +310,17 @@ const StarshipList: React.FC<StarshipListProps> = ({
     return new Date(date).toLocaleDateString();
   };
 
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return '-';
+    
+    return new Intl.NumberFormat(currencySettings.locale, {
+      style: 'currency',
+      currency: currencySettings.currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  };
+
   // Add handler for image click
   const handleImageClick = (imageUrl: string | undefined, shipName: string) => {
     if (imageUrl) {
@@ -435,6 +464,12 @@ const StarshipList: React.FC<StarshipListProps> = ({
             <th onClick={() => handleSort('releaseDate')} style={{ cursor: 'pointer' }}>
               Release Date {getSortIcon('releaseDate')}
             </th>
+            <th onClick={() => handleSort('retailPrice')} style={{ cursor: 'pointer' }}>
+              RRP {getSortIcon('retailPrice')}
+            </th>
+            <th onClick={() => handleSort('purchasePrice')} style={{ cursor: 'pointer' }}>
+              Purchase {getSortIcon('purchasePrice')}
+            </th>
             <th onClick={() => handleSort('owned')} style={{ cursor: 'pointer' }}>
               Owned {getSortIcon('owned')}
             </th>
@@ -468,6 +503,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
               <td>{starship.shipName || 'Unnamed'}</td>
               <td>{starship.faction || 'N/A'}</td>
               <td>{formatDate(starship.releaseDate)}</td>
+              <td>{formatCurrency(starship.retailPrice)}</td>
+              <td>{formatCurrency(starship.purchasePrice)}</td>
               <td>
                 {starship.owned ? (
                   <FontAwesomeIcon icon={faCheck} className="text-success" />

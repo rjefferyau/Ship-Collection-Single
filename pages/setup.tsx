@@ -73,6 +73,21 @@ const SetupPage: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
+        
+        <Col md={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="text-center d-flex flex-column">
+              <div className="flex-grow-1">
+                <i className="fa-solid fa-money-bill-wave fa-3x mb-3 text-primary"></i>
+                <h5>Currency Settings</h5>
+                <p>Set your preferred currency for prices throughout the application.</p>
+              </div>
+              <Link href="/currency-setup" passHref>
+                <Button variant="primary">Configure Currency</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
       </Row>
     </Layout>
   );

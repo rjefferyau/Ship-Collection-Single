@@ -1,6 +1,7 @@
 import { AppProps } from 'next/app';
 import Head from 'next/head';
 import '../styles/globals.css';
+import '../styles/sidebar.css';
 import 'bootswatch/dist/darkly/bootstrap.min.css';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
@@ -14,6 +15,10 @@ function MyApp({ Component, pageProps }: AppProps) {
   if (path === '/fancy-view') activeTab = 'fancy-view';
   else if (path === '/statistics') activeTab = 'statistics';
   else if (path === '/setup') activeTab = 'setup';
+  else if (path === '/icon-setup') activeTab = 'icon-setup';
+  else if (path === '/faction-setup') activeTab = 'faction-setup';
+  else if (path === '/edition-setup') activeTab = 'edition-setup';
+  else if (path === '/import-export') activeTab = 'import-export';
   
   return (
     <>
@@ -30,4 +35,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-export default MyApp; 
+export default MyApp;

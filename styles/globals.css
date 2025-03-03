@@ -363,11 +363,13 @@ h1, .h1 {
   color: var(--footer-text);
   padding: 1rem 0;
   text-align: center;
-  border-top: 1px solid var(--border-color);
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  z-index: 999;
+  margin-left: 250px; /* Match sidebar width */
+}
+
+@media (max-width: 767.98px) {
+  .footer {
+    margin-left: 0;
+  }
 }
 
 /* Table styling */
@@ -446,10 +448,10 @@ h1, .h1 {
 
 /* Button styling */
 .btn {
-  font-weight: 400;
+  font-weight: 500;
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.2s;
 }
 
 .btn-primary {

@@ -115,17 +115,32 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
         
         // Special handling for issue field - treat as numbers when possible
         if (sortConfig.key === 'issue') {
-          const aNum = parseInt(a.issue, 10);
-          const bNum = parseInt(b.issue, 10);
+          // Extract numeric part from issue strings (e.g., "XL1" -> "1", "XL10" -> "10")
+          const aMatch = a.issue.match(/(\d+)$/);
+          const bMatch = b.issue.match(/(\d+)$/);
           
-          // If both are valid numbers, compare them numerically
+          const aNum = aMatch ? parseInt(aMatch[0], 10) : NaN;
+          const bNum = bMatch ? parseInt(bMatch[0], 10) : NaN;
+          
+          // If both have numeric parts, compare them numerically
           if (!isNaN(aNum) && !isNaN(bNum)) {
-            return sortConfig.direction === 'asc' 
-              ? aNum - bNum 
-              : bNum - aNum;
+            // If they have the same prefix (or no prefix), sort by number
+            const aPrefix = a.issue.replace(/\d+$/, '');
+            const bPrefix = b.issue.replace(/\d+$/, '');
+            
+            if (aPrefix === bPrefix) {
+              return sortConfig.direction === 'asc' 
+                ? aNum - bNum 
+                : bNum - aNum;
+            }
+            
+            // If prefixes are different, sort by prefix first
+            return sortConfig.direction === 'asc'
+              ? aPrefix.localeCompare(bPrefix)
+              : bPrefix.localeCompare(aPrefix);
           }
           
-          // If only one is a number, prioritize numbers before strings
+          // If only one has a numeric part, prioritize numbers before strings
           if (!isNaN(aNum) && isNaN(bNum)) {
             return sortConfig.direction === 'asc' ? -1 : 1;
           }

@@ -41,6 +41,9 @@ class MyDocument extends Document {
             crossOrigin="anonymous" 
             referrerPolicy="no-referrer" 
           />
+          
+          {/* Font Awesome Pro Kit */}
+          <script src="https://kit.fontawesome.com/d0637c0c40.js" crossOrigin="anonymous"></script>
         </Head>
         <body>
           <Main />

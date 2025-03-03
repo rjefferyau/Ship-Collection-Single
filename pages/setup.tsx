@@ -1,96 +1,80 @@
-import React, { useEffect, useState } from 'react';
-import Head from 'next/head';
+import React from 'react';
+import { Row, Col, Card, Button } from 'react-bootstrap';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { Row, Col, Breadcrumb, Nav, Tab, Card } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faCog, faUsers, faBookOpen, faFileImport } from '@fortawesome/free-solid-svg-icons';
-
-import FactionManager from '../components/FactionManager';
-import EditionManager from '../components/EditionManager';
-import ImportExport from '../components/ImportExport';
+import Layout from '../components/Layout';
 
 const SetupPage: React.FC = () => {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('factions');
-
-  useEffect(() => {
-    // Get the tab from the URL query
-    const { tab } = router.query;
-    if (tab === 'editions' || tab === 'factions' || tab === 'import') {
-      setActiveTab(tab);
-    }
-  }, [router.query]);
-
-  const handleTabChange = (key: string | null) => {
-    if (key) {
-      setActiveTab(key);
-      // Update the URL without refreshing the page
-      router.push(`/setup?tab=${key}`, undefined, { shallow: true });
-    }
-  };
-
   return (
-    <>
-      <Head>
-        <title>Setup - Starship Collection Manager</title>
-      </Head>
-
+    <Layout activeTab="setup">
       <div className="page-header">
-        <h1>Setup & Configuration</h1>
-        <Breadcrumb>
-          <Link href="/" passHref legacyBehavior>
-            <Breadcrumb.Item>
-              <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-            </Breadcrumb.Item>
-          </Link>
-          <Breadcrumb.Item active>
-            <FontAwesomeIcon icon={faCog} className="me-2" /> Setup
-          </Breadcrumb.Item>
-        </Breadcrumb>
+        <h1 className="mb-4">Setup & Configuration</h1>
+        <p className="mb-4">
+          Configure various aspects of your Starship Collection Manager. Click on a card to access the specific configuration page.
+        </p>
       </div>
-
-      <Card>
-        <Card.Body>
-          <Tab.Container activeKey={activeTab} onSelect={handleTabChange}>
-            <Row>
-              <Col md={3}>
-                <Nav variant="pills" className="flex-column">
-                  <Nav.Item>
-                    <Nav.Link eventKey="factions">
-                      <FontAwesomeIcon icon={faUsers} className="me-2" /> Factions
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="editions">
-                      <FontAwesomeIcon icon={faBookOpen} className="me-2" /> Editions
-                    </Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link eventKey="import">
-                      <FontAwesomeIcon icon={faFileImport} className="me-2" /> Import/Export
-                    </Nav.Link>
-                  </Nav.Item>
-                </Nav>
-              </Col>
-              <Col md={9}>
-                <Tab.Content>
-                  <Tab.Pane eventKey="factions">
-                    <FactionManager />
-                  </Tab.Pane>
-                  <Tab.Pane eventKey="editions">
-                    <EditionManager />
-                  </Tab.Pane>
-                  <Tab.Pane eventKey="import">
-                    <ImportExport />
-                  </Tab.Pane>
-                </Tab.Content>
-              </Col>
-            </Row>
-          </Tab.Container>
-        </Card.Body>
-      </Card>
-    </>
+      
+      <Row>
+        <Col md={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="text-center d-flex flex-column">
+              <div className="flex-grow-1">
+                <i className="fa-solid fa-icons fa-3x mb-3 text-primary"></i>
+                <h5>Navigation Icons</h5>
+                <p>Customize the icons used in the navigation menu.</p>
+              </div>
+              <Link href="/icon-setup" passHref>
+                <Button variant="primary">Configure Icons</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+        
+        <Col md={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="text-center d-flex flex-column">
+              <div className="flex-grow-1">
+                <i className="fa-solid fa-users fa-3x mb-3 text-primary"></i>
+                <h5>Factions</h5>
+                <p>Manage factions for your starship collection.</p>
+              </div>
+              <Link href="/faction-setup" passHref>
+                <Button variant="primary">Manage Factions</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+        
+        <Col md={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="text-center d-flex flex-column">
+              <div className="flex-grow-1">
+                <i className="fa-solid fa-book fa-3x mb-3 text-primary"></i>
+                <h5>Editions</h5>
+                <p>Configure editions for your starship collection.</p>
+              </div>
+              <Link href="/edition-setup" passHref>
+                <Button variant="primary">Manage Editions</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+        
+        <Col md={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="text-center d-flex flex-column">
+              <div className="flex-grow-1">
+                <i className="fa-solid fa-file-import fa-3x mb-3 text-primary"></i>
+                <h5>Import/Export</h5>
+                <p>Import or export your starship collection data.</p>
+              </div>
+              <Link href="/import-export" passHref>
+                <Button variant="primary">Import/Export Data</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Layout>
   );
 };
 

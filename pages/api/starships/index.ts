@@ -2,6 +2,28 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '../../../lib/mongodb';
 import Starship, { IStarship } from '../../../models/Starship';
 
+export interface Starship {
+  _id: string;
+  issue: string;
+  edition: string;
+  shipName: string;
+  faction: string;
+  releaseDate: string;
+  retailPrice: number;
+  purchasePrice: number;
+  purchaseDate: string;
+  owned: boolean;
+  wishlist: boolean;
+  wishlistPriority: number;
+  imageUrl: string;
+  magazinePdfUrl?: string;
+  condition?: string;
+  conditionNotes?: string;
+  conditionPhotos?: string[];
+  lastInspectionDate?: string;
+  marketValue?: number;
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse

@@ -16,7 +16,8 @@ const IconSetupPage: React.FC = () => {
     statistics: 'fa-chart-bar',
     'price-vault': 'fa-dollar-sign',
     wishlist: 'fa-star',
-    setup: 'fa-cog'
+    setup: 'fa-cog',
+    management: 'fa-clipboard-list'
   });
   
   const [success, setSuccess] = useState<string | null>(null);
@@ -65,6 +66,15 @@ const IconSetupPage: React.FC = () => {
       { value: 'fa-sliders-h', label: 'Sliders' },
       { value: 'fa-wrench', label: 'Wrench' },
       { value: 'fa-screwdriver', label: 'Screwdriver' }
+    ],
+    management: [
+      { value: 'fa-clipboard-list', label: 'Clipboard List' },
+      { value: 'fa-tasks', label: 'Tasks' },
+      { value: 'fa-clipboard-check', label: 'Clipboard Check' },
+      { value: 'fa-file-invoice', label: 'Invoice' },
+      { value: 'fa-id-card', label: 'ID Card' },
+      { value: 'fa-shield-alt', label: 'Shield' },
+      { value: 'fa-certificate', label: 'Certificate' }
     ]
   };
   
@@ -106,7 +116,8 @@ const IconSetupPage: React.FC = () => {
       statistics: 'fa-chart-bar',
       'price-vault': 'fa-dollar-sign',
       wishlist: 'fa-star',
-      setup: 'fa-cog'
+      setup: 'fa-cog',
+      management: 'fa-clipboard-list'
     };
     
     setNavIcons(defaultIcons);

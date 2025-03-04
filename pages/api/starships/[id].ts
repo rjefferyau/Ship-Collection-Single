@@ -49,6 +49,50 @@ export default async function handler(
         res.status(400).json({ success: false, error });
       }
       break;
+    case 'PATCH':
+      try {
+        const allowedFields = [
+          'issue',
+          'edition',
+          'shipName',
+          'faction',
+          'releaseDate',
+          'retailPrice',
+          'purchasePrice',
+          'purchaseDate',
+          'owned',
+          'wishlist',
+          'wishlistPriority',
+          'imageUrl',
+          'magazinePdfUrl',
+          'condition',
+          'conditionNotes',
+          'conditionPhotos',
+          'lastInspectionDate'
+        ];
+        
+        // Filter out any fields that aren't in the allowed list
+        const updateData = Object.keys(req.body)
+          .filter(key => allowedFields.includes(key))
+          .reduce<Record<string, any>>((obj, key) => {
+            obj[key] = req.body[key];
+            return obj;
+          }, {});
+        
+        const starship = await Starship.findByIdAndUpdate(id, updateData, {
+          new: true,
+          runValidators: true,
+        });
+        
+        if (!starship) {
+          return res.status(404).json({ success: false, error: 'Starship not found' });
+        }
+        
+        res.status(200).json({ success: true, data: starship });
+      } catch (error) {
+        res.status(400).json({ success: false, error });
+      }
+      break;
     case 'DELETE':
       try {
         const deletedStarship = await Starship.findByIdAndDelete(id);

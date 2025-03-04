@@ -16,7 +16,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
     statistics: 'fa-chart-bar',
     'price-vault': 'fa-dollar-sign',
     wishlist: 'fa-star',
-    setup: 'fa-cog'
+    setup: 'fa-cog',
+    'management': 'fa-clipboard-list'
   });
   
   // Load icons from localStorage on component mount
@@ -127,6 +128,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             >
               <i className={`fa-solid ${navIcons['price-vault']} me-2`}></i>
               <span>Price Vault</span>
+            </Link>
+            <Link 
+              href="/management" 
+              className={`nav-link ${activeTab === 'management' ? 'active' : ''}`}
+            >
+              <i className={`fa-solid ${navIcons['management']} me-2`}></i>
+              <span>Management</span>
             </Link>
           </div>
         </div>

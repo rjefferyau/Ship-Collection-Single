@@ -17,6 +17,10 @@ export interface IStarship extends Document {
   retailPrice?: number; // Recommended Retail Price
   purchasePrice?: number; // My Purchase Price
   marketValue?: number; // Current Market Value
+  condition?: string; // Condition of the item (Mint, Near Mint, etc.)
+  conditionNotes?: string; // Notes about the condition
+  conditionPhotos?: string[]; // URLs to photos documenting condition
+  lastInspectionDate?: Date; // When the item was last inspected
 }
 
 const StarshipSchema: Schema = new Schema({
@@ -35,7 +39,11 @@ const StarshipSchema: Schema = new Schema({
   orderDate: { type: Date },
   retailPrice: { type: Number },
   purchasePrice: { type: Number },
-  marketValue: { type: Number }
+  marketValue: { type: Number },
+  condition: { type: String },
+  conditionNotes: { type: String },
+  conditionPhotos: [{ type: String }],
+  lastInspectionDate: { type: Date }
 }, {
   timestamps: true
 });

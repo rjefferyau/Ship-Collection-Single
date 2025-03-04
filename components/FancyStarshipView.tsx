@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Badge, Button, Form, InputGroup, Dropdown, DropdownButton, Nav, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faSearch, faFilter, faSort, faSortUp, faSortDown, faTrash, faMagnifyingGlass, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faSearch, faFilter, faSort, faSortUp, faSortDown, faTrash, faMagnifyingGlass, faPlus, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import PdfViewer from './PdfViewer';
 
 interface Starship {
   _id: string;
@@ -12,6 +13,7 @@ interface Starship {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  magazinePdfUrl?: string;
 }
 
 interface SortConfig {
@@ -57,6 +59,11 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const [selectedShipName, setSelectedShipName] = useState<string>('');
+
+  // Add state for PDF viewer modal
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | undefined>(undefined);
+  const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>('');
 
   // Extract unique factions and editions
   useEffect(() => {
@@ -242,6 +249,15 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     }
   };
 
+  // Add handler for PDF click
+  const handlePdfClick = (pdfUrl: string | undefined, shipName: string) => {
+    if (pdfUrl) {
+      setSelectedPdfUrl(pdfUrl);
+      setSelectedPdfTitle(`${shipName} - Magazine`);
+      setShowPdfViewer(true);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4">
@@ -401,14 +417,29 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   >
                     <FontAwesomeIcon icon={faMagnifyingGlass} />
                   </Button>
-                  <Button 
-                    variant={starship.owned ? "outline-danger" : "outline-success"} 
-                    size="sm"
-                    onClick={() => onToggleOwned(starship._id)}
-                    title={starship.owned ? "Remove from Collection" : "Add to Collection"}
-                  >
-                    <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
-                  </Button>
+                  
+                  <div>
+                    {starship.magazinePdfUrl && (
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm"
+                        className="me-2"
+                        onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
+                        title="View Magazine PDF"
+                      >
+                        <FontAwesomeIcon icon={faFilePdf} />
+                      </Button>
+                    )}
+                    
+                    <Button 
+                      variant={starship.owned ? "outline-danger" : "outline-success"} 
+                      size="sm"
+                      onClick={() => onToggleOwned(starship._id)}
+                      title={starship.owned ? "Remove from Collection" : "Add to Collection"}
+                    >
+                      <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
+                    </Button>
+                  </div>
                 </div>
               </Card.Footer>
             </Card>
@@ -447,6 +478,16 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
           </Button>
         </Modal.Footer>
       </Modal>
+      
+      {/* PDF Viewer Modal */}
+      {selectedPdfUrl && (
+        <PdfViewer
+          pdfUrl={selectedPdfUrl}
+          show={showPdfViewer}
+          onHide={() => setShowPdfViewer(false)}
+          title={selectedPdfTitle}
+        />
+      )}
     </div>
   );
 };

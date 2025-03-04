@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Form, InputGroup, Button, Dropdown, DropdownButton, Badge, Nav, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus, faStar as faStarSolid, faShoppingCart } from '@fortawesome/free-solid-svg-icons';
+import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus, faStar as faStarSolid, faShoppingCart, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import DataTable from './DataTable';
+import PdfViewer from './PdfViewer';
 
 interface Starship {
   _id: string;
@@ -13,6 +14,7 @@ interface Starship {
   faction: string;
   releaseDate?: Date;
   imageUrl?: string;
+  magazinePdfUrl?: string;
   owned: boolean;
   wishlist: boolean;
   wishlistPriority?: number;
@@ -74,6 +76,11 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const [selectedShipName, setSelectedShipName] = useState<string>('');
+
+  // Add state for PDF viewer
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | undefined>(undefined);
+  const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>('');
 
   // Load currency settings from localStorage
   useEffect(() => {
@@ -338,6 +345,15 @@ const StarshipList: React.FC<StarshipListProps> = ({
     }
   };
 
+  // Add a handler for PDF click
+  const handlePdfClick = (pdfUrl: string | undefined, shipName: string) => {
+    if (pdfUrl) {
+      setSelectedPdfUrl(pdfUrl);
+      setSelectedPdfTitle(`${shipName} - Magazine`);
+      setShowPdfViewer(true);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4">
@@ -469,9 +485,6 @@ const StarshipList: React.FC<StarshipListProps> = ({
             <th onClick={() => handleSort('faction')} style={{ cursor: 'pointer' }}>
               Race/Faction {getSortIcon('faction')}
             </th>
-            <th onClick={() => handleSort('releaseDate')} style={{ cursor: 'pointer' }}>
-              Release Date {getSortIcon('releaseDate')}
-            </th>
             <th onClick={() => handleSort('retailPrice')} style={{ cursor: 'pointer' }}>
               RRP {getSortIcon('retailPrice')}
             </th>
@@ -513,7 +526,6 @@ const StarshipList: React.FC<StarshipListProps> = ({
               </td>
               <td>{starship.shipName || 'Unnamed'}</td>
               <td>{starship.faction || 'N/A'}</td>
-              <td>{formatDate(starship.releaseDate)}</td>
               <td>{formatCurrency(starship.retailPrice)}</td>
               <td>{formatCurrency(starship.purchasePrice)}</td>
               <td>
@@ -564,6 +576,16 @@ const StarshipList: React.FC<StarshipListProps> = ({
                 >
                   <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
                 </Button>
+                {starship.magazinePdfUrl && (
+                  <Button 
+                    variant="outline-danger" 
+                    size="sm"
+                    onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
+                    title="View Magazine PDF"
+                  >
+                    <FontAwesomeIcon icon={faFilePdf} />
+                  </Button>
+                )}
               </td>
             </tr>
           ))}
@@ -601,6 +623,16 @@ const StarshipList: React.FC<StarshipListProps> = ({
           </Button>
         </Modal.Footer>
       </Modal>
+      
+      {/* Add PDF Viewer Modal */}
+      {selectedPdfUrl && (
+        <PdfViewer
+          pdfUrl={selectedPdfUrl}
+          show={showPdfViewer}
+          onHide={() => setShowPdfViewer(false)}
+          title={selectedPdfTitle}
+        />
+      )}
     </div>
   );
 };

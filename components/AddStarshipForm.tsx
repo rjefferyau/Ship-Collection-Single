@@ -23,6 +23,7 @@ interface StarshipFormData {
   faction: string;
   releaseDate?: string;
   imageUrl?: string;
+  magazinePdfUrl?: string;
   owned: boolean;
   retailPrice?: number;
   purchasePrice?: number;
@@ -41,6 +42,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
     faction: '',
     releaseDate: '',
     imageUrl: '',
+    magazinePdfUrl: '',
     owned: false,
     retailPrice: undefined,
     purchasePrice: undefined,

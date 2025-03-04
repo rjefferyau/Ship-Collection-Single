@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Form, Alert, Row, Col, Spinner, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
+import PdfViewer from './PdfViewer';
 
 interface Faction {
   _id: string;
@@ -24,6 +25,7 @@ interface Starship {
   faction: string;
   releaseDate?: Date;
   imageUrl?: string;
+  magazinePdfUrl?: string;
   owned: boolean;
   wishlist: boolean;
   wishlistPriority?: number;
@@ -53,6 +55,9 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+  const [pdfUploadError, setPdfUploadError] = useState<string | null>(null);
+  const [pdfUploadSuccess, setPdfUploadSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<Omit<Starship, '_id' | 'owned'>>({
     issue: starship.issue,
@@ -61,6 +66,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     faction: starship.faction,
     releaseDate: starship.releaseDate,
     imageUrl: starship.imageUrl,
+    magazinePdfUrl: starship.magazinePdfUrl,
     wishlist: starship.wishlist,
     wishlistPriority: starship.wishlistPriority,
     onOrder: starship.onOrder,
@@ -85,6 +91,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   });
   const [showOnOrderForm, setShowOnOrderForm] = useState(false);
   const [savingOrderStatus, setSavingOrderStatus] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
 
   // Fetch factions and editions when entering edit mode
   useEffect(() => {
@@ -164,6 +171,57 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     }
   };
 
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
+    
+    const file = e.target.files[0];
+    
+    // Check if file is a PDF
+    if (file.type !== 'application/pdf') {
+      setPdfUploadError('Only PDF files are allowed');
+      return;
+    }
+    
+    setUploadingPdf(true);
+    setPdfUploadError(null);
+    setPdfUploadSuccess(false);
+    
+    const formData = new FormData();
+    formData.append('pdf', file);
+    formData.append('starshipId', starship._id);
+    
+    try {
+      const response = await fetch('/api/upload/pdf', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload PDF');
+      }
+      
+      const data = await response.json();
+      
+      // Update the local state with the new PDF URL
+      setEditFormData(prev => ({
+        ...prev,
+        magazinePdfUrl: data.data.magazinePdfUrl
+      }));
+      
+      setPdfUploadSuccess(true);
+      
+      // Refresh the starship data
+      onRefresh(currentEdition);
+    } catch (error) {
+      setPdfUploadError(error instanceof Error ? error.message : 'An unknown error occurred');
+    } finally {
+      setUploadingPdf(false);
+    }
+  };
+
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({
@@ -218,6 +276,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       faction: starship.faction,
       releaseDate: starship.releaseDate,
       imageUrl: starship.imageUrl,
+      magazinePdfUrl: starship.magazinePdfUrl,
       wishlist: starship.wishlist,
       wishlistPriority: starship.wishlistPriority,
       onOrder: starship.onOrder,
@@ -332,6 +391,97 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     } finally {
       setSavingOrderStatus(false);
     }
+  };
+
+  const renderPdfUploadSection = () => {
+    return (
+      <div className="mb-4">
+        <h5>Magazine PDF</h5>
+        {starship.magazinePdfUrl ? (
+          <div className="d-flex align-items-center mb-3">
+            <Button 
+              variant="outline-primary" 
+              className="me-3"
+              onClick={() => setShowPdfViewer(true)}
+            >
+              <FontAwesomeIcon icon={faFilePdf} className="me-2" />
+              View Magazine PDF
+            </Button>
+            {isEditing && (
+              <div className="position-relative">
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() => document.getElementById('pdfUpload')?.click()}
+                  disabled={uploadingPdf}
+                >
+                  {uploadingPdf ? (
+                    <>
+                      <FontAwesomeIcon icon={faSpinner} spin className="me-2" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faUpload} className="me-2" />
+                      Replace PDF
+                    </>
+                  )}
+                </Button>
+                <Form.Control
+                  type="file"
+                  id="pdfUpload"
+                  accept=".pdf"
+                  onChange={handlePdfUpload}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
+          </div>
+        ) : isEditing ? (
+          <div className="position-relative">
+            <Button
+              variant="outline-primary"
+              onClick={() => document.getElementById('pdfUpload')?.click()}
+              disabled={uploadingPdf}
+              className="mb-3"
+            >
+              {uploadingPdf ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} spin className="me-2" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faUpload} className="me-2" />
+                  Upload Magazine PDF
+                </>
+              )}
+            </Button>
+            <Form.Control
+              type="file"
+              id="pdfUpload"
+              accept=".pdf"
+              onChange={handlePdfUpload}
+              style={{ display: 'none' }}
+            />
+          </div>
+        ) : (
+          <p className="text-muted">No magazine PDF available</p>
+        )}
+        
+        {pdfUploadError && (
+          <Alert variant="danger" className="mt-2">
+            {pdfUploadError}
+          </Alert>
+        )}
+        
+        {pdfUploadSuccess && (
+          <Alert variant="success" className="mt-2">
+            PDF uploaded successfully!
+          </Alert>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -662,6 +812,8 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
         </Card.Body>
       </Card>
       
+      {renderPdfUploadSection()}
+      
       <Row className="mb-3">
         <Col>
           <Card>
@@ -765,6 +917,16 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
             </Col>
           </Form.Group>
         </div>
+      )}
+      
+      {/* Add the PDF Viewer Modal */}
+      {starship.magazinePdfUrl && (
+        <PdfViewer
+          pdfUrl={starship.magazinePdfUrl}
+          show={showPdfViewer}
+          onHide={() => setShowPdfViewer(false)}
+          title={`${starship.shipName} - Magazine`}
+        />
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  distDir: process.env.NODE_ENV === 'development' ? 'dev-build' : '.next',
+  distDir: '.next',
   images: {
     domains: ['localhost'],
   },
@@ -31,8 +31,6 @@ const nextConfig = {
     workerThreads: false,
     // Reduce file system operations
     swcMinify: true,
-    // Reduce file system cache operations
-    swcFileReading: true,
     // Disable font optimization (using a valid property)
     optimizeCss: false,
   },

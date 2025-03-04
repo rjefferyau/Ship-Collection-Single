@@ -7,6 +7,7 @@ export interface IStarship extends Document {
   faction: string;   // "Race/Faction" from CSV
   releaseDate?: Date; // "Release Date" from CSV
   imageUrl?: string;  // "Image" field
+  magazinePdfUrl?: string; // URL to the PDF magazine
   owned: boolean;
   wishlist: boolean; // Added to wishlist for future purchase
   wishlistPriority?: number; // Priority in the wishlist (lower number = higher priority)
@@ -25,6 +26,7 @@ const StarshipSchema: Schema = new Schema({
   faction: { type: String, required: true },
   releaseDate: { type: Date },
   imageUrl: { type: String },
+  magazinePdfUrl: { type: String },
   owned: { type: Boolean, default: false },
   wishlist: { type: Boolean, default: false },
   wishlistPriority: { type: Number },

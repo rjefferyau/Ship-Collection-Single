@@ -50,6 +50,28 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
       setSetupSubmenuOpen(true);
     }
   }, [activeTab]);
+
+  // Close sidebar on mobile when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.querySelector('.sidebar');
+      const toggleButton = document.querySelector('.sidebar-toggle');
+      
+      if (sidebar && 
+          !sidebar.contains(event.target as Node) && 
+          toggleButton && 
+          !toggleButton.contains(event.target as Node) &&
+          window.innerWidth < 768 && 
+          sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [sidebarOpen]);
   
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -62,10 +84,11 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
   return (
     <div className="wrapper">
       {/* Mobile header with menu toggle */}
-      <div className="d-md-none bg-primary text-white p-2 d-flex align-items-center">
+      <div className="d-md-none bg-primary text-white p-3 d-flex align-items-center sticky-top shadow-sm">
         <button 
-          className="btn btn-link text-white p-0 me-3" 
+          className="btn btn-link text-white p-0 me-3 sidebar-toggle" 
           onClick={toggleSidebar}
+          aria-label="Toggle navigation"
         >
           <i className="fa-solid fa-bars"></i>
         </button>
@@ -80,6 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
           <button 
             className="btn btn-link text-white p-0 d-md-none" 
             onClick={toggleSidebar}
+            aria-label="Close navigation"
           >
             <i className="fa-solid fa-times"></i>
           </button>
@@ -91,6 +115,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             <Link 
               href="/" 
               className={`nav-link ${activeTab === 'collection' ? 'active' : ''}`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
             >
               <i className={`fa-solid ${navIcons.collection} me-2`}></i>
               <span>Collection</span>
@@ -98,6 +123,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             <Link 
               href="/fancy-view" 
               className={`nav-link ${activeTab === 'fancy-view' ? 'active' : ''}`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
             >
               <i className={`fa-solid ${navIcons['fancy-view']} me-2`}></i>
               <span>Gallery</span>
@@ -105,6 +131,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             <Link 
               href="/wishlist" 
               className={`nav-link ${activeTab === 'wishlist' ? 'active' : ''}`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
             >
               <i className={`fa-solid ${navIcons.wishlist} me-2`}></i>
               <span>Wishlist</span>
@@ -118,6 +145,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             <Link 
               href="/statistics" 
               className={`nav-link ${activeTab === 'statistics' ? 'active' : ''}`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
             >
               <i className={`fa-solid ${navIcons.statistics} me-2`}></i>
               <span>Statistics</span>
@@ -125,6 +153,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             <Link 
               href="/price-vault" 
               className={`nav-link ${activeTab === 'price-vault' ? 'active' : ''}`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
             >
               <i className={`fa-solid ${navIcons['price-vault']} me-2`}></i>
               <span>Price Vault</span>
@@ -132,6 +161,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
             <Link 
               href="/management" 
               className={`nav-link ${activeTab === 'management' ? 'active' : ''}`}
+              onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
             >
               <i className={`fa-solid ${navIcons['management']} me-2`}></i>
               <span>Management</span>
@@ -159,13 +189,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                   <i className={`fa-solid ${navIcons.setup} me-2`}></i>
                   <span>Setup</span>
                 </div>
-                <i className={`fa-solid ${setupSubmenuOpen ? 'fa-chevron-down' : 'fa-chevron-right'} ms-2`}></i>
+                <i className={`fa-solid ${setupSubmenuOpen ? 'fa-chevron-down' : 'fa-chevron-right'} ms-2 transition-icon`}></i>
               </div>
               
               <div className={`custom-submenu ${setupSubmenuOpen ? 'show' : ''}`}>
                 <Link 
                   href="/setup" 
                   className={`custom-submenu-link ${activeTab === 'setup' ? 'active' : ''}`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
                   <i className="fa-solid fa-home me-2"></i>
                   <span>Overview</span>
@@ -173,6 +204,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                 <Link 
                   href="/icon-setup" 
                   className={`custom-submenu-link ${activeTab === 'icon-setup' ? 'active' : ''}`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
                   <i className="fa-solid fa-icons me-2"></i>
                   <span>Icons</span>
@@ -180,6 +212,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                 <Link 
                   href="/faction-setup" 
                   className={`custom-submenu-link ${activeTab === 'faction-setup' ? 'active' : ''}`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
                   <i className="fa-solid fa-users me-2"></i>
                   <span>Factions</span>
@@ -187,6 +220,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                 <Link 
                   href="/edition-setup" 
                   className={`custom-submenu-link ${activeTab === 'edition-setup' ? 'active' : ''}`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
                   <i className="fa-solid fa-book me-2"></i>
                   <span>Editions</span>
@@ -194,6 +228,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                 <Link 
                   href="/import-export" 
                   className={`custom-submenu-link ${activeTab === 'import-export' ? 'active' : ''}`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
                   <i className="fa-solid fa-file-import me-2"></i>
                   <span>Import/Export</span>
@@ -201,133 +236,35 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab = 'collection' }) =
                 <Link 
                   href="/currency-setup" 
                   className={`custom-submenu-link ${activeTab === 'currency-setup' ? 'active' : ''}`}
+                  onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
                 >
-                  <i className="fa-solid fa-dollar-sign me-2"></i>
+                  <i className="fa-solid fa-money-bill-wave me-2"></i>
                   <span>Currency</span>
                 </Link>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Main content area */}
-      <div className="main-content">
-        {children}
+        
+        <div className="sidebar-footer">
+          <div className="version">v1.0.0</div>
+        </div>
       </div>
       
-      <style jsx>{`
-        .wrapper {
-          display: flex;
-          min-height: 100vh;
-        }
-        
-        .sidebar {
-          width: 250px;
-          background-color: #343a40;
-          color: #fff;
-          position: fixed;
-          top: 0;
-          left: 0;
-          bottom: 0;
-          z-index: 100;
-          transition: all 0.3s;
-          overflow-y: auto;
-          padding: 1rem 0;
-        }
-        
-        @media (max-width: 767.98px) {
-          .sidebar {
-            margin-left: -250px;
-          }
-          
-          .sidebar.show {
-            margin-left: 0;
-          }
-        }
-        
-        .sidebar-header {
-          padding: 0 1rem 1rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          margin-bottom: 1rem;
-        }
-        
-        .sidebar-brand {
-          margin-bottom: 0;
-          font-size: 1.25rem;
-          color: #fff;
-        }
-        
-        .nav-section {
-          margin-bottom: 1.5rem;
-        }
-        
-        .nav-section-title {
-          text-transform: uppercase;
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.5);
-          padding: 0 1rem;
-          margin-bottom: 0.5rem;
-        }
-        
-        .nav-link {
-          color: rgba(255, 255, 255, 0.75);
-          padding: 0.5rem 1rem;
-          transition: all 0.2s;
-        }
-        
-        .nav-link:hover {
-          color: #fff;
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-link.active {
-          color: #fff;
-          background-color: #007bff;
-        }
-        
-        .custom-submenu {
-          max-height: 0;
-          overflow: hidden;
-          transition: max-height 0.3s ease-out;
-        }
-        
-        .custom-submenu.show {
-          max-height: 500px;
-        }
-        
-        .custom-submenu-link {
-          display: block;
-          padding: 0.5rem 1rem 0.5rem 2.5rem;
-          color: rgba(255, 255, 255, 0.75);
-          text-decoration: none;
-          transition: all 0.2s;
-        }
-        
-        .custom-submenu-link:hover {
-          color: #fff;
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .custom-submenu-link.active {
-          color: #fff;
-          background-color: rgba(0, 123, 255, 0.5);
-        }
-        
-        .main-content {
-          flex: 1;
-          padding: 2rem;
-          margin-left: 250px;
-          transition: all 0.3s;
-        }
-        
-        @media (max-width: 767.98px) {
-          .main-content {
-            margin-left: 0;
-            padding-top: 4rem;
-          }
-        }
-      `}</style>
+      {/* Main content */}
+      <div className={`main-content ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <Container fluid className="py-4 px-md-4">
+          {children}
+        </Container>
+      </div>
+      
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-overlay d-md-none" 
+          onClick={toggleSidebar}
+        ></div>
+      )}
     </div>
   );
 };

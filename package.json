@@ -27,10 +27,13 @@
     "@types/react-dom": "^18.0.11",
     "bootstrap": "^5.2.3",
     "bootswatch": "^5.3.3",
+    "csv-parse": "^5.6.0",
     "csv-parser": "^3.0.0",
     "eslint": "^8.37.0",
     "eslint-config-next": "^13.2.4",
-    "formidable": "^2.1.1",
+    "firebase-admin": "^13.1.0",
+    "formidable": "^2.1.2",
+    "json2csv": "^6.0.0-alpha.2",
     "jspdf": "^3.0.0",
     "jspdf-autotable": "^5.0.2",
     "mongoose": "^7.0.3",
@@ -42,6 +45,7 @@
     "typescript": "^5.0.3"
   },
   "devDependencies": {
+    "@types/json2csv": "^5.0.7",
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",

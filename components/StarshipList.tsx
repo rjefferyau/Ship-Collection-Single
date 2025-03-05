@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, InputGroup, Button, Dropdown, DropdownButton, Badge, Nav, Modal } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus, faStar as faStarSolid, faShoppingCart, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus, faStar as faStarSolid, faShoppingCart, faFilePdf, faImages } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import DataTable from './DataTable';
 import PdfViewer from './PdfViewer';
@@ -359,7 +359,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
       <div className="mb-4">
         <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
           <div className="d-flex flex-wrap align-items-center">
-            <InputGroup className="me-2 mb-2" style={{ width: 'auto' }}>
+            <InputGroup className="me-2 mb-2 search-input" style={{ width: 'auto' }}>
               <InputGroup.Text>
                 <FontAwesomeIcon icon={faSearch} />
               </InputGroup.Text>
@@ -369,6 +369,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
                 value={filters.search}
                 onChange={handleSearchChange}
                 style={{ width: '200px' }}
+                aria-label="Search ships"
               />
             </InputGroup>
             
@@ -399,7 +400,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
                   onClick={() => setFilters(prev => ({ ...prev, faction: [] }))}
                   className="text-danger"
                 >
-                  Clear Faction Filters
+                  <FontAwesomeIcon icon={faTrash} className="me-1" /> Clear Faction Filters
                 </Dropdown.Item>
               )}
             </DropdownButton>
@@ -420,219 +421,345 @@ const StarshipList: React.FC<StarshipListProps> = ({
                   onClick={() => setOwnedFilter('owned')}
                   active={filters.owned === 'owned'}
                 >
-                  Owned Only
+                  <FontAwesomeIcon icon={faCheck} className="text-success me-2" /> Owned Only
                 </Dropdown.Item>
                 <Dropdown.Item 
                   onClick={() => setOwnedFilter('not-owned')}
                   active={filters.owned === 'not-owned'}
                 >
-                  Not Owned Only
+                  <FontAwesomeIcon icon={faTimes} className="text-secondary me-2" /> Not Owned Only
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           </div>
           
-          <div className="mb-2">
-            <Badge bg="primary" className="me-2">
-              {filteredStarships.length} ships
+          <div className="mb-2 d-flex">
+            <Badge bg="primary" className="me-2 badge-pill">
+              <span className="badge-text">{filteredStarships.length} ships</span>
             </Badge>
-            <Badge bg="success">
-              {filteredStarships.filter(s => s.owned).length} owned
+            <Badge bg="success" className="badge-pill">
+              <span className="badge-text">{filteredStarships.filter(s => s.owned).length} owned</span>
             </Badge>
           </div>
         </div>
         
         {/* Edition Tabs */}
-        <Nav variant="tabs" className="mb-3">
-          {availableEditions.map(edition => (
-            <Nav.Item key={edition}>
-              <Nav.Link 
-                active={activeEdition === edition}
-                onClick={() => handleEditionSelect(edition)}
-              >
-                {edition}
-              </Nav.Link>
-            </Nav.Item>
-          ))}
-        </Nav>
+        <div className="edition-tabs-container">
+          <Nav variant="tabs" className="edition-tabs">
+            {availableEditions.map(edition => (
+              <Nav.Item key={edition}>
+                <Nav.Link 
+                  active={activeEdition === edition}
+                  onClick={() => handleEditionSelect(edition)}
+                  className="edition-tab"
+                >
+                  {edition}
+                </Nav.Link>
+              </Nav.Item>
+            ))}
+          </Nav>
+        </div>
       </div>
       
-      <DataTable 
-        id="starships-table"
-        striped
-        hover
-        responsive
-        options={{
-          ordering: false, // We'll handle sorting ourselves
-          searching: false, // We have our own search input
-          paging: true,
-          info: true,
-          lengthChange: true
-        }}
-      >
-        <thead>
-          <tr>
-            <th onClick={() => handleSort('issue')} style={{ cursor: 'pointer' }}>
-              Issue {getSortIcon('issue')}
-            </th>
-            <th onClick={() => handleSort('edition')} style={{ cursor: 'pointer' }}>
-              Edition {getSortIcon('edition')}
-            </th>
-            <th style={{ width: '80px' }}>Image</th>
-            <th onClick={() => handleSort('shipName')} style={{ cursor: 'pointer' }}>
-              Ship Name {getSortIcon('shipName')}
-            </th>
-            <th onClick={() => handleSort('faction')} style={{ cursor: 'pointer' }}>
-              Race/Faction {getSortIcon('faction')}
-            </th>
-            <th onClick={() => handleSort('retailPrice')} style={{ cursor: 'pointer' }}>
-              RRP {getSortIcon('retailPrice')}
-            </th>
-            <th onClick={() => handleSort('purchasePrice')} style={{ cursor: 'pointer' }}>
-              Purchase {getSortIcon('purchasePrice')}
-            </th>
-            <th onClick={() => handleSort('owned')} style={{ cursor: 'pointer' }}>
-              Owned {getSortIcon('owned')}
-            </th>
-            <th onClick={() => handleSort('wishlist')} style={{ cursor: 'pointer' }}>
-              Wishlist {getSortIcon('wishlist')}
-            </th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredStarships.map(starship => (
-            <tr key={starship._id}>
-              <td>{starship.issue || 'N/A'}</td>
-              <td>{starship.edition || 'N/A'}</td>
-              <td>
-                {starship.imageUrl ? (
-                  <img 
-                    src={starship.imageUrl} 
-                    alt={starship.shipName}
-                    style={{ width: '60px', height: '60px', objectFit: 'contain', cursor: 'pointer' }}
-                    className="img-thumbnail"
-                    onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
-                    title="Click to view larger image"
-                  />
-                ) : (
-                  <div 
-                    className="bg-light d-flex align-items-center justify-content-center" 
-                    style={{ width: '60px', height: '60px' }}
-                  >
-                    <small className="text-muted">No image</small>
-                  </div>
-                )}
-              </td>
-              <td>{starship.shipName || 'Unnamed'}</td>
-              <td>{starship.faction || 'N/A'}</td>
-              <td>{formatCurrency(starship.retailPrice)}</td>
-              <td>{formatCurrency(starship.purchasePrice)}</td>
-              <td>
-                {starship.owned ? (
-                  <FontAwesomeIcon icon={faCheck} className="text-success" />
-                ) : (
-                  <FontAwesomeIcon icon={faTimes} className="text-secondary" />
-                )}
-              </td>
-              <td>
-                {starship.owned ? (
-                  <span className="text-muted">-</span>
-                ) : starship.onOrder ? (
-                  <Badge bg="primary" className="on-order-badge">
-                    <FontAwesomeIcon icon={faShoppingCart} className="me-1" /> On Order
-                  </Badge>
-                ) : onToggleWishlist ? (
-                  <span 
-                    style={{ cursor: 'pointer' }} 
-                    onClick={() => onToggleWishlist(starship._id)}
-                    title={starship.wishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-                  >
-                    <FontAwesomeIcon 
-                      icon={starship.wishlist ? faStarSolid : faStarRegular} 
-                      className={starship.wishlist ? "text-warning" : "text-secondary"} 
-                    />
-                  </span>
-                ) : (
-                  <span className="text-muted">-</span>
-                )}
-              </td>
-              <td>
-                <Button 
-                  variant="outline-primary" 
-                  size="sm"
-                  onClick={() => onSelectStarship(starship)}
-                  title="View Details"
-                  className="me-2"
-                >
-                  <FontAwesomeIcon icon={faMagnifyingGlass} />
-                </Button>
-                <Button 
-                  variant={starship.owned ? "outline-danger" : "outline-success"} 
-                  size="sm"
-                  onClick={() => onToggleOwned(starship._id)}
-                  title={starship.owned ? "Remove from Collection" : "Add to Collection"}
-                  className="me-2"
-                >
-                  <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
-                </Button>
-                {starship.magazinePdfUrl && (
-                  <Button 
-                    variant="outline-danger" 
-                    size="sm"
-                    onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
-                    title="View Magazine PDF"
-                  >
-                    <FontAwesomeIcon icon={faFilePdf} />
-                  </Button>
-                )}
-              </td>
+      <div className="table-responsive">
+        <DataTable 
+          id="starships-table"
+          striped
+          hover
+          responsive
+          options={{
+            ordering: false, // We'll handle sorting ourselves
+            searching: false, // We have our own search input
+            paging: true,
+            info: true,
+            lengthChange: true,
+            responsive: true
+          }}
+          className="starship-table"
+        >
+          <thead>
+            <tr>
+              <th onClick={() => handleSort('issue')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Issue {getSortIcon('issue')}
+              </th>
+              <th onClick={() => handleSort('edition')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Edition {getSortIcon('edition')}
+              </th>
+              <th style={{ width: '80px' }}>Image</th>
+              <th onClick={() => handleSort('shipName')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Ship Name {getSortIcon('shipName')}
+              </th>
+              <th onClick={() => handleSort('faction')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Race/Faction {getSortIcon('faction')}
+              </th>
+              <th onClick={() => handleSort('retailPrice')} style={{ cursor: 'pointer' }} className="sortable-header">
+                RRP {getSortIcon('retailPrice')}
+              </th>
+              <th onClick={() => handleSort('purchasePrice')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Purchase {getSortIcon('purchasePrice')}
+              </th>
+              <th onClick={() => handleSort('owned')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Owned {getSortIcon('owned')}
+              </th>
+              <th onClick={() => handleSort('wishlist')} style={{ cursor: 'pointer' }} className="sortable-header">
+                Wishlist {getSortIcon('wishlist')}
+              </th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </DataTable>
-      
-      {filteredStarships.length === 0 && (
-        <div className="text-center p-4 bg-light rounded">
-          <p className="mb-0">No starships match your current filters.</p>
-        </div>
-      )}
+          </thead>
+          <tbody>
+            {filteredStarships.length > 0 ? (
+              filteredStarships.map(starship => (
+                <tr key={starship._id} className={starship.owned ? 'owned-row' : ''}>
+                  <td>{starship.issue || 'N/A'}</td>
+                  <td>{starship.edition || 'N/A'}</td>
+                  <td>
+                    {starship.imageUrl ? (
+                      <div className="image-container">
+                        <img 
+                          src={starship.imageUrl} 
+                          alt={starship.shipName}
+                          className="ship-thumbnail"
+                          onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                          title="Click to view larger image"
+                        />
+                      </div>
+                    ) : (
+                      <div className="no-image-container">
+                        <FontAwesomeIcon icon={faImages} className="text-muted" />
+                      </div>
+                    )}
+                  </td>
+                  <td className="ship-name">{starship.shipName || 'Unnamed'}</td>
+                  <td>{starship.faction || 'N/A'}</td>
+                  <td>{formatCurrency(starship.retailPrice)}</td>
+                  <td>{formatCurrency(starship.purchasePrice)}</td>
+                  <td>
+                    <div className="ownership-indicator">
+                      {starship.owned ? (
+                        <span className="owned-badge">
+                          <FontAwesomeIcon icon={faCheck} className="text-success" />
+                        </span>
+                      ) : (
+                        <span className="not-owned-badge">
+                          <FontAwesomeIcon icon={faTimes} className="text-secondary" />
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    {starship.owned ? (
+                      <span className="text-muted">-</span>
+                    ) : starship.onOrder ? (
+                      <Badge bg="primary" className="on-order-badge">
+                        <FontAwesomeIcon icon={faShoppingCart} className="me-1" /> On Order
+                      </Badge>
+                    ) : onToggleWishlist ? (
+                      <span 
+                        className="wishlist-toggle"
+                        onClick={() => onToggleWishlist(starship._id)}
+                        title={starship.wishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                      >
+                        <FontAwesomeIcon 
+                          icon={starship.wishlist ? faStarSolid : faStarRegular} 
+                          className={starship.wishlist ? "text-warning" : "text-secondary"}
+                        />
+                      </span>
+                    ) : null}
+                  </td>
+                  <td>
+                    <div className="d-flex action-buttons">
+                      <Button 
+                        variant="outline-primary" 
+                        size="sm" 
+                        className="me-1 action-button"
+                        onClick={() => onSelectStarship(starship)}
+                        title="View Details"
+                      >
+                        <FontAwesomeIcon icon={faMagnifyingGlass} />
+                      </Button>
+                      
+                      <Button 
+                        variant="outline-success" 
+                        size="sm" 
+                        className="me-1 action-button"
+                        onClick={() => onToggleOwned(starship._id)}
+                        title={starship.owned ? "Mark as Not Owned" : "Mark as Owned"}
+                      >
+                        <FontAwesomeIcon icon={starship.owned ? faTimes : faCheck} />
+                      </Button>
+                      
+                      {starship.magazinePdfUrl && (
+                        <Button 
+                          variant="outline-info" 
+                          size="sm"
+                          className="action-button"
+                          onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
+                          title="View Magazine PDF"
+                        >
+                          <FontAwesomeIcon icon={faFilePdf} />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={10} className="text-center py-4">
+                  <div className="empty-state">
+                    <FontAwesomeIcon icon={faSearch} size="2x" className="mb-3 text-muted" />
+                    <h5>No starships found</h5>
+                    <p className="text-muted">Try adjusting your search or filters</p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </DataTable>
+      </div>
       
       {/* Image Modal */}
       <Modal 
         show={showImageModal} 
-        onHide={() => setShowImageModal(false)} 
-        size="lg" 
+        onHide={() => setShowImageModal(false)}
         centered
+        size="lg"
+        className="image-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>{selectedShipName}</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="text-center">
+        <Modal.Body className="text-center p-0">
           {selectedImage && (
             <img 
               src={selectedImage} 
               alt={selectedShipName} 
-              style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '12px', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)' }} 
+              className="img-fluid modal-image"
             />
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowImageModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
       </Modal>
       
-      {/* Add PDF Viewer Modal */}
-      {selectedPdfUrl && (
-        <PdfViewer
-          pdfUrl={selectedPdfUrl}
-          show={showPdfViewer}
-          onHide={() => setShowPdfViewer(false)}
-          title={selectedPdfTitle}
-        />
-      )}
+      {/* PDF Viewer Modal */}
+      <PdfViewer
+        pdfUrl={selectedPdfUrl || ''}
+        show={showPdfViewer}
+        onHide={() => setShowPdfViewer(false)}
+        title={selectedPdfTitle}
+      />
+      
+      <style jsx>{`
+        .ship-thumbnail {
+          width: 60px;
+          height: 60px;
+          object-fit: contain;
+          cursor: pointer;
+          transition: transform 0.2s ease;
+        }
+        
+        .ship-thumbnail:hover {
+          transform: scale(1.1);
+        }
+        
+        .image-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 60px;
+          height: 60px;
+        }
+        
+        .no-image-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 60px;
+          height: 60px;
+          background-color: #f8f9fa;
+          border-radius: 4px;
+        }
+        
+        .owned-row {
+          background-color: rgba(46, 204, 113, 0.05) !important;
+        }
+        
+        .ship-name {
+          font-weight: 500;
+        }
+        
+        .wishlist-toggle {
+          cursor: pointer;
+          font-size: 1.2rem;
+          transition: transform 0.2s ease;
+        }
+        
+        .wishlist-toggle:hover {
+          transform: scale(1.2);
+        }
+        
+        .action-button {
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+        
+        .action-button:hover {
+          transform: translateY(-2px);
+        }
+        
+        .ownership-indicator {
+          display: flex;
+          justify-content: center;
+        }
+        
+        .owned-badge, .not-owned-badge {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+        }
+        
+        .owned-badge {
+          background-color: rgba(46, 204, 113, 0.1);
+        }
+        
+        .not-owned-badge {
+          background-color: rgba(189, 195, 199, 0.1);
+        }
+        
+        .sortable-header {
+          position: relative;
+          white-space: nowrap;
+        }
+        
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2rem;
+        }
+        
+        .badge-pill {
+          border-radius: 50rem;
+          padding: 0.5rem 0.75rem;
+        }
+        
+        .badge-text {
+          font-weight: 500;
+        }
+        
+        .modal-image {
+          max-height: 80vh;
+        }
+      `}</style>
     </div>
   );
 };

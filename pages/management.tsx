@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form } from 'react-bootstrap';
 import InsuranceReport from '../components/InsuranceReport';
 import ConditionTracker from '../components/ConditionTracker';
 import { Starship } from './api/starships';
@@ -48,7 +47,7 @@ const ManagementPage: React.FC = () => {
     
     try {
       const response = await fetch(`/api/starships/${selectedStarshipId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -77,89 +76,101 @@ const ManagementPage: React.FC = () => {
   const selectedStarship = starships.find(ship => ship._id === selectedStarshipId);
   
   return (
-    <Container fluid>
-      <h1 className="mb-4">Management</h1>
+    <div className="container mx-auto px-4">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Management</h1>
       
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Header>Owner Information</Card.Header>
-            <Card.Body>
-              <Form>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Name</Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        value={ownerInfo.name}
-                        onChange={(e) => setOwnerInfo({...ownerInfo, name: e.target.value})}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Email</Form.Label>
-                      <Form.Control 
-                        type="email" 
-                        value={ownerInfo.email}
-                        onChange={(e) => setOwnerInfo({...ownerInfo, email: e.target.value})}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Address</Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        value={ownerInfo.address}
-                        onChange={(e) => setOwnerInfo({...ownerInfo, address: e.target.value})}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Phone</Form.Label>
-                      <Form.Control 
-                        type="text" 
-                        value={ownerInfo.phone}
-                        onChange={(e) => setOwnerInfo({...ownerInfo, phone: e.target.value})}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      <div className="mb-6">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+            <h2 className="text-lg font-medium text-gray-900">Owner Information</h2>
+          </div>
+          <div className="p-6">
+            <form>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    value={ownerInfo.name}
+                    onChange={(e) => setOwnerInfo({...ownerInfo, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    value={ownerInfo.email}
+                    onChange={(e) => setOwnerInfo({...ownerInfo, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    id="address"
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    value={ownerInfo.address}
+                    onChange={(e) => setOwnerInfo({...ownerInfo, address: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    id="phone"
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    value={ownerInfo.phone}
+                    onChange={(e) => setOwnerInfo({...ownerInfo, phone: e.target.value})}
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
       
-      <Row className="mb-4">
-        <Col>
-          <InsuranceReport 
-            starships={starships} 
-            ownerInfo={ownerInfo} 
-          />
-        </Col>
-      </Row>
+      <div className="mb-6">
+        <InsuranceReport 
+          starships={starships} 
+          ownerInfo={ownerInfo} 
+        />
+      </div>
       
-      <Row>
-        <Col md={4}>
-          <Card>
-            <Card.Header>Your Starships</Card.Header>
-            <Card.Body style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="md:col-span-4">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+              <h2 className="text-lg font-medium text-gray-900">Your Starships</h2>
+            </div>
+            <div className="p-6" style={{ maxHeight: '400px', overflowY: 'auto' }}>
               {isLoading ? (
-                <p>Loading starships...</p>
+                <div className="flex justify-center items-center h-24">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
               ) : (
                 <>
                   {starships.filter(ship => ship.owned).length === 0 ? (
-                    <p>No owned starships found. Add some to your collection first!</p>
+                    <p className="text-gray-500">No owned starships found. Add some to your collection first!</p>
                   ) : (
-                    <Form.Group>
-                      <Form.Label>Select a starship to manage</Form.Label>
-                      <Form.Select
+                    <div>
+                      <label htmlFor="starship-select" className="block text-sm font-medium text-gray-700 mb-1">
+                        Select a starship to manage
+                      </label>
+                      <select
+                        id="starship-select"
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         value={selectedStarshipId || ''}
                         onChange={(e) => setSelectedStarshipId(e.target.value)}
                       >
@@ -170,25 +181,25 @@ const ManagementPage: React.FC = () => {
                               {ship.shipName} (Issue {ship.issue})
                             </option>
                           ))}
-                      </Form.Select>
-                    </Form.Group>
+                      </select>
+                    </div>
                   )}
                 </>
               )}
-            </Card.Body>
-          </Card>
-        </Col>
+            </div>
+          </div>
+        </div>
         
-        <Col md={8}>
+        <div className="md:col-span-8">
           {selectedStarship && (
             <ConditionTracker 
               starship={selectedStarship}
               onUpdate={handleStarshipUpdate}
             />
           )}
-        </Col>
-      </Row>
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 };
 

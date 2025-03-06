@@ -1,10 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import Link from 'next/link';
-import { Breadcrumb, Card, Nav, Tab, Button, Alert, Spinner } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faDollarSign, faSync, faTag } from '@fortawesome/free-solid-svg-icons';
-
 import PriceVault from '../components/PriceVault';
 
 interface Starship {
@@ -88,80 +82,94 @@ const PriceVaultPage: React.FC = () => {
 
   return (
     <>
-      <Head>
-        <title>Price Vault - Starship Collection Manager</title>
-      </Head>
-
-      <div className="page-header d-flex justify-content-between align-items-center">
+      <div className="mb-4 flex flex-wrap justify-between items-center">
         <div>
-          <h1>Price Vault</h1>
-          <Breadcrumb>
-            <Link href="/" passHref legacyBehavior>
-              <Breadcrumb.Item>
-                <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-              </Breadcrumb.Item>
-            </Link>
-            <Breadcrumb.Item active>
-              <FontAwesomeIcon icon={faDollarSign} className="me-2" /> Price Vault
-            </Breadcrumb.Item>
-          </Breadcrumb>
+          <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
+          <p className="text-gray-600">Track and manage pricing information for your collection</p>
         </div>
         <div>
-          <Button 
-            variant="outline-primary"
+          <button 
+            className={`px-4 py-2 rounded-md border border-indigo-500 ${isUpdatingPrices || loading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
             onClick={handleSetPurchasePrices}
             disabled={isUpdatingPrices || loading}
             title="Set purchase prices equal to RRP for all owned ships that don't have a purchase price set"
           >
             {isUpdatingPrices ? (
-              <>
-                <Spinner animation="border" size="sm" className="me-2" />
-                Updating Prices...
-              </>
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500 mr-2"></div>
+                <span>Updating Prices...</span>
+              </div>
             ) : (
-              <>
-                <FontAwesomeIcon icon={faTag} className="me-2" />
-                Set Purchase = RRP
-              </>
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <span>Set Purchase = RRP</span>
+              </div>
             )}
-          </Button>
+          </button>
         </div>
       </div>
 
-      {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
-      {success && <Alert variant="success" className="mb-4">{success}</Alert>}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      )}
+      
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Success!</strong>
+          <span className="block sm:inline"> {success}</span>
+        </div>
+      )}
 
-      <Card className="mb-4">
-        <Card.Header>
-          <Nav variant="tabs" className="card-header-tabs" onSelect={(k) => setViewMode(k as any)}>
-            <Nav.Item>
-              <Nav.Link active={viewMode === 'all'} eventKey="all">
-                All Starships
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link active={viewMode === 'owned'} eventKey="owned">
-                Owned Only
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Link active={viewMode === 'missing'} eventKey="missing">
-                Missing Only
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
-        </Card.Header>
-        <Card.Body>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setViewMode('all')}
+              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                viewMode === 'all'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              All Starships
+            </button>
+            <button
+              onClick={() => setViewMode('owned')}
+              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                viewMode === 'owned'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Owned Only
+            </button>
+            <button
+              onClick={() => setViewMode('missing')}
+              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                viewMode === 'missing'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Missing Only
+            </button>
+          </nav>
+        </div>
+        <div className="p-6">
           {loading ? (
-            <div className="text-center p-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <p className="mt-3">Loading price data...</p>
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              <span className="ml-3 text-gray-600">Loading price data...</span>
             </div>
           ) : error ? (
-            <div className="alert alert-danger" role="alert">
-              {error}
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline"> {error}</span>
             </div>
           ) : (
             <PriceVault
@@ -169,8 +177,8 @@ const PriceVaultPage: React.FC = () => {
               viewMode={viewMode}
             />
           )}
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
     </>
   );
 };

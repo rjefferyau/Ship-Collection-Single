@@ -1,10 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import Link from 'next/link';
-import { Row, Col, Breadcrumb, Card } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faChartBar } from '@fortawesome/free-solid-svg-icons';
-
 import Statistics from '../components/Statistics';
 
 interface StatisticsData {
@@ -87,48 +81,32 @@ const StatisticsPage: React.FC = () => {
 
   return (
     <>
-      <Head>
-        <title>Statistics - Starship Collection Manager</title>
-      </Head>
-
-      <div className="page-header">
-        <h1>Collection Statistics</h1>
-        <Breadcrumb>
-          <Link href="/" passHref legacyBehavior>
-            <Breadcrumb.Item>
-              <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-            </Breadcrumb.Item>
-          </Link>
-          <Breadcrumb.Item active>
-            <FontAwesomeIcon icon={faChartBar} className="me-2" /> Statistics
-          </Breadcrumb.Item>
-        </Breadcrumb>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Collection Statistics</h1>
+        <p className="text-gray-600">Insights and analytics about your starship collection</p>
       </div>
 
-      <Card className="mb-4">
-        <Card.Body>
-          {loading ? (
-            <div className="text-center p-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <p className="mt-3">Loading statistics...</p>
-            </div>
-          ) : error ? (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          ) : (
-            <Statistics
-              totalStarships={statistics.totalStarships}
-              ownedStarships={statistics.ownedStarships}
-              factionBreakdown={statistics.factionBreakdown}
-              editionBreakdown={statistics.editionBreakdown}
-              viewMode="all"
-            />
-          )}
-        </Card.Body>
-      </Card>
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            <span className="ml-3 text-gray-600">Loading statistics...</span>
+          </div>
+        ) : error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> {error}</span>
+          </div>
+        ) : (
+          <Statistics
+            totalStarships={statistics.totalStarships}
+            ownedStarships={statistics.ownedStarships}
+            factionBreakdown={statistics.factionBreakdown}
+            editionBreakdown={statistics.editionBreakdown}
+            viewMode="all"
+          />
+        )}
+      </div>
     </>
   );
 };

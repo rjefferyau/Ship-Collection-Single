@@ -1,29 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import { Row, Col, Card, Button, Breadcrumb, Alert, Form, Badge, Tabs, Tab, Modal, InputGroup } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faHome, faArrowUp, faArrowDown, faGripVertical, faShoppingCart, faBoxOpen, faCheck, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DragDropContext, Draggable, DropResult, DroppableStateSnapshot } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
-
-interface Starship {
-  _id: string;
-  issue: string;
-  edition: string;
-  shipName: string;
-  faction: string;
-  releaseDate?: Date;
-  imageUrl?: string;
-  owned: boolean;
-  wishlist: boolean;
-  wishlistPriority?: number;
-  onOrder: boolean;
-  pricePaid?: number;
-  orderDate?: Date;
-  retailPrice?: number;
-  purchasePrice?: number;
-  marketValue?: number;
-}
+import { Starship } from '../types';
 
 const WishlistPage: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
@@ -53,13 +31,11 @@ const WishlistPage: React.FC = () => {
         setCurrencySettings(JSON.parse(savedSettings));
       }
     }
-  }, []);
-
-  // Fetch starships
-  useEffect(() => {
+    
     fetchStarships();
   }, []);
 
+  // Fetch starships
   const fetchStarships = async () => {
     setLoading(true);
     setError(null);
@@ -290,391 +266,262 @@ const WishlistPage: React.FC = () => {
 
   return (
     <>
-      <Head>
-        <title>Wishlist - Starship Collection Manager</title>
-      </Head>
-
-      <div className="page-header">
-        <h1>Wishlist</h1>
-        <Breadcrumb>
-          <Breadcrumb.Item href="/">
-            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-          </Breadcrumb.Item>
-          <Breadcrumb.Item active>
-            <FontAwesomeIcon icon={faStar} className="me-2" /> Wishlist
-          </Breadcrumb.Item>
-        </Breadcrumb>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Wishlist & Orders</h1>
+        <p className="text-gray-600">Manage your wishlist and track your orders</p>
       </div>
-      
+
       {error && (
-        <Alert variant="danger" className="mb-4">
-          {error}
-        </Alert>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
       )}
       
       {success && (
-        <Alert variant="success" className="mb-4">
-          {success}
-        </Alert>
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Success!</strong>
+          <span className="block sm:inline"> {success}</span>
+        </div>
       )}
-      
-      <Tabs
-        activeKey={activeTab}
-        onSelect={(k) => setActiveTab(k || 'wishlist')}
-        className="mb-4"
-      >
-        <Tab 
-          eventKey="wishlist" 
-          title={
-            <span>
-              <FontAwesomeIcon icon={faStar} className="me-2" />
-              Wishlist ({wishlistItems.length})
-            </span>
-          }
-        >
-          <Row className="mb-4">
-            <Col>
-              <Card>
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">My Wishlist ({wishlistItems.length} items)</h5>
-                  {wishlistItems.length > 0 && (
-                    <div className="text-muted small">
-                      <FontAwesomeIcon icon={faGripVertical} className="me-1" /> Drag items to reorder
-                    </div>
-                  )}
-                </Card.Header>
-                <Card.Body>
-                  {loading ? (
-                    <div className="text-center p-4">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading wishlist...</p>
-                    </div>
-                  ) : wishlistItems.length === 0 ? (
-                    <div className="text-center p-4">
-                      <FontAwesomeIcon icon={faStar} className="text-muted fa-3x mb-3" />
-                      <h5>Your wishlist is empty</h5>
-                      <p>Add items to your wishlist by clicking the star icon on the collection page.</p>
-                    </div>
-                  ) : (
-                    <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                      <StrictModeDroppable droppableId="wishlist">
-                        {(provided) => (
-                          <div
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="wishlist-items"
-                          >
-                            {wishlistItems.map((starship, index) => (
-                              <Draggable 
-                                key={starship._id} 
-                                draggableId={starship._id} 
-                                index={index}
-                              >
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`wishlist-item mb-3 ${snapshot.isDragging ? 'is-dragging' : ''}`}
-                                  >
-                                    <Card>
-                                      <Card.Body>
-                                        <Row className="align-items-center">
-                                          <Col xs={12} md={1} className="text-center mb-3 mb-md-0">
-                                            <div 
-                                              className="priority-badge"
-                                              {...provided.dragHandleProps}
-                                              title="Drag to reorder"
-                                            >
-                                              <FontAwesomeIcon icon={faGripVertical} className="drag-handle-icon" />
-                                            </div>
-                                          </Col>
-                                          <Col xs={12} md={2} className="text-center mb-3 mb-md-0">
-                                            {starship.imageUrl ? (
-                                              <img 
-                                                src={starship.imageUrl} 
-                                                alt={starship.shipName}
-                                                style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-                                                className="img-thumbnail"
-                                              />
-                                            ) : (
-                                              <div 
-                                                className="bg-light d-flex align-items-center justify-content-center" 
-                                                style={{ width: '80px', height: '80px', margin: '0 auto' }}
-                                              >
-                                                <small className="text-muted">No image</small>
-                                              </div>
-                                            )}
-                                          </Col>
-                                          <Col xs={12} md={4} className="mb-3 mb-md-0">
-                                            <h5>{starship.shipName}</h5>
-                                            <div className="text-muted">
-                                              {starship.edition} #{starship.issue} - {starship.faction}
-                                            </div>
-                                          </Col>
-                                          <Col xs={6} md={2} className="text-center mb-3 mb-md-0">
-                                            <div className="small text-muted">Retail Price</div>
-                                            <div className="fw-bold">{formatCurrency(starship.retailPrice)}</div>
-                                          </Col>
-                                          <Col xs={6} md={3} className="text-end">
-                                            <div className="d-flex justify-content-end gap-2">
-                                              <Button 
-                                                variant="info" 
-                                                size="sm"
-                                                onClick={() => handleOpenOrderModal(starship)}
-                                                title="Mark as On Order"
-                                              >
-                                                <FontAwesomeIcon icon={faShoppingCart} /> Order
-                                              </Button>
-                                              <Button 
-                                                variant="warning" 
-                                                size="sm"
-                                                onClick={() => handleToggleWishlist(starship._id)}
-                                                title="Remove from Wishlist"
-                                              >
-                                                <FontAwesomeIcon icon={faStar} /> Remove
-                                              </Button>
-                                            </div>
-                                          </Col>
-                                        </Row>
-                                      </Card.Body>
-                                    </Card>
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </div>
-                        )}
-                      </StrictModeDroppable>
-                    </DragDropContext>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Tab>
-        <Tab 
-          eventKey="onOrder" 
-          title={
-            <span>
-              <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-              On Order ({onOrderItems.length})
-            </span>
-          }
-        >
-          <Row className="mb-4">
-            <Col>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Items On Order ({onOrderItems.length})</h5>
-                </Card.Header>
-                <Card.Body>
-                  {loading ? (
-                    <div className="text-center p-4">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
-                      <p className="mt-2">Loading orders...</p>
-                    </div>
-                  ) : onOrderItems.length === 0 ? (
-                    <div className="text-center p-4">
-                      <FontAwesomeIcon icon={faShoppingCart} className="text-muted fa-3x mb-3" />
-                      <h5>No items on order</h5>
-                      <p>Items you've ordered but not yet received will appear here.</p>
-                    </div>
-                  ) : (
-                    <div className="on-order-items">
-                      {onOrderItems.map((starship) => (
-                        <div key={starship._id} className="on-order-item mb-3">
-                          <Card>
-                            <Card.Body>
-                              <Row className="align-items-center">
-                                <Col xs={12} md={2} className="text-center mb-3 mb-md-0">
-                                  {starship.imageUrl ? (
-                                    <img 
-                                      src={starship.imageUrl} 
-                                      alt={starship.shipName}
-                                      style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-                                      className="img-thumbnail"
-                                    />
-                                  ) : (
-                                    <div 
-                                      className="bg-light d-flex align-items-center justify-content-center" 
-                                      style={{ width: '80px', height: '80px', margin: '0 auto' }}
-                                    >
-                                      <small className="text-muted">No image</small>
-                                    </div>
-                                  )}
-                                </Col>
-                                <Col xs={12} md={3} className="mb-3 mb-md-0">
-                                  <h5>{starship.shipName}</h5>
-                                  <div className="text-muted">
-                                    {starship.edition} #{starship.issue} - {starship.faction}
-                                  </div>
-                                </Col>
-                                <Col xs={6} md={2} className="mb-3 mb-md-0">
-                                  <div className="small text-muted">Price Paid</div>
-                                  <div className="fw-bold">{formatCurrency(starship.pricePaid)}</div>
-                                </Col>
-                                <Col xs={6} md={2} className="mb-3 mb-md-0">
-                                  <div className="small text-muted">Order Date</div>
-                                  <div>{formatDate(starship.orderDate)}</div>
-                                </Col>
-                                <Col xs={12} md={3} className="text-end">
-                                  <div className="d-flex justify-content-end gap-2">
-                                    <Button 
-                                      variant="success" 
-                                      size="sm"
-                                      onClick={() => handleMarkAsReceived(starship._id)}
-                                      title="Mark as Received"
-                                    >
-                                      <FontAwesomeIcon icon={faCheck} className="me-2" />
-                                      Received
-                                    </Button>
-                                    <Button 
-                                      variant="danger" 
-                                      size="sm"
-                                      onClick={() => handleRemoveFromOrder(starship._id)}
-                                      title="Remove from Orders"
-                                    >
-                                      <FontAwesomeIcon icon={faTrash} />
-                                    </Button>
-                                  </div>
-                                </Col>
-                              </Row>
-                            </Card.Body>
-                          </Card>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Tab>
-      </Tabs>
-      
-      {/* Order Modal */}
-      <Modal show={showOrderModal} onHide={() => setShowOrderModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Mark as On Order</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedStarship && (
-            <>
-              <div className="mb-3">
-                <h5>{selectedStarship.shipName}</h5>
-                <div className="text-muted">
-                  {selectedStarship.edition} #{selectedStarship.issue} - {selectedStarship.faction}
-                </div>
+
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200">
+          <nav className="flex -mb-px">
+            <button
+              onClick={() => setActiveTab('wishlist')}
+              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                activeTab === 'wishlist'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                Wishlist
               </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('on-order')}
+              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                activeTab === 'on-order'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                </svg>
+                On Order
+              </div>
+            </button>
+          </nav>
+        </div>
+        <div className="p-6">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+              <span className="ml-3 text-gray-600">Loading wishlist data...</span>
+            </div>
+          ) : (
+            <div>
+              {activeTab === 'wishlist' && (
+                <div className={`${isDragging ? 'bg-indigo-50 rounded-lg p-4 transition-all duration-200' : ''}`}>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Drag and drop items to reorder your wishlist. Higher items have higher priority.
+                  </p>
+                  
+                  <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                    <StrictModeDroppable droppableId="wishlist">
+                      {(provided, snapshot) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="space-y-2"
+                        >
+                          {wishlistItems.map((starship, index) => (
+                            <Draggable 
+                              key={starship._id} 
+                              draggableId={starship._id} 
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`wishlist-item mb-3 ${snapshot.isDragging ? 'is-dragging' : ''}`}
+                                >
+                                  <div className="flex items-center">
+                                    <div 
+                                      className="priority-badge"
+                                      {...provided.dragHandleProps}
+                                      title="Drag to reorder"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                      </svg>
+                                    </div>
+                                    <div className="flex-grow">
+                                      <h5 className="text-sm font-medium text-gray-900">{starship.shipName}</h5>
+                                      <div className="text-sm text-gray-500">{starship.edition} #{starship.issue} - {starship.faction}</div>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <button 
+                                        onClick={(e) => { e.preventDefault(); handleOpenOrderModal(starship); }}
+                                        className="text-indigo-600 hover:text-indigo-900 mr-2"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                          <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                                        </svg>
+                                      </button>
+                                      <button 
+                                        onClick={(e) => { e.preventDefault(); handleToggleWishlist(starship._id); }}
+                                        className="text-red-600 hover:text-red-900"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </StrictModeDroppable>
+                  </DragDropContext>
+                </div>
+              )}
               
-              <Form.Group className="mb-3">
-                <Form.Label>Price Paid</Form.Label>
-                <InputGroup>
-                  <InputGroup.Text>{currencySettings.symbol}</InputGroup.Text>
-                  <Form.Control 
-                    type="number" 
-                    step="0.01" 
-                    value={orderData.pricePaid} 
-                    onChange={(e) => setOrderData({...orderData, pricePaid: e.target.value})}
-                    placeholder="Enter price paid"
-                  />
-                </InputGroup>
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Order Date</Form.Label>
-                <Form.Control 
-                  type="date" 
-                  value={orderData.orderDate} 
-                  onChange={(e) => setOrderData({...orderData, orderDate: e.target.value})}
-                />
-              </Form.Group>
-            </>
+              {activeTab === 'on-order' && (
+                <div>
+                  {onOrderItems.map((starship) => (
+                    <div key={starship._id} className="on-order-item mb-3">
+                      <div className="flex items-center">
+                        <div className="flex-grow">
+                          <h5 className="text-sm font-medium text-gray-900">{starship.shipName}</h5>
+                          <div className="text-sm text-gray-500">{starship.edition} #{starship.issue} - {starship.faction}</div>
+                        </div>
+                        <div className="flex items-center">
+                          <button 
+                            onClick={(e) => { e.preventDefault(); handleMarkAsReceived(starship._id); }}
+                            className="text-green-600 hover:text-green-900 mr-2"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={(e) => { e.preventDefault(); handleRemoveFromOrder(starship._id); }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowOrderModal(false)}>
-            Cancel
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleMarkAsOnOrder}
-            disabled={processingOrder}
-          >
-            {processingOrder ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Processing...
-              </>
-            ) : (
-              <>
-                <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
-                Confirm Order
-              </>
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-      
-      <style jsx>{`
-        .wishlist-items {
-          min-height: 200px;
-        }
-        
-        .wishlist-item {
-          transition: all 0.2s ease;
-        }
-        
-        .wishlist-item:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        
-        .wishlist-item.is-dragging {
-          transform: rotate(1deg) scale(1.02);
-          box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-          z-index: 100;
-        }
-        
-        .priority-badge {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          background-color: #ffc107;
-          border: 2px solid #e0a800;
-          color: #212529;
-          font-weight: bold;
-          margin: 0 auto;
-          position: relative;
-          cursor: grab;
-        }
-        
-        .priority-badge:hover {
-          background-color: #e0a800;
-        }
-        
-        .drag-handle-icon {
-          font-size: 16px;
-          color: #212529;
-        }
-        
-        .on-order-item {
-          transition: all 0.2s ease;
-        }
-        
-        .on-order-item:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-      `}</style>
+        </div>
+      </div>
+
+      {/* Order Modal */}
+      {showOrderModal && selectedStarship && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-medium text-gray-900">
+                Mark as On Order
+              </h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setShowOrderModal(false)}
+              >
+                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="mb-4">
+                <span className="font-medium">{selectedStarship.shipName}</span> - {selectedStarship.edition} #{selectedStarship.issue}
+              </p>
+              
+              <form onSubmit={(e) => { e.preventDefault(); handleMarkAsOnOrder(); }}>
+                <div className="mb-4">
+                  <label htmlFor="pricePaid" className="block text-sm font-medium text-gray-700 mb-1">
+                    Price Paid ({currencySettings.symbol})
+                  </label>
+                  <div className="relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">{currencySettings.symbol}</span>
+                    </div>
+                    <input
+                      type="number"
+                      id="pricePaid"
+                      className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      value={orderData.pricePaid}
+                      onChange={(e) => setOrderData({ ...orderData, pricePaid: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <label htmlFor="orderDate" className="block text-sm font-medium text-gray-700 mb-1">
+                    Order Date
+                  </label>
+                  <input
+                    type="date"
+                    id="orderDate"
+                    className="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                    value={orderData.orderDate}
+                    onChange={(e) => setOrderData({ ...orderData, orderDate: e.target.value })}
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    onClick={() => setShowOrderModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    disabled={processingOrder}
+                  >
+                    {processingOrder ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      'Mark as On Order'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

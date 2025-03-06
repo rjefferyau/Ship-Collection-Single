@@ -1,32 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import { Row, Col, Modal, Button, Card, Breadcrumb } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faImages, faHome } from '@fortawesome/free-solid-svg-icons';
+import React, { useState, useEffect, Fragment } from 'react';
 import Link from 'next/link';
+import { Dialog, Transition } from '@headlessui/react';
 
 import StarshipList from '../components/StarshipList';
 import StarshipDetails from '../components/StarshipDetails';
 import AddStarshipForm from '../components/AddStarshipForm';
-
-interface Starship {
-  _id: string;
-  issue: string;
-  edition: string;
-  shipName: string;
-  faction: string;
-  releaseDate?: Date;
-  imageUrl?: string;
-  owned: boolean;
-  wishlist: boolean;
-  wishlistPriority?: number;
-  onOrder: boolean;
-  pricePaid?: number;
-  orderDate?: Date;
-  retailPrice?: number;
-  purchasePrice?: number;
-  marketValue?: number;
-}
+import { Starship } from '../types';
 
 const Home: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
@@ -144,78 +123,159 @@ const Home: React.FC = () => {
 
   return (
     <>
-      <Head>
-        <title>Starship Collection Manager</title>
-      </Head>
-
-      <div className="page-header">
-        <h1>Starship Collection Manager</h1>
-        <Breadcrumb>
-          <Breadcrumb.Item active>
-            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-          </Breadcrumb.Item>
-        </Breadcrumb>
-        <div className="d-flex justify-content-end mt-3">
-          <Button variant="primary" onClick={() => setShowAddModal(true)}>
-            <FontAwesomeIcon icon={faPlus} /> Add New Starship
-          </Button>
-        </div>
+      <div className="mb-4 flex flex-wrap justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-800">The Collection</h1>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
+        >
+          Add New Starship
+        </button>
       </div>
-      
-      <Row className="mb-4">
-        <Col>
-          <Card>
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  {/* Removing the Fancy View button */}
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+      ) : error ? (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      ) : (
+        <StarshipList
+          starships={starships}
+          onToggleOwned={handleToggleOwned}
+          onSelectStarship={handleSelectStarship}
+          onToggleWishlist={handleToggleWishlist}
+          onEditionChange={handleEditionChange}
+          currentEdition={currentEdition}
+        />
+      )}
+
+      {/* Modal for adding new starship */}
+      <Transition.Root show={showAddModal} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={setShowAddModal}>
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+            </Transition.Child>
+
+            {/* This element is to trick the browser into centering the modal contents. */}
+            <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enterTo="opacity-100 translate-y-0 sm:scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            >
+              <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                      <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                        Add New Starship
+                      </Dialog.Title>
+                      <div className="mt-2">
+                        <AddStarshipForm onStarshipAdded={handleRefreshStarships} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  {/* ... existing filter controls ... */}
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    onClick={() => setShowAddModal(false)}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-              <StarshipList
-                starships={starships}
-                onToggleOwned={handleToggleOwned}
-                onSelectStarship={handleSelectStarship}
-                onToggleWishlist={handleToggleWishlist}
-                onEditionChange={handleEditionChange}
-                currentEdition={currentEdition}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Modal for adding a new starship */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Starship</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <AddStarshipForm onStarshipAdded={handleRefreshStarships} />
-        </Modal.Body>
-      </Modal>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition.Root>
 
       {/* Modal for starship details */}
-      <Modal show={!!selectedStarship} onHide={() => setSelectedStarship(null)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {selectedStarship?.shipName} - {selectedStarship?.edition} #{selectedStarship?.issue}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedStarship && (
-            <StarshipDetails
-              starship={selectedStarship}
-              onToggleOwned={handleToggleOwned}
-              onRefresh={handleRefreshStarships}
-              onToggleWishlist={handleToggleWishlist}
-              currentEdition={currentEdition}
-            />
-          )}
-        </Modal.Body>
-      </Modal>
+      <Transition.Root show={!!selectedStarship} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={() => setSelectedStarship(null)}>
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+            </Transition.Child>
+
+            {/* This element is to trick the browser into centering the modal contents. */}
+            <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enterTo="opacity-100 translate-y-0 sm:scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            >
+              <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                      <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                        {selectedStarship?.shipName} - {selectedStarship?.edition} #{selectedStarship?.issue}
+                      </Dialog.Title>
+                      <div className="mt-2">
+                        {selectedStarship && (
+                          <StarshipDetails
+                            starship={selectedStarship}
+                            onToggleOwned={handleToggleOwned}
+                            onRefresh={handleRefreshStarships}
+                            onToggleWishlist={handleToggleWishlist}
+                            currentEdition={currentEdition}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    onClick={() => setSelectedStarship(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition.Root>
     </>
   );
 };

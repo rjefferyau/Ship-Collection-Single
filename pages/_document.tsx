@@ -10,7 +10,7 @@ class MyDocument extends Document {
     return (
       <Html>
         <Head>
-          {/* Google Fonts - Montserrat */}
+          {/* Google Fonts - Inter */}
           <link 
             rel="preconnect" 
             href="https://fonts.googleapis.com" 
@@ -21,16 +21,8 @@ class MyDocument extends Document {
             crossOrigin="anonymous" 
           />
           <link 
-            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" 
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" 
             rel="stylesheet" 
-          />
-          
-          {/* Bootstrap CSS */}
-          <link 
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" 
-            rel="stylesheet" 
-            integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" 
-            crossOrigin="anonymous" 
           />
           
           {/* Font Awesome */}
@@ -44,17 +36,21 @@ class MyDocument extends Document {
           
           {/* Font Awesome Pro Kit */}
           <script src="https://kit.fontawesome.com/d0637c0c40.js" crossOrigin="anonymous"></script>
+          
+          {/* DataTables CSS */}
+          <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.tailwindcss.min.css" />
+          
+          {/* Alpine.js */}
+          <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
         </Head>
         <body>
           <Main />
           <NextScript />
           
-          {/* Bootstrap JS */}
-          <script 
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" 
-            integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" 
-            crossOrigin="anonymous"
-          ></script>
+          {/* jQuery for DataTables */}
+          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+          <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+          <script src="https://cdn.datatables.net/1.11.5/js/dataTables.tailwindcss.min.js"></script>
         </body>
       </Html>
     );

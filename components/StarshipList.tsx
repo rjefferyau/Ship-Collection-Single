@@ -1,42 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Form, InputGroup, Button, Dropdown, DropdownButton, Badge, Nav, Modal } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSort, faSortUp, faSortDown, faCheck, faTimes, faSearch, faFilter, faTrash, faMagnifyingGlass, faPlus, faStar as faStarSolid, faShoppingCart, faFilePdf, faImages } from '@fortawesome/free-solid-svg-icons';
-import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import DataTable from './DataTable';
 import PdfViewer from './PdfViewer';
-
-interface Starship {
-  _id: string;
-  issue: string;
-  edition: string;
-  shipName: string;
-  faction: string;
-  releaseDate?: Date;
-  imageUrl?: string;
-  magazinePdfUrl?: string;
-  owned: boolean;
-  wishlist: boolean;
-  wishlistPriority?: number;
-  onOrder: boolean;
-  pricePaid?: number;
-  orderDate?: Date;
-  retailPrice?: number;
-  purchasePrice?: number;
-  marketValue?: number;
-}
-
-interface SortConfig {
-  key: keyof Starship | '';
-  direction: 'asc' | 'desc';
-}
-
-interface Filters {
-  search: string;
-  faction: string[];
-  edition: string[];
-  owned: 'all' | 'owned' | 'not-owned';
-}
+import { Starship, SortConfig, Filters } from '../types';
 
 interface StarshipListProps {
   starships: Starship[];
@@ -79,8 +44,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
 
   // Add state for PDF viewer
   const [showPdfViewer, setShowPdfViewer] = useState(false);
-  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | undefined>(undefined);
-  const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>('');
+  const [selectedPdfTitle, setSelectedPdfTitle] = useState('');
+  const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
+  const [factionMenuOpen, setFactionMenuOpen] = useState(false);
+  const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
 
   // Load currency settings from localStorage
   useEffect(() => {
@@ -269,13 +236,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
   }, [currentEdition]);
 
   const handleSort = (key: keyof Starship) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    
-    if (sortConfig.key === key) {
-      direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
-    }
-    
-    setSortConfig({ key, direction });
+    setSortConfig(prevConfig => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,19 +251,15 @@ const StarshipList: React.FC<StarshipListProps> = ({
       const newFactions = prev.faction.includes(faction)
         ? prev.faction.filter(f => f !== faction)
         : [...prev.faction, faction];
-      
       return { ...prev, faction: newFactions };
     });
   };
 
   const handleEditionSelect = (edition: string) => {
+    setFilters(prev => ({ ...prev, edition: [edition] }));
     setActiveEdition(edition);
-    setFilters(prev => ({
-      ...prev,
-      edition: [edition]
-    }));
     
-    // Notify parent component of edition change if callback exists
+    // Call the parent's onEditionChange if provided
     if (onEditionChange) {
       onEditionChange(edition);
     }
@@ -311,12 +271,26 @@ const StarshipList: React.FC<StarshipListProps> = ({
 
   const getSortIcon = (key: keyof Starship) => {
     if (sortConfig.key !== key) {
-      return <FontAwesomeIcon icon={faSort} />;
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
+        </svg>
+      );
     }
     
-    return sortConfig.direction === 'asc' 
-      ? <FontAwesomeIcon icon={faSortUp} /> 
-      : <FontAwesomeIcon icon={faSortDown} />;
+    if (sortConfig.direction === 'asc') {
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+    
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+      </svg>
+    );
   };
 
   // Format date for display
@@ -354,412 +328,474 @@ const StarshipList: React.FC<StarshipListProps> = ({
     }
   };
 
-  return (
-    <div>
-      <div className="mb-4">
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
-          <div className="d-flex flex-wrap align-items-center">
-            <InputGroup className="me-2 mb-2 search-input" style={{ width: 'auto' }}>
-              <InputGroup.Text>
-                <FontAwesomeIcon icon={faSearch} />
-              </InputGroup.Text>
-              <Form.Control
-                type="text"
-                placeholder="Search ships..."
-                value={filters.search}
-                onChange={handleSearchChange}
-                style={{ width: '200px' }}
-                aria-label="Search ships"
+  // Define columns for the DataTable
+  const columns = [
+    {
+      key: 'issue',
+      header: 'Issue',
+      sortable: true,
+    },
+    {
+      key: 'edition',
+      header: 'Edition',
+      sortable: true,
+    },
+    {
+      key: 'imageUrl',
+      header: 'Image',
+      sortable: false,
+      render: (starship: Starship) => (
+        <div className="flex justify-center">
+          {starship.imageUrl ? (
+            <div className="w-16 h-16 flex items-center justify-center">
+              <img 
+                src={starship.imageUrl} 
+                alt={starship.shipName}
+                className="max-w-full max-h-full object-contain cursor-pointer transition-transform duration-200 hover:scale-110"
+                onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                title="Click to view larger image"
               />
-            </InputGroup>
-            
-            <DropdownButton 
-              id="dropdown-faction-filter" 
-              title={
-                <span>
-                  <FontAwesomeIcon icon={faFilter} /> Faction
-                  {filters.faction.length > 0 && (
-                    <Badge bg="primary" className="ms-1">{filters.faction.length}</Badge>
-                  )}
-                </span>
-              }
-              variant="outline-secondary"
-              className="me-2 mb-2"
+            </div>
+          ) : (
+            <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'shipName',
+      header: 'Ship Name',
+      sortable: true,
+      wrapText: true,
+      className: 'max-w-[200px]',
+      render: (starship: Starship) => (
+        <span className="font-medium">{starship.shipName || 'Unnamed'}</span>
+      ),
+    },
+    {
+      key: 'faction',
+      header: 'Faction',
+      sortable: true,
+    },
+    {
+      key: 'retailPrice',
+      header: 'RRP',
+      sortable: true,
+      render: (starship: Starship) => formatCurrency(starship.retailPrice),
+    },
+    {
+      key: 'purchasePrice',
+      header: 'Purchase',
+      sortable: true,
+      render: (starship: Starship) => formatCurrency(starship.purchasePrice),
+    },
+    {
+      key: 'owned',
+      header: 'Owned',
+      sortable: true,
+      render: (starship: Starship) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleOwned(starship._id);
+          }}
+          className={`rounded-full p-1 ${
+            starship.owned 
+              ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+              : 'bg-red-100 text-red-600 hover:bg-red-200'
+          }`}
+        >
+          {starship.owned ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          )}
+        </button>
+      ),
+    },
+    {
+      key: 'wishlist',
+      header: 'Wishlist',
+      sortable: true,
+      render: (starship: Starship) => {
+        // If owned, don't show wishlist button
+        if (starship.owned) {
+          return null;
+        }
+        
+        // If on order, show blue airplane icon
+        if (starship.onOrder) {
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onToggleWishlist) onToggleWishlist(starship._id);
+              }}
+              className="rounded-full p-1 bg-blue-100 text-blue-600 hover:bg-blue-200"
+              title="On Order"
             >
-              {availableFactions.map(faction => (
-                <Dropdown.Item 
-                  key={faction} 
-                  onClick={() => toggleFactionFilter(faction)}
-                  active={filters.faction.includes(faction)}
-                >
-                  {faction}
-                </Dropdown.Item>
-              ))}
-              {filters.faction.length > 0 && (
-                <Dropdown.Item 
-                  onClick={() => setFilters(prev => ({ ...prev, faction: [] }))}
-                  className="text-danger"
-                >
-                  <FontAwesomeIcon icon={faTrash} className="me-1" /> Clear Faction Filters
-                </Dropdown.Item>
-              )}
-            </DropdownButton>
-            
-            <Dropdown className="me-2 mb-2">
-              <Dropdown.Toggle variant="outline-secondary" id="dropdown-owned-filter">
-                {filters.owned === 'all' ? 'All Ships' : 
-                 filters.owned === 'owned' ? 'Owned Only' : 'Not Owned Only'}
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item 
-                  onClick={() => setOwnedFilter('all')}
-                  active={filters.owned === 'all'}
-                >
-                  All Ships
-                </Dropdown.Item>
-                <Dropdown.Item 
-                  onClick={() => setOwnedFilter('owned')}
-                  active={filters.owned === 'owned'}
-                >
-                  <FontAwesomeIcon icon={faCheck} className="text-success me-2" /> Owned Only
-                </Dropdown.Item>
-                <Dropdown.Item 
-                  onClick={() => setOwnedFilter('not-owned')}
-                  active={filters.owned === 'not-owned'}
-                >
-                  <FontAwesomeIcon icon={faTimes} className="text-secondary me-2" /> Not Owned Only
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+              </svg>
+            </button>
+          );
+        }
+        
+        // If wishlist, show gold star
+        if (starship.wishlist) {
+          return (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onToggleWishlist) onToggleWishlist(starship._id);
+              }}
+              className="rounded-full p-1 bg-yellow-100 text-yellow-500 hover:bg-yellow-200"
+              title="On Wishlist"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </button>
+          );
+        }
+        
+        // Default case: not owned, not on order, not on wishlist
+        return onToggleWishlist ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleWishlist(starship._id);
+            }}
+            className="rounded-full p-1 bg-gray-100 text-gray-400 hover:bg-gray-200"
+            title="Add to Wishlist"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          </button>
+        ) : null;
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (starship: Starship) => (
+        <div className="flex space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectStarship(starship);
+            }}
+            className="p-1 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50"
+            title="View Details"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+            </svg>
+          </button>
+          
+          {starship.imageUrl && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleImageClick(starship.imageUrl, starship.shipName);
+              }}
+              className="p-1 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50"
+              title="View Image"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+          
+          {starship.magazinePdfUrl && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePdfClick(starship.magazinePdfUrl, starship.shipName);
+              }}
+              className="p-1 text-red-600 hover:text-red-900 rounded-full hover:bg-red-50"
+              title="View PDF"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+              </svg>
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Search and Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search Input */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <svg className="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search ships..."
+              value={filters.search}
+              onChange={handleSearchChange}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+            />
           </div>
           
-          <div className="mb-2 d-flex">
-            <Badge bg="primary" className="me-2 badge-pill">
-              <span className="badge-text">{filteredStarships.length} ships</span>
-            </Badge>
-            <Badge bg="success" className="badge-pill">
-              <span className="badge-text">{filteredStarships.filter(s => s.owned).length} owned</span>
-            </Badge>
+          {/* Faction Filter */}
+          <div className="relative inline-block text-left">
+            <div>
+              <button
+                type="button"
+                className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                id="faction-menu-button"
+                aria-expanded="true"
+                aria-haspopup="true"
+                onClick={() => setFactionMenuOpen(!factionMenuOpen)}
+              >
+                Faction
+                {filters.faction.length > 0 && (
+                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {filters.faction.length}
+                  </span>
+                )}
+                <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            
+            {factionMenuOpen && (
+              <div
+                className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="faction-menu-button"
+                tabIndex={-1}
+              >
+                <div className="py-1" role="none">
+                  {availableFactions.map(faction => (
+                    <button
+                      key={faction}
+                      className={`${
+                        filters.faction.includes(faction) ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => toggleFactionFilter(faction)}
+                    >
+                      {faction}
+                    </button>
+                  ))}
+                  {filters.faction.length > 0 && (
+                    <button
+                      className="text-red-600 block px-4 py-2 text-sm w-full text-left hover:bg-gray-50 border-t border-gray-100"
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setFilters(prev => ({ ...prev, faction: [] }))}
+                    >
+                      Clear Faction Filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Owned Filter */}
+          <div className="relative inline-block text-left">
+            <div>
+              <button
+                type="button"
+                className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                id="owned-menu-button"
+                aria-expanded="true"
+                aria-haspopup="true"
+                onClick={() => setOwnedMenuOpen(!ownedMenuOpen)}
+              >
+                {filters.owned === 'all' ? 'All Ships' : 
+                 filters.owned === 'owned' ? 'Owned Only' : 'Not Owned Only'}
+                <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            
+            {ownedMenuOpen && (
+              <div
+                className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="owned-menu-button"
+                tabIndex={-1}
+              >
+                <div className="py-1" role="none">
+                  <button
+                    className={`${
+                      filters.owned === 'all' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => setOwnedFilter('all')}
+                  >
+                    All Ships
+                  </button>
+                  <button
+                    className={`${
+                      filters.owned === 'owned' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => setOwnedFilter('owned')}
+                  >
+                    <span className="flex items-center">
+                      <svg className="mr-2 h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Owned Only
+                    </span>
+                  </button>
+                  <button
+                    className={`${
+                      filters.owned === 'not-owned' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => setOwnedFilter('not-owned')}
+                  >
+                    <span className="flex items-center">
+                      <svg className="mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      Not Owned Only
+                    </span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
-        {/* Edition Tabs */}
-        <div className="edition-tabs-container">
-          <Nav variant="tabs" className="edition-tabs">
-            {availableEditions.map(edition => (
-              <Nav.Item key={edition}>
-                <Nav.Link 
-                  active={activeEdition === edition}
-                  onClick={() => handleEditionSelect(edition)}
-                  className="edition-tab"
-                >
-                  {edition}
-                </Nav.Link>
-              </Nav.Item>
-            ))}
-          </Nav>
+        {/* Stats */}
+        <div className="flex space-x-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+            {filteredStarships.length} ships
+          </span>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            {filteredStarships.filter(s => s.owned).length} owned
+          </span>
         </div>
       </div>
       
-      <div className="table-responsive">
-        <DataTable 
-          id="starships-table"
-          striped
-          hover
-          responsive
-          options={{
-            ordering: false, // We'll handle sorting ourselves
-            searching: false, // We have our own search input
-            paging: true,
-            info: true,
-            lengthChange: true,
-            responsive: true
-          }}
-          className="starship-table"
-        >
-          <thead>
-            <tr>
-              <th onClick={() => handleSort('issue')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Issue {getSortIcon('issue')}
-              </th>
-              <th onClick={() => handleSort('edition')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Edition {getSortIcon('edition')}
-              </th>
-              <th style={{ width: '80px' }}>Image</th>
-              <th onClick={() => handleSort('shipName')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Ship Name {getSortIcon('shipName')}
-              </th>
-              <th onClick={() => handleSort('faction')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Race/Faction {getSortIcon('faction')}
-              </th>
-              <th onClick={() => handleSort('retailPrice')} style={{ cursor: 'pointer' }} className="sortable-header">
-                RRP {getSortIcon('retailPrice')}
-              </th>
-              <th onClick={() => handleSort('purchasePrice')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Purchase {getSortIcon('purchasePrice')}
-              </th>
-              <th onClick={() => handleSort('owned')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Owned {getSortIcon('owned')}
-              </th>
-              <th onClick={() => handleSort('wishlist')} style={{ cursor: 'pointer' }} className="sortable-header">
-                Wishlist {getSortIcon('wishlist')}
-              </th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStarships.length > 0 ? (
-              filteredStarships.map(starship => (
-                <tr key={starship._id} className={starship.owned ? 'owned-row' : ''}>
-                  <td>{starship.issue || 'N/A'}</td>
-                  <td>{starship.edition || 'N/A'}</td>
-                  <td>
-                    {starship.imageUrl ? (
-                      <div className="image-container">
-                        <img 
-                          src={starship.imageUrl} 
-                          alt={starship.shipName}
-                          className="ship-thumbnail"
-                          onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
-                          title="Click to view larger image"
-                        />
-                      </div>
-                    ) : (
-                      <div className="no-image-container">
-                        <FontAwesomeIcon icon={faImages} className="text-muted" />
-                      </div>
-                    )}
-                  </td>
-                  <td className="ship-name">{starship.shipName || 'Unnamed'}</td>
-                  <td>{starship.faction || 'N/A'}</td>
-                  <td>{formatCurrency(starship.retailPrice)}</td>
-                  <td>{formatCurrency(starship.purchasePrice)}</td>
-                  <td>
-                    <div className="ownership-indicator">
-                      {starship.owned ? (
-                        <span className="owned-badge">
-                          <FontAwesomeIcon icon={faCheck} className="text-success" />
-                        </span>
-                      ) : (
-                        <span className="not-owned-badge">
-                          <FontAwesomeIcon icon={faTimes} className="text-secondary" />
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    {starship.owned ? (
-                      <span className="text-muted">-</span>
-                    ) : starship.onOrder ? (
-                      <Badge bg="primary" className="on-order-badge">
-                        <FontAwesomeIcon icon={faShoppingCart} className="me-1" /> On Order
-                      </Badge>
-                    ) : onToggleWishlist ? (
-                      <span 
-                        className="wishlist-toggle"
-                        onClick={() => onToggleWishlist(starship._id)}
-                        title={starship.wishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-                      >
-                        <FontAwesomeIcon 
-                          icon={starship.wishlist ? faStarSolid : faStarRegular} 
-                          className={starship.wishlist ? "text-warning" : "text-secondary"}
-                        />
-                      </span>
-                    ) : null}
-                  </td>
-                  <td>
-                    <div className="d-flex action-buttons">
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm" 
-                        className="me-1 action-button"
-                        onClick={() => onSelectStarship(starship)}
-                        title="View Details"
-                      >
-                        <FontAwesomeIcon icon={faMagnifyingGlass} />
-                      </Button>
-                      
-                      <Button 
-                        variant="outline-success" 
-                        size="sm" 
-                        className="me-1 action-button"
-                        onClick={() => onToggleOwned(starship._id)}
-                        title={starship.owned ? "Mark as Not Owned" : "Mark as Owned"}
-                      >
-                        <FontAwesomeIcon icon={starship.owned ? faTimes : faCheck} />
-                      </Button>
-                      
-                      {starship.magazinePdfUrl && (
-                        <Button 
-                          variant="outline-info" 
-                          size="sm"
-                          className="action-button"
-                          onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
-                          title="View Magazine PDF"
-                        >
-                          <FontAwesomeIcon icon={faFilePdf} />
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={10} className="text-center py-4">
-                  <div className="empty-state">
-                    <FontAwesomeIcon icon={faSearch} size="2x" className="mb-3 text-muted" />
-                    <h5>No starships found</h5>
-                    <p className="text-muted">Try adjusting your search or filters</p>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </DataTable>
+      {/* Edition Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {availableEditions.map(edition => (
+            <button
+              key={edition}
+              onClick={() => handleEditionSelect(edition)}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeEdition === edition
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {edition}
+            </button>
+          ))}
+        </nav>
       </div>
       
+      {/* Data Table */}
+      <div className="w-full overflow-hidden">
+        <DataTable
+          data={filteredStarships}
+          columns={columns}
+          keyField="_id"
+          onRowClick={onSelectStarship}
+          onSort={handleSort}
+          sortConfig={{
+            key: sortConfig.key as keyof Starship,
+            direction: sortConfig.direction
+          }}
+          emptyMessage="No starships found. Try adjusting your search or filters."
+        />
+      </div>
+      
+      {/* Empty state shown when no results */}
+      {filteredStarships.length === 0 && (
+        <div className="py-8 text-center">
+          <svg className="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No starships found</h3>
+          <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
+        </div>
+      )}
+      
       {/* Image Modal */}
-      <Modal 
-        show={showImageModal} 
-        onHide={() => setShowImageModal(false)}
-        centered
-        size="lg"
-        className="image-modal"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedShipName}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center p-0">
-          {selectedImage && (
-            <img 
-              src={selectedImage} 
-              alt={selectedShipName} 
-              className="img-fluid modal-image"
-            />
-          )}
-        </Modal.Body>
-      </Modal>
+      {showImageModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowImageModal(false)}></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      {selectedShipName}
+                    </h3>
+                    <div className="mt-2">
+                      {selectedImage && (
+                        <img 
+                          src={selectedImage} 
+                          alt={selectedShipName} 
+                          className="max-w-full max-h-[70vh] mx-auto object-contain"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button 
+                  type="button" 
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setShowImageModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* PDF Viewer Modal */}
-      <PdfViewer
-        pdfUrl={selectedPdfUrl || ''}
-        show={showPdfViewer}
-        onHide={() => setShowPdfViewer(false)}
-        title={selectedPdfTitle}
-      />
-      
-      <style jsx>{`
-        .ship-thumbnail {
-          width: 60px;
-          height: 60px;
-          object-fit: contain;
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }
-        
-        .ship-thumbnail:hover {
-          transform: scale(1.1);
-        }
-        
-        .image-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: 60px;
-          height: 60px;
-        }
-        
-        .no-image-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: 60px;
-          height: 60px;
-          background-color: #f8f9fa;
-          border-radius: 4px;
-        }
-        
-        .owned-row {
-          background-color: rgba(46, 204, 113, 0.05) !important;
-        }
-        
-        .ship-name {
-          font-weight: 500;
-        }
-        
-        .wishlist-toggle {
-          cursor: pointer;
-          font-size: 1.2rem;
-          transition: transform 0.2s ease;
-        }
-        
-        .wishlist-toggle:hover {
-          transform: scale(1.2);
-        }
-        
-        .action-button {
-          border-radius: 50%;
-          width: 32px;
-          height: 32px;
-          padding: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        }
-        
-        .action-button:hover {
-          transform: translateY(-2px);
-        }
-        
-        .ownership-indicator {
-          display: flex;
-          justify-content: center;
-        }
-        
-        .owned-badge, .not-owned-badge {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-        }
-        
-        .owned-badge {
-          background-color: rgba(46, 204, 113, 0.1);
-        }
-        
-        .not-owned-badge {
-          background-color: rgba(189, 195, 199, 0.1);
-        }
-        
-        .sortable-header {
-          position: relative;
-          white-space: nowrap;
-        }
-        
-        .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding: 2rem;
-        }
-        
-        .badge-pill {
-          border-radius: 50rem;
-          padding: 0.5rem 0.75rem;
-        }
-        
-        .badge-text {
-          font-weight: 500;
-        }
-        
-        .modal-image {
-          max-height: 80vh;
-        }
-      `}</style>
+      {showPdfViewer && selectedPdfUrl && (
+        <PdfViewer
+          pdfUrl={selectedPdfUrl}
+          title={selectedPdfTitle}
+          onClose={() => setShowPdfViewer(false)}
+        />
+      )}
     </div>
   );
 };

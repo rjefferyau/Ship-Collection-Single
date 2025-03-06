@@ -1,32 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Button, Form, InputGroup, Dropdown, DropdownButton, Nav, Modal } from 'react-bootstrap';
+import React, { useState, useEffect, Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faTimes, faSearch, faFilter, faSort, faSortUp, faSortDown, faTrash, faMagnifyingGlass, faPlus, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import PdfViewer from './PdfViewer';
-
-interface Starship {
-  _id: string;
-  issue: string;
-  edition: string;
-  shipName: string;
-  faction: string;
-  releaseDate?: Date;
-  imageUrl?: string;
-  owned: boolean;
-  magazinePdfUrl?: string;
-}
-
-interface SortConfig {
-  key: keyof Starship | '';
-  direction: 'asc' | 'desc';
-}
-
-interface Filters {
-  search: string;
-  faction: string[];
-  edition: string[];
-  owned: 'all' | 'owned' | 'not-owned';
-}
+import { Starship, SortConfig, Filters } from '../types';
 
 interface FancyStarshipViewProps {
   starships: Starship[];
@@ -122,53 +99,33 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
         
         // Special handling for issue field - treat as numbers when possible
         if (sortConfig.key === 'issue') {
-          // Extract numeric part from issue strings (e.g., "XL1" -> "1", "XL10" -> "10")
-          const aMatch = a.issue.match(/(\d+)$/);
-          const bMatch = b.issue.match(/(\d+)$/);
+          const aIssue = a.issue || '';
+          const bIssue = b.issue || '';
           
-          const aNum = aMatch ? parseInt(aMatch[0], 10) : NaN;
-          const bNum = bMatch ? parseInt(bMatch[0], 10) : NaN;
+          // Try to convert to numbers if possible
+          const aNum = parseInt(aIssue, 10);
+          const bNum = parseInt(bIssue, 10);
           
-          // If both have numeric parts, compare them numerically
           if (!isNaN(aNum) && !isNaN(bNum)) {
-            // If they have the same prefix (or no prefix), sort by number
-            const aPrefix = a.issue.replace(/\d+$/, '');
-            const bPrefix = b.issue.replace(/\d+$/, '');
-            
-            if (aPrefix === bPrefix) {
-              return sortConfig.direction === 'asc' 
-                ? aNum - bNum 
-                : bNum - aNum;
-            }
-            
-            // If prefixes are different, sort by prefix first
-            return sortConfig.direction === 'asc'
-              ? aPrefix.localeCompare(bPrefix)
-              : bPrefix.localeCompare(aPrefix);
+            return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
           }
           
-          // If only one has a numeric part, prioritize numbers before strings
-          if (!isNaN(aNum) && isNaN(bNum)) {
-            return sortConfig.direction === 'asc' ? -1 : 1;
-          }
-          if (isNaN(aNum) && !isNaN(bNum)) {
-            return sortConfig.direction === 'asc' ? 1 : -1;
-          }
+          // Fall back to string comparison
+          return sortConfig.direction === 'asc' 
+            ? aIssue.localeCompare(bIssue) 
+            : bIssue.localeCompare(aIssue);
         }
         
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        // Handle other fields
+        const aValue = a[sortConfig.key as keyof Starship] || '';
+        const bValue = b[sortConfig.key as keyof Starship] || '';
         
-        // Handle undefined or null values
-        if (aValue === undefined || aValue === null) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (bValue === undefined || bValue === null) return sortConfig.direction === 'asc' ? 1 : -1;
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === 'asc' 
+            ? aValue.localeCompare(bValue) 
+            : bValue.localeCompare(aValue);
+        }
         
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
         return 0;
       });
     }
@@ -195,13 +152,15 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   }, [currentEdition]);
 
   const handleSort = (key: keyof Starship) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    
-    if (sortConfig.key === key) {
-      direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
-    }
-    
-    setSortConfig({ key, direction });
+    setSortConfig(prevConfig => {
+      if (prevConfig.key === key) {
+        return { 
+          key, 
+          direction: prevConfig.direction === 'asc' ? 'desc' : 'asc' 
+        };
+      }
+      return { key, direction: 'asc' };
+    });
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,11 +179,9 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
 
   const handleEditionSelect = (edition: string) => {
     setActiveEdition(edition);
-    setFilters(prev => ({
-      ...prev,
-      edition: [edition]
-    }));
+    setFilters(prev => ({ ...prev, edition: [edition] }));
     
+    // Call the parent component's edition change handler if provided
     if (onEditionChange) {
       onEditionChange(edition);
     }
@@ -234,13 +191,12 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     setFilters(prev => ({ ...prev, owned: value }));
   };
 
-  // Format date for display
   const formatDate = (date: Date | undefined) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleDateString();
+    if (!date) return 'Unknown';
+    const d = new Date(date);
+    return d.toLocaleDateString();
   };
 
-  // Add handler for image click
   const handleImageClick = (imageUrl: string | undefined, shipName: string) => {
     if (imageUrl) {
       setSelectedImage(imageUrl);
@@ -249,243 +205,336 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     }
   };
 
-  // Add handler for PDF click
   const handlePdfClick = (pdfUrl: string | undefined, shipName: string) => {
     if (pdfUrl) {
       setSelectedPdfUrl(pdfUrl);
-      setSelectedPdfTitle(`${shipName} - Magazine`);
+      setSelectedPdfTitle(shipName);
       setShowPdfViewer(true);
     }
   };
 
   return (
     <div>
-      <div className="mb-4">
-        <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
-          <div className="d-flex flex-wrap align-items-center">
-            <InputGroup className="me-2 mb-2" style={{ width: 'auto' }}>
-              <InputGroup.Text>
-                <FontAwesomeIcon icon={faSearch} />
-              </InputGroup.Text>
-              <Form.Control
+      <div className="mb-6">
+        <div className="flex flex-wrap justify-between items-center mb-4">
+          <div className="flex flex-wrap items-center space-x-2">
+            <div className="relative flex items-center mb-2">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+              </div>
+              <input
                 type="text"
                 placeholder="Search ships..."
                 value={filters.search}
                 onChange={handleSearchChange}
-                style={{ width: '200px' }}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-48"
               />
-            </InputGroup>
+            </div>
             
-            <DropdownButton 
-              id="dropdown-faction-filter" 
-              title={
-                <span>
-                  <FontAwesomeIcon icon={faFilter} /> Faction
+            <div className="relative inline-block text-left mb-2">
+              <button
+                type="button"
+                className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                id="faction-menu-button"
+                aria-expanded="true"
+                aria-haspopup="true"
+                onClick={() => document.getElementById('faction-dropdown')?.classList.toggle('hidden')}
+              >
+                <FontAwesomeIcon icon={faFilter} className="mr-2" /> Faction
+                {filters.faction.length > 0 && (
+                  <span className="ml-1 bg-indigo-100 text-indigo-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                    {filters.faction.length}
+                  </span>
+                )}
+              </button>
+              <div
+                id="faction-dropdown"
+                className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="faction-menu-button"
+                tabIndex={-1}
+              >
+                <div className="py-1" role="none">
+                  {availableFactions.map(faction => (
+                    <button
+                      key={faction}
+                      onClick={() => toggleFactionFilter(faction)}
+                      className={`block px-4 py-2 text-sm w-full text-left ${
+                        filters.faction.includes(faction)
+                          ? 'bg-indigo-100 text-indigo-900'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                      role="menuitem"
+                    >
+                      {faction}
+                    </button>
+                  ))}
                   {filters.faction.length > 0 && (
-                    <Badge bg="primary" className="ms-1">{filters.faction.length}</Badge>
+                    <button
+                      onClick={() => setFilters(prev => ({ ...prev, faction: [] }))}
+                      className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                      role="menuitem"
+                    >
+                      Clear Faction Filters
+                    </button>
                   )}
-                </span>
-              }
-              variant="outline-secondary"
-              className="me-2 mb-2"
-            >
-              {availableFactions.map(faction => (
-                <Dropdown.Item 
-                  key={faction} 
-                  onClick={() => toggleFactionFilter(faction)}
-                  active={filters.faction.includes(faction)}
-                >
-                  {faction}
-                </Dropdown.Item>
-              ))}
-              {filters.faction.length > 0 && (
-                <Dropdown.Item 
-                  onClick={() => setFilters(prev => ({ ...prev, faction: [] }))}
-                  className="text-danger"
-                >
-                  Clear Faction Filters
-                </Dropdown.Item>
-              )}
-            </DropdownButton>
+                </div>
+              </div>
+            </div>
             
-            <Dropdown className="me-2 mb-2">
-              <Dropdown.Toggle variant="outline-secondary" id="dropdown-owned-filter">
+            <div className="relative inline-block text-left mb-2">
+              <button
+                type="button"
+                className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                id="owned-menu-button"
+                aria-expanded="true"
+                aria-haspopup="true"
+                onClick={() => document.getElementById('owned-dropdown')?.classList.toggle('hidden')}
+              >
                 {filters.owned === 'all' ? 'All Ships' : 
                  filters.owned === 'owned' ? 'Owned Only' : 'Not Owned Only'}
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item 
-                  onClick={() => setOwnedFilter('all')}
-                  active={filters.owned === 'all'}
-                >
-                  All Ships
-                </Dropdown.Item>
-                <Dropdown.Item 
-                  onClick={() => setOwnedFilter('owned')}
-                  active={filters.owned === 'owned'}
-                >
-                  Owned Only
-                </Dropdown.Item>
-                <Dropdown.Item 
-                  onClick={() => setOwnedFilter('not-owned')}
-                  active={filters.owned === 'not-owned'}
-                >
-                  Not Owned Only
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+              </button>
+              <div
+                id="owned-dropdown"
+                className="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="owned-menu-button"
+                tabIndex={-1}
+              >
+                <div className="py-1" role="none">
+                  <button
+                    onClick={() => setOwnedFilter('all')}
+                    className={`block px-4 py-2 text-sm w-full text-left ${
+                      filters.owned === 'all'
+                        ? 'bg-indigo-100 text-indigo-900'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    role="menuitem"
+                  >
+                    All Ships
+                  </button>
+                  <button
+                    onClick={() => setOwnedFilter('owned')}
+                    className={`block px-4 py-2 text-sm w-full text-left ${
+                      filters.owned === 'owned'
+                        ? 'bg-indigo-100 text-indigo-900'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    role="menuitem"
+                  >
+                    Owned Only
+                  </button>
+                  <button
+                    onClick={() => setOwnedFilter('not-owned')}
+                    className={`block px-4 py-2 text-sm w-full text-left ${
+                      filters.owned === 'not-owned'
+                        ? 'bg-indigo-100 text-indigo-900'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    role="menuitem"
+                  >
+                    Not Owned Only
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="mb-2">
-            <Badge bg="primary" className="me-2">
+            <span className="bg-indigo-100 text-indigo-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">
               {filteredStarships.length} ships
-            </Badge>
-            <Badge bg="success">
+            </span>
+            <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
               {filteredStarships.filter(s => s.owned).length} owned
-            </Badge>
+            </span>
           </div>
         </div>
         
         {/* Edition Tabs */}
-        <Nav variant="tabs" className="mb-3">
-          {availableEditions.map(edition => (
-            <Nav.Item key={edition}>
-              <Nav.Link 
-                active={activeEdition === edition}
+        <div className="border-b border-gray-200">
+          <nav className="flex -mb-px">
+            {availableEditions.map(edition => (
+              <button
+                key={edition}
                 onClick={() => handleEditionSelect(edition)}
+                className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                  activeEdition === edition
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
                 {edition}
-              </Nav.Link>
-            </Nav.Item>
-          ))}
-        </Nav>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
       
-      <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredStarships.map(starship => (
-          <Col key={starship._id}>
-            <Card className="h-100 shadow-sm">
-              <div className="position-relative">
-                {starship.imageUrl ? (
-                  <Card.Img 
-                    variant="top" 
+          <div key={starship._id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="relative">
+              {starship.imageUrl ? (
+                <div 
+                  className="h-48 flex items-center justify-center p-4 cursor-pointer"
+                  onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                >
+                  <img 
                     src={starship.imageUrl} 
                     alt={starship.shipName}
-                    style={{ height: '180px', objectFit: 'contain', padding: '1rem', cursor: 'pointer', borderRadius: '8px' }}
-                    onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                    className="h-full object-contain"
                     title="Click to view larger image"
                   />
-                ) : (
-                  <div 
-                    className="bg-light d-flex align-items-center justify-content-center" 
-                    style={{ height: '180px' }}
-                  >
-                    <span className="text-muted">No image available</span>
-                  </div>
-                )}
-                <Badge 
-                  bg={starship.owned ? "success" : "secondary"}
-                  className="position-absolute top-0 end-0 m-2"
-                >
-                  {starship.owned ? "Owned" : "Not Owned"}
-                </Badge>
-              </div>
-              
-              <Card.Body>
-                <Card.Title className="d-flex justify-content-between align-items-center">
-                  <span>Issue {starship.issue}</span>
-                  <Badge bg="info">{starship.edition}</Badge>
-                </Card.Title>
-                <Card.Text className="mb-1">
-                  <strong>{starship.shipName}</strong>
-                </Card.Text>
-                <Card.Text className="text-muted mb-1">
-                  {starship.faction}
-                </Card.Text>
-                <Card.Text className="text-muted small">
-                  Released: {formatDate(starship.releaseDate)}
-                </Card.Text>
-              </Card.Body>
-              
-              <Card.Footer className="bg-white border-top-0">
-                <div className="d-flex justify-content-between">
-                  <Button 
-                    variant="outline-primary" 
-                    size="sm"
-                    onClick={() => onSelectStarship(starship)}
-                    title="View Details"
-                  >
-                    <FontAwesomeIcon icon={faMagnifyingGlass} />
-                  </Button>
-                  
-                  <div>
-                    {starship.magazinePdfUrl && (
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm"
-                        className="me-2"
-                        onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
-                        title="View Magazine PDF"
-                      >
-                        <FontAwesomeIcon icon={faFilePdf} />
-                      </Button>
-                    )}
-                    
-                    <Button 
-                      variant={starship.owned ? "outline-danger" : "outline-success"} 
-                      size="sm"
-                      onClick={() => onToggleOwned(starship._id)}
-                      title={starship.owned ? "Remove from Collection" : "Add to Collection"}
-                    >
-                      <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
-                    </Button>
-                  </div>
                 </div>
-              </Card.Footer>
-            </Card>
-          </Col>
+              ) : (
+                <div className="h-48 bg-gray-100 flex items-center justify-center">
+                  <span className="text-gray-500">No image available</span>
+                </div>
+              )}
+              <span 
+                className={`absolute top-2 right-2 text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  starship.owned 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}
+              >
+                {starship.owned ? "Owned" : "Not Owned"}
+              </span>
+            </div>
+            
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium">Issue {starship.issue}</span>
+                <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                  {starship.edition}
+                </span>
+              </div>
+              <h3 className="font-bold text-gray-900 mb-1">
+                {starship.shipName}
+              </h3>
+              <p className="text-gray-600 text-sm mb-1">
+                {starship.faction}
+              </p>
+              <p className="text-gray-500 text-xs">
+                Released: {formatDate(starship.releaseDate)}
+              </p>
+            </div>
+            
+            <div className="px-4 py-3 bg-gray-50 flex justify-between">
+              <button 
+                className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => onSelectStarship(starship)}
+                title="View Details"
+              >
+                <FontAwesomeIcon icon={faMagnifyingGlass} />
+              </button>
+              
+              <div className="flex space-x-2">
+                {starship.magazinePdfUrl && (
+                  <button 
+                    className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
+                    title="View Magazine PDF"
+                  >
+                    <FontAwesomeIcon icon={faFilePdf} />
+                  </button>
+                )}
+                
+                <button 
+                  className={`inline-flex items-center px-2.5 py-1.5 border text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    starship.owned 
+                      ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500' 
+                      : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
+                  }`}
+                  onClick={() => onToggleOwned(starship._id)}
+                  title={starship.owned ? "Remove from Collection" : "Add to Collection"}
+                >
+                  <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
+                </button>
+              </div>
+            </div>
+          </div>
         ))}
-      </Row>
+      </div>
       
       {filteredStarships.length === 0 && (
-        <div className="text-center p-5 bg-light rounded">
-          <p className="mb-0">No starships match your current filters.</p>
+        <div className="text-center p-8 bg-gray-50 rounded-lg">
+          <p className="text-gray-500">No starships match your current filters.</p>
         </div>
       )}
       
       {/* Image Modal */}
-      <Modal 
-        show={showImageModal} 
-        onHide={() => setShowImageModal(false)} 
-        size="lg" 
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>{selectedShipName}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="text-center">
-          {selectedImage && (
-            <img 
-              src={selectedImage} 
-              alt={selectedShipName} 
-              style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '12px', boxShadow: '0 5px 15px rgba(0, 0, 0, 0.3)' }} 
-            />
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowImageModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <Transition.Root show={showImageModal} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={() => setShowImageModal(false)}>
+          <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+            </Transition.Child>
+
+            {/* This element is to trick the browser into centering the modal contents. */}
+            <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enterTo="opacity-100 translate-y-0 sm:scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            >
+              <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                      <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
+                        {selectedShipName}
+                      </Dialog.Title>
+                      <div className="mt-2">
+                        {selectedImage && (
+                          <img 
+                            src={selectedImage} 
+                            alt={selectedShipName} 
+                            className="w-full object-contain max-h-96"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                  <button
+                    type="button"
+                    className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                    onClick={() => setShowImageModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition.Root>
       
       {/* PDF Viewer Modal */}
-      {selectedPdfUrl && (
+      {showPdfViewer && selectedPdfUrl && (
         <PdfViewer
           pdfUrl={selectedPdfUrl}
-          show={showPdfViewer}
-          onHide={() => setShowPdfViewer(false)}
           title={selectedPdfTitle}
+          onClose={() => setShowPdfViewer(false)}
         />
       )}
     </div>

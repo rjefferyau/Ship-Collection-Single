@@ -1,7 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { Container, Row, Col, Card, Button, Breadcrumb } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faHome, faCog, faIcons, faUsers, 
@@ -21,156 +20,139 @@ const SetupPage: React.FC = () => {
         <title>Setup - Starship Collection Manager</title>
       </Head>
       
-      <div className="page-header">
-        <h1>Setup</h1>
-        <Breadcrumb>
-          <Breadcrumb.Item href="/">
-            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-          </Breadcrumb.Item>
-          <Breadcrumb.Item active>
-            <FontAwesomeIcon icon={faCog} className="me-2" /> Setup
-          </Breadcrumb.Item>
-        </Breadcrumb>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Setup</h1>
+        <nav className="flex" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-1 md:space-x-3">
+            <li className="inline-flex items-center">
+              <a href="/" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+                <FontAwesomeIcon icon={faHome} className="mr-2" /> Home
+              </a>
+            </li>
+            <li>
+              <div className="flex items-center">
+                <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+                </svg>
+                <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2">
+                  <FontAwesomeIcon icon={faCog} className="mr-2" /> Setup
+                </span>
+              </div>
+            </li>
+          </ol>
+        </nav>
       </div>
       
-      <p className="lead mb-4">
+      <p className="text-gray-600 mb-6">
         Configure your collection manager settings and preferences.
       </p>
       
-      <Row>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Icon Setup */}
-        <Col md={4} className="mb-4">
-          <Card className="h-100">
-            <Card.Body className="d-flex flex-column align-items-center text-center">
-              <div className="icon-container mb-3">
-                <FontAwesomeIcon icon={faIcons} size="2x" />
-              </div>
-              <h4>Icon Setup</h4>
-              <p className="text-muted">
-                Customize the icons used throughout the application.
-              </p>
-              <div className="mt-auto">
-                <Button 
-                  variant="primary" 
-                  className="d-flex align-items-center mx-auto"
-                  onClick={() => navigateTo('/icon-setup')}
-                >
-                  Configure Icons <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="p-6 flex flex-col items-center text-center h-full">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+              <FontAwesomeIcon icon={faIcons} size="lg" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">Icon Setup</h4>
+            <p className="text-gray-600 mb-6">
+              Customize the icons used throughout the application.
+            </p>
+            <div className="mt-auto">
+              <button 
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => navigateTo('/icon-setup')}
+              >
+                Configure Icons <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* Faction Setup */}
-        <Col md={4} className="mb-4">
-          <Card className="h-100">
-            <Card.Body className="d-flex flex-column align-items-center text-center">
-              <div className="icon-container mb-3">
-                <FontAwesomeIcon icon={faUsers} size="2x" />
-              </div>
-              <h4>Faction Setup</h4>
-              <p className="text-muted">
-                Manage factions and races for your starship collection.
-              </p>
-              <div className="mt-auto">
-                <Button 
-                  variant="primary" 
-                  className="d-flex align-items-center mx-auto"
-                  onClick={() => navigateTo('/faction-setup')}
-                >
-                  Manage Factions <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="p-6 flex flex-col items-center text-center h-full">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+              <FontAwesomeIcon icon={faUsers} size="lg" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">Faction Setup</h4>
+            <p className="text-gray-600 mb-6">
+              Manage factions and races for your starship collection.
+            </p>
+            <div className="mt-auto">
+              <button 
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => navigateTo('/faction-setup')}
+              >
+                Manage Factions <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* Edition Setup */}
-        <Col md={4} className="mb-4">
-          <Card className="h-100">
-            <Card.Body className="d-flex flex-column align-items-center text-center">
-              <div className="icon-container mb-3">
-                <FontAwesomeIcon icon={faBookOpen} size="2x" />
-              </div>
-              <h4>Edition Setup</h4>
-              <p className="text-muted">
-                Manage editions and series for your starship collection.
-              </p>
-              <div className="mt-auto">
-                <Button 
-                  variant="primary" 
-                  className="d-flex align-items-center mx-auto"
-                  onClick={() => navigateTo('/edition-setup')}
-                >
-                  Manage Editions <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="p-6 flex flex-col items-center text-center h-full">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+              <FontAwesomeIcon icon={faBookOpen} size="lg" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">Edition Setup</h4>
+            <p className="text-gray-600 mb-6">
+              Manage editions and series for your starship collection.
+            </p>
+            <div className="mt-auto">
+              <button 
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => navigateTo('/edition-setup')}
+              >
+                Manage Editions <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* Import/Export */}
-        <Col md={4} className="mb-4">
-          <Card className="h-100">
-            <Card.Body className="d-flex flex-column align-items-center text-center">
-              <div className="icon-container mb-3">
-                <FontAwesomeIcon icon={faFileImport} size="2x" />
-              </div>
-              <h4>Import/Export</h4>
-              <p className="text-muted">
-                Import or export your collection data.
-              </p>
-              <div className="mt-auto">
-                <Button 
-                  variant="primary" 
-                  className="d-flex align-items-center mx-auto"
-                  onClick={() => navigateTo('/import-export')}
-                >
-                  Import/Export Data <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="p-6 flex flex-col items-center text-center h-full">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+              <FontAwesomeIcon icon={faFileImport} size="lg" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">Import/Export</h4>
+            <p className="text-gray-600 mb-6">
+              Import or export your collection data.
+            </p>
+            <div className="mt-auto">
+              <button 
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => navigateTo('/import-export')}
+              >
+                Import/Export Data <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
         
         {/* Currency Setup */}
-        <Col md={4} className="mb-4">
-          <Card className="h-100">
-            <Card.Body className="d-flex flex-column align-items-center text-center">
-              <div className="icon-container mb-3">
-                <FontAwesomeIcon icon={faDollarSign} size="2x" />
-              </div>
-              <h4>Currency Setup</h4>
-              <p className="text-muted">
-                Configure your preferred currency for prices.
-              </p>
-              <div className="mt-auto">
-                <Button 
-                  variant="primary" 
-                  className="d-flex align-items-center mx-auto"
-                  onClick={() => navigateTo('/currency-setup')}
-                >
-                  Configure Currency <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      
-      <style jsx>{`
-        .icon-container {
-          width: 70px;
-          height: 70px;
-          border-radius: 50%;
-          background-color: #f8f9fa;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #007bff;
-        }
-      `}</style>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="p-6 flex flex-col items-center text-center h-full">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+              <FontAwesomeIcon icon={faDollarSign} size="lg" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">Currency Setup</h4>
+            <p className="text-gray-600 mb-6">
+              Configure your preferred currency for prices.
+            </p>
+            <div className="mt-auto">
+              <button 
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => navigateTo('/currency-setup')}
+              >
+                Configure Currency <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 };

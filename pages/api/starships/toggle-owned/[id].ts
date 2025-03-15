@@ -28,49 +28,55 @@ export default async function handler(
       return res.status(400).json({ success: false, error: 'Invalid ID format' });
     }
 
-    // Try to find the starship using raw MongoDB queries
+    // Try to find the starship using the Starship model
     console.log(`Looking for starship with ID: ${id}`);
     
-    // Get the raw MongoDB connection
-    const db = mongoose.connection.db;
+    // First try to find by direct ID
+    let starship = await Starship.findById(id);
     
-    // Try to find the document in starshipv4 collection
-    let rawDoc = await db.collection('starshipv4').findOne({ _id: id as any });
-    let collectionName = 'starshipv4';
-    
-    if (!rawDoc) {
-      console.log(`Document not found in starshipv4, trying starshipv3 collection`);
-      // Try to find the document in starshipv3 collection
-      rawDoc = await db.collection('starshipv3').findOne({ _id: id as any });
-      collectionName = 'starshipv3';
+    // If not found, check if it's an old ID
+    if (!starship && mongoose.Types.ObjectId.isValid(id)) {
+      console.log(`Starship not found with ID ${id}, checking if it's an old ID...`);
+      
+      // Try to find by originalId
+      starship = await Starship.findOne({ originalId: new mongoose.Types.ObjectId(id) });
+      
+      // If still not found, check the ID mapping collection
+      if (!starship) {
+        const idMappingCollection = mongoose.connection.collection('starshipIdMapping');
+        const mapping = await idMappingCollection.findOne({ oldId: new mongoose.Types.ObjectId(id) });
+        
+        if (mapping) {
+          console.log(`Found ID mapping: ${id} -> ${mapping.newId}`);
+          starship = await Starship.findById(mapping.newId);
+        }
+      }
     }
     
-    if (!rawDoc) {
-      console.log(`Starship not found in any collection`);
+    if (!starship) {
+      console.log(`Starship not found with ID ${id} or as originalId`);
       return res.status(404).json({ success: false, error: 'Starship not found' });
     }
     
-    console.log(`Document found in ${collectionName}: ${rawDoc._id}`);
+    console.log(`Found starship: ${starship._id}`);
     
     // Toggle the owned status
-    console.log(`Current owned status: ${rawDoc.owned}, toggling to: ${!rawDoc.owned}`);
-    const newOwnedStatus = !rawDoc.owned;
+    console.log(`Current owned status: ${starship.owned}, toggling to: ${!starship.owned}`);
+    starship.owned = !starship.owned;
     
-    // Update the document
-    const result = await db.collection(collectionName).updateOne(
-      { _id: id as any },
-      { $set: { 
-        owned: newOwnedStatus,
-        updatedAt: new Date()
-      }}
-    );
+    // If marking as owned, clear wishlist and on-order status
+    if (starship.owned) {
+      starship.wishlist = false;
+      starship.wishlistPriority = undefined;
+      starship.onOrder = false;
+    }
     
-    console.log(`Update result: ${result.modifiedCount} document(s) modified`);
+    // Save the updated starship
+    await starship.save();
     
-    // Get the updated document
-    const updatedDoc = await db.collection(collectionName).findOne({ _id: id as any });
+    console.log(`Starship updated successfully`);
     
-    res.status(200).json({ success: true, data: updatedDoc });
+    res.status(200).json({ success: true, data: starship });
   } catch (error: any) {
     console.error('Error in toggle-owned API:', error);
     res.status(400).json({ success: false, error: error.message || 'An error occurred' });

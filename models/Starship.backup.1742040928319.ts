@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IStarship extends Document {
-  originalId?: mongoose.Types.ObjectId; // Reference to the original ID from starshipv4
   issue: string;
   edition: string;
   shipName: string;  // "Ship Name" from CSV
@@ -25,7 +24,6 @@ export interface IStarship extends Document {
 }
 
 const StarshipSchema: Schema = new Schema({
-  originalId: { type: Schema.Types.ObjectId, ref: 'Starship', index: true },
   issue: { type: String, required: true },
   edition: { type: String, required: true },
   shipName: { type: String, required: true },
@@ -47,8 +45,7 @@ const StarshipSchema: Schema = new Schema({
   conditionPhotos: [{ type: String }],
   lastInspectionDate: { type: Date }
 }, {
-  timestamps: true,
-  collection: 'starshipv5'
+  timestamps: true
 });
 
 // Create a compound unique index for issue and edition
@@ -58,7 +55,7 @@ StarshipSchema.index({ issue: 1, edition: 1 }, { unique: true });
 let Starship: Model<IStarship>;
 
 // Use a different model name to avoid conflicts with existing models
-const MODEL_NAME = 'StarshipV5';
+const MODEL_NAME = 'StarshipV4';
 
 try {
   // Try to get the existing model

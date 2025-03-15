@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import PriceVault from '../components/PriceVault';
+import InsuranceReport from '../components/InsuranceReport';
+import { Starship as ApiStarship } from '../pages/api/starships';
 
-interface Starship {
+// Define a local interface that matches what PriceVault expects
+interface PriceVaultStarship {
   _id: string;
   issue: string;
   edition: string;
@@ -16,15 +19,25 @@ interface Starship {
 }
 
 const PriceVaultPage: React.FC = () => {
-  const [starships, setStarships] = useState<Starship[]>([]);
+  // Maintain two separate state variables for the different component types
+  const [priceVaultStarships, setPriceVaultStarships] = useState<PriceVaultStarship[]>([]);
+  const [apiStarships, setApiStarships] = useState<ApiStarship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'owned' | 'missing'>('all');
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
+  // Add owner information state for the insurance report
+  const [ownerInfo, setOwnerInfo] = useState({
+    name: '',
+    address: '',
+    email: '',
+    phone: ''
+  });
 
   useEffect(() => {
     fetchStarships();
+    fetchOwnerInfo();
   }, []);
 
   const fetchStarships = async () => {
@@ -39,11 +52,43 @@ const PriceVaultPage: React.FC = () => {
       }
       
       const data = await response.json();
-      setStarships(data.data || []);
+      // Store the original API data
+      setApiStarships(data.data || []);
+      
+      // Convert API starships to the format expected by PriceVault
+      const convertedStarships: PriceVaultStarship[] = (data.data || []).map((ship: ApiStarship) => ({
+        _id: ship._id,
+        issue: ship.issue,
+        edition: ship.edition,
+        shipName: ship.shipName,
+        faction: ship.faction,
+        releaseDate: ship.releaseDate ? new Date(ship.releaseDate) : undefined,
+        imageUrl: ship.imageUrl,
+        owned: ship.owned,
+        retailPrice: ship.retailPrice,
+        purchasePrice: ship.purchasePrice,
+        marketValue: ship.marketValue
+      }));
+      setPriceVaultStarships(convertedStarships);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOwnerInfo = async () => {
+    try {
+      const response = await fetch('/api/owner-info');
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data) {
+          setOwnerInfo(data.data);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch owner info:', err);
     }
   };
 
@@ -87,7 +132,9 @@ const PriceVaultPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
           <p className="text-gray-600">Track and manage pricing information for your collection</p>
         </div>
-        <div>
+        <div className="flex space-x-2">
+          <InsuranceReport starships={apiStarships} ownerInfo={ownerInfo} />
+          
           <button 
             className={`px-4 py-2 rounded-md border border-indigo-500 ${isUpdatingPrices || loading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
             onClick={handleSetPurchasePrices}
@@ -173,7 +220,7 @@ const PriceVaultPage: React.FC = () => {
             </div>
           ) : (
             <PriceVault
-              starships={starships}
+              starships={priceVaultStarships}
               viewMode={viewMode}
             />
           )}

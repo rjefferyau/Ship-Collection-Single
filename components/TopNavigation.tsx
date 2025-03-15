@@ -188,6 +188,14 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   >
                     Currency Setup
                   </Link>
+                  <Link 
+                    href="/database-check" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Database Check & Maintenance
+                  </Link>
                   <div className="border-t border-gray-100 my-1"></div>
                   <Link 
                     href="/import-export" 
@@ -330,6 +338,9 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
               </Link>
               <Link href="/currency-setup" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
                 Currency Setup
+              </Link>
+              <Link href="/database-check" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
+                Database Check & Maintenance
               </Link>
               <Link href="/import-export" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
                 Import/Export

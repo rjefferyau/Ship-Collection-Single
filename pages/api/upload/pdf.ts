@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import dbConnect from '../../../lib/mongodb';
 import Starship from '../../../models/Starship';
+import mongoose from 'mongoose';
 
 // Disable the default body parser to handle form data
 export const config = {
@@ -65,6 +66,11 @@ export default async function handler(
         return res.status(400).json({ success: false, error: 'No starship ID provided or multiple IDs received' });
       }
       
+      // Check if the ID is a valid ObjectId
+      if (!mongoose.Types.ObjectId.isValid(starshipId)) {
+        return res.status(400).json({ success: false, error: 'Invalid starship ID format' });
+      }
+      
       // Check if the file is a PDF
       const fileExt = path.extname(file.originalFilename || 'document.pdf').toLowerCase();
       if (fileExt !== '.pdf') {
@@ -103,16 +109,40 @@ export default async function handler(
       const magazinePdfUrl = `/uploads/magazines/${fileName}`;
       
       try {
-        const starship = await Starship.findByIdAndUpdate(
-          starshipId,
-          { magazinePdfUrl },
-          { new: true }
-        );
+        // Try to find the starship by ID
+        let starship = await Starship.findById(starshipId);
         
+        // If not found, check if we're using an old ID and try to find by originalId
         if (!starship) {
-          return res.status(404).json({ success: false, error: 'Starship not found' });
+          console.log(`Starship not found with ID ${starshipId}, checking if it's an old ID...`);
+          
+          // Try to find by originalId
+          starship = await Starship.findOne({ originalId: starshipId });
+          
+          if (!starship) {
+            // Check if there's a mapping in the ID mapping collection
+            const idMappingCollection = mongoose.connection.collection('starshipIdMapping');
+            const mapping = await idMappingCollection.findOne({ oldId: new mongoose.Types.ObjectId(starshipId) });
+            
+            if (mapping) {
+              console.log(`Found ID mapping: ${starshipId} -> ${mapping.newId}`);
+              starship = await Starship.findById(mapping.newId);
+            }
+          }
         }
         
+        if (!starship) {
+          return res.status(404).json({ 
+            success: false, 
+            error: 'Starship not found with either current ID or as originalId' 
+          });
+        }
+        
+        // Update the starship
+        starship.magazinePdfUrl = magazinePdfUrl;
+        await starship.save();
+        
+        console.log(`Successfully updated magazine PDF for starship ${starship._id}`);
         return res.status(200).json({ 
           success: true, 
           data: starship,

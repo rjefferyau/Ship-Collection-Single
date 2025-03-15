@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faHome, faCog, faIcons, faUsers, 
-  faBookOpen, faFileImport, faDollarSign, faArrowRight
+  faBookOpen, faFileImport, faDollarSign, faArrowRight, faDatabase
 } from '@fortawesome/free-solid-svg-icons';
 
 const SetupPage: React.FC = () => {
@@ -148,6 +148,27 @@ const SetupPage: React.FC = () => {
                 onClick={() => navigateTo('/currency-setup')}
               >
                 Configure Currency <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Database Check - NEW */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+          <div className="p-6 flex flex-col items-center text-center h-full">
+            <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+              <FontAwesomeIcon icon={faDatabase} size="lg" />
+            </div>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">Database Check</h4>
+            <p className="text-gray-600 mb-6">
+              View database information, collection statistics, and storage usage.
+            </p>
+            <div className="mt-auto">
+              <button 
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => navigateTo('/database-check')}
+              >
+                Check Database <FontAwesomeIcon icon={faArrowRight} className="ml-2" />
               </button>
             </div>
           </div>

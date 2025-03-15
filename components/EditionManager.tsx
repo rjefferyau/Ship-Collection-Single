@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button, Form, ListGroup, Badge, Spinner, Alert, Modal, InputGroup, Card } from 'react-bootstrap';
+import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faPlus, faSync, faMagic, faDollarSign, faRefresh, faUpload, faDownload, faFileAlt } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faPlus, faSync, faMagic, faDollarSign, faRefresh, faUpload, faDownload, faFileAlt, faTimes, faExclamationTriangle, faInfoCircle, faCheckCircle } from '@fortawesome/free-solid-svg-icons';
 
 interface Edition {
   _id: string;
@@ -311,15 +310,14 @@ const EditionManager: React.FC = () => {
       <h2>Manage Editions</h2>
       
       <div className="mb-4">
-        <Button 
-          variant="outline-primary" 
-          className="me-2 mb-2"
+        <button 
+          className="btn btn-outline-primary me-2 mb-2"
           onClick={handleImport}
           disabled={isImporting}
         >
           {isImporting ? (
             <>
-              <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               <span className="ms-2">Importing...</span>
             </>
           ) : (
@@ -328,17 +326,16 @@ const EditionManager: React.FC = () => {
               Import Editions from Starships
             </>
           )}
-        </Button>
+        </button>
         
-        <Button 
-          variant="outline-success" 
-          className="me-2 mb-2"
+        <button 
+          className="btn btn-outline-success me-2 mb-2"
           onClick={handleUpdateStarships}
           disabled={isUpdating}
         >
           {isUpdating ? (
             <>
-              <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               <span className="ms-2">Updating...</span>
             </>
           ) : (
@@ -347,41 +344,40 @@ const EditionManager: React.FC = () => {
               Standardize Edition Names in Starships
             </>
           )}
-        </Button>
+        </button>
 
-        <Button 
-          variant="outline-info" 
-          className="mb-2"
+        <button 
+          className="btn btn-outline-info mb-2"
           onClick={() => setShowCsvModal(true)}
         >
           <FontAwesomeIcon icon={faUpload} className="me-2" />
           Import Editions from CSV
-        </Button>
+        </button>
       </div>
       
-      {importStatus && <Alert variant="info" className="mb-3">{importStatus}</Alert>}
-      {updateStatus && <Alert variant="info" className="mb-3">{updateStatus}</Alert>}
-      {priceUpdateStatus && <Alert variant="info" className="mb-3">{priceUpdateStatus}</Alert>}
-      {csvUploadStatus && <Alert variant="info" className="mb-3">{csvUploadStatus}</Alert>}
-      {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
-      {success && <Alert variant="success" className="mb-3">{success}</Alert>}
+      {importStatus && <div className="alert alert-info mb-3">{importStatus}</div>}
+      {updateStatus && <div className="alert alert-info mb-3">{updateStatus}</div>}
+      {priceUpdateStatus && <div className="alert alert-info mb-3">{priceUpdateStatus}</div>}
+      {csvUploadStatus && <div className="alert alert-info mb-3">{csvUploadStatus}</div>}
+      {error && <div className="alert alert-danger mb-3">{error}</div>}
+      {success && <div className="alert alert-success mb-3">{success}</div>}
       
       <div className="row">
         <div className="col-md-6">
           <h3>Editions List</h3>
           {loading && !editions.length ? (
             <div className="text-center my-4">
-              <Spinner animation="border" role="status">
+              <div className="spinner-border" role="status">
                 <span className="visually-hidden">Loading...</span>
-              </Spinner>
+              </div>
             </div>
           ) : (
-            <ListGroup className="mb-4">
+            <div className="list-group mb-4">
               {editions.length === 0 ? (
-                <ListGroup.Item>No editions found</ListGroup.Item>
+                <div className="list-group-item">No editions found</div>
               ) : (
                 editions.map(edition => (
-                  <ListGroup.Item key={edition._id} className="d-flex justify-content-between align-items-center">
+                  <div key={edition._id} className="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                       <div className="fw-bold">{edition.name}</div>
                       {edition.description && <small className="text-muted">{edition.description}</small>}
@@ -396,201 +392,216 @@ const EditionManager: React.FC = () => {
                     </div>
                     <div>
                       {edition.retailPrice && (
-                        <Button 
-                          variant="outline-success" 
-                          size="sm"
-                          className="me-2"
+                        <button 
+                          className="btn btn-outline-success btn-sm me-2"
                           onClick={() => handleUpdatePrices(edition)}
                           disabled={isUpdatingPrices}
                           title="Update all starships in this edition with this retail price"
                         >
                           {isUpdatingPrices ? (
-                            <Spinner animation="border" size="sm" />
+                            <div className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
                           ) : (
                             <FontAwesomeIcon icon={faRefresh} />
                           )}
-                        </Button>
+                        </button>
                       )}
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm" 
-                        className="me-2"
+                      <button 
+                        className="btn btn-outline-primary btn-sm me-2"
                         onClick={() => handleEdit(edition)}
                       >
                         <FontAwesomeIcon icon={faEdit} />
-                      </Button>
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm"
+                      </button>
+                      <button 
+                        className="btn btn-outline-danger btn-sm"
                         onClick={() => confirmDelete(edition)}
                       >
                         <FontAwesomeIcon icon={faTrash} />
-                      </Button>
+                      </button>
                     </div>
-                  </ListGroup.Item>
+                  </div>
                 ))
               )}
-            </ListGroup>
+            </div>
           )}
         </div>
         
         <div className="col-md-6">
           <h3>{editMode ? 'Edit Edition' : 'Add New Edition'}</h3>
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control 
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label htmlFor="editionName" className="form-label">Name</label>
+              <input 
                 type="text" 
+                className="form-control" 
+                id="editionName" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)}
                 required
               />
-            </Form.Group>
+            </div>
             
-            <Form.Group className="mb-3">
-              <Form.Label>Description (optional)</Form.Label>
-              <Form.Control 
-                as="textarea" 
-                rows={3} 
+            <div className="mb-3">
+              <label htmlFor="editionDescription" className="form-label">Description (optional)</label>
+              <textarea 
+                className="form-control" 
+                id="editionDescription" 
+                rows="3" 
                 value={description} 
                 onChange={(e) => setDescription(e.target.value)}
-              />
-            </Form.Group>
+              ></textarea>
+            </div>
             
-            <Form.Group className="mb-3" controlId="editionRetailPrice">
-              <Form.Label>Collection Retail Price (RRP)</Form.Label>
-              <InputGroup>
-                <InputGroup.Text>
+            <div className="mb-3">
+              <label htmlFor="editionRetailPrice" className="form-label">Collection Retail Price (RRP)</label>
+              <div className="input-group">
+                <span className="input-group-text">
                   <FontAwesomeIcon icon={faDollarSign} />
-                </InputGroup.Text>
-                <Form.Control 
+                </span>
+                <input 
                   type="number" 
+                  className="form-control" 
+                  id="editionRetailPrice" 
                   placeholder="Enter retail price (optional)" 
                   value={retailPrice}
                   onChange={(e) => setRetailPrice(e.target.value)}
                   step="0.01"
                   min="0"
                 />
-              </InputGroup>
-              <Form.Text className="text-muted">
+              </div>
+              <div className="form-text">
                 This will be used as the default RRP for starships in this edition
-              </Form.Text>
-            </Form.Group>
+              </div>
+            </div>
             
             {editMode && retailPrice && (
-              <Form.Group className="mb-3" controlId="updateStarshipPrices">
-                <Form.Check 
+              <div className="mb-3">
+                <input 
                   type="checkbox"
-                  label="Update all starships in this edition with this retail price"
+                  className="form-check-input"
+                  id="updateStarshipPrices"
                   checked={updateStarshipPrices}
                   onChange={(e) => setUpdateStarshipPrices(e.target.checked)}
                 />
-                <Form.Text className="text-muted">
+                <label htmlFor="updateStarshipPrices" className="form-check-label">
+                  Update all starships in this edition with this retail price
+                </label>
+                <div className="form-text">
                   This will only update starships that don't already have a retail price set
-                </Form.Text>
-              </Form.Group>
+                </div>
+              </div>
             )}
             
             <div className="d-flex justify-content-between">
-              <Button variant="primary" type="submit">
+              <button type="submit" className="btn btn-primary">
                 {editMode ? 'Update Edition' : 'Add Edition'}
-              </Button>
+              </button>
               {editMode && (
-                <Button variant="secondary" onClick={resetForm}>
+                <button type="reset" className="btn btn-secondary">
                   Cancel
-                </Button>
+                </button>
               )}
             </div>
-          </Form>
+          </form>
         </div>
       </div>
       
       {/* CSV Upload Modal */}
-      <Modal show={showCsvModal} onHide={() => setShowCsvModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Import Editions from CSV</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>Upload a CSV file with edition data to import multiple editions at once.</p>
-          
-          <Card className="mb-3">
-            <Card.Header>CSV Format</Card.Header>
-            <Card.Body>
-              <p>Your CSV file should have the following columns:</p>
-              <ul>
-                <li><strong>name</strong> (required): The name of the edition</li>
-                <li><strong>description</strong> (optional): A description of the edition</li>
-                <li><strong>retailPrice</strong> (optional): The retail price of ships in this edition</li>
-              </ul>
+      <div className="modal" style={{ display: showCsvModal ? 'block' : 'none' }}>
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Import Editions from CSV</h5>
+              <button type="button" className="btn-close" onClick={() => setShowCsvModal(false)}></button>
+            </div>
+            <div className="modal-body">
+              <p>Upload a CSV file with edition data to import multiple editions at once.</p>
               
-              <div className="bg-light p-2 rounded mb-3">
-                <pre className="mb-0">
-                  name,description,retailPrice<br/>
-                  Regular,Standard edition ships,14.99<br/>
-                  Special,Limited edition ships,19.99<br/>
-                  XL,Extra large ships,49.99
-                </pre>
+              <div className="card mb-3">
+                <div className="card-header">CSV Format</div>
+                <div className="card-body">
+                  <p>Your CSV file should have the following columns:</p>
+                  <ul>
+                    <li><strong>name</strong> (required): The name of the edition</li>
+                    <li><strong>description</strong> (optional): A description of the edition</li>
+                    <li><strong>retailPrice</strong> (optional): The retail price of ships in this edition</li>
+                  </ul>
+                  
+                  <div className="bg-light p-2 rounded mb-3">
+                    <pre className="mb-0">
+                      name,description,retailPrice<br/>
+                      Regular,Standard edition ships,14.99<br/>
+                      Special,Limited edition ships,19.99<br/>
+                      XL,Extra large ships,49.99
+                    </pre>
+                  </div>
+                  
+                  <button 
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={downloadSampleCsv}
+                  >
+                    <FontAwesomeIcon icon={faDownload} className="me-2" />
+                    Download Sample CSV
+                  </button>
+                </div>
               </div>
               
-              <Button 
-                variant="outline-secondary" 
-                size="sm"
-                onClick={downloadSampleCsv}
-              >
-                <FontAwesomeIcon icon={faDownload} className="me-2" />
-                Download Sample CSV
-              </Button>
-            </Card.Body>
-          </Card>
-          
-          <Form.Group controlId="csvFileUpload" className="mb-3">
-            <Form.Label>Select CSV File</Form.Label>
-            <Form.Control 
-              type="file" 
-              accept=".csv" 
-              onChange={handleCsvUpload}
-              ref={fileInputRef}
-              disabled={isUploadingCsv}
-            />
-            <Form.Text className="text-muted">
-              Only CSV files are supported
-            </Form.Text>
-          </Form.Group>
-          
-          {isUploadingCsv && (
-            <div className="text-center my-3">
-              <Spinner animation="border" role="status">
-                <span className="visually-hidden">Uploading...</span>
-              </Spinner>
-              <p className="mt-2">Uploading and processing your CSV file...</p>
+              <div className="mb-3">
+                <label htmlFor="csvFileUpload" className="form-label">Select CSV File</label>
+                <input 
+                  type="file" 
+                  className="form-control" 
+                  id="csvFileUpload" 
+                  accept=".csv" 
+                  onChange={handleCsvUpload}
+                  ref={fileInputRef}
+                  disabled={isUploadingCsv}
+                />
+                <div className="form-text">
+                  Only CSV files are supported
+                </div>
+              </div>
+              
+              {isUploadingCsv && (
+                <div className="text-center my-3">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Uploading...</span>
+                  </div>
+                  <p className="mt-2">Uploading and processing your CSV file...</p>
+                </div>
+              )}
             </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCsvModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowCsvModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Delete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete the edition "{editionToDelete?.name}"?
-          This action cannot be undone.
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Delete
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <div className="modal" style={{ display: showDeleteModal ? 'block' : 'none' }}>
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Confirm Delete</h5>
+              <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+            </div>
+            <div className="modal-body">
+              Are you sure you want to delete the edition "{editionToDelete?.name}"?
+              This action cannot be undone.
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-danger" onClick={handleDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

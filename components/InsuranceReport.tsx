@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Button, Modal, Form, Table } from 'react-bootstrap';
+import React, { useState, useRef, Fragment } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Starship } from '../pages/api/starships';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileInvoiceDollar, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 // Add the missing type for jspdf-autotable
 declare module 'jspdf' {
@@ -31,6 +32,9 @@ const InsuranceReport: React.FC<InsuranceReportProps> = ({ starships, ownerInfo 
   const [includePhotos, setIncludePhotos] = useState(true);
   const [includeNotes, setIncludeNotes] = useState(true);
   const [reportTitle, setReportTitle] = useState('Starship Collection Insurance Valuation');
+  
+  // Close modal when clicking outside
+  const modalRef = useRef<HTMLDivElement>(null);
   
   const formatCurrency = (value: number | undefined | null): string => {
     if (value === undefined || value === null) return '-';
@@ -179,131 +183,198 @@ const InsuranceReport: React.FC<InsuranceReportProps> = ({ starships, ownerInfo 
   
   return (
     <>
-      <Button 
-        variant="primary" 
+      {/* Tailwind Button */}
+      <button 
         onClick={() => setShowModal(true)}
-        className="mb-3"
+        className="px-4 py-2 rounded-md border border-indigo-500 bg-white text-indigo-600 hover:bg-indigo-50 flex items-center"
+        title="Generate an insurance valuation report for your collection"
       >
-        Generate Insurance Valuation Report
-      </Button>
+        <FontAwesomeIcon icon={faFileInvoiceDollar} className="mr-2" />
+        <span>Insurance Report</span>
+      </button>
       
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Insurance Valuation Report</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Report Title</Form.Label>
-              <Form.Control 
-                type="text" 
-                value={reportTitle}
-                onChange={(e) => setReportTitle(e.target.value)}
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Check 
-                type="checkbox"
-                label="Include condition photos"
-                checked={includePhotos}
-                onChange={(e) => setIncludePhotos(e.target.checked)}
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Check 
-                type="checkbox"
-                label="Include condition notes"
-                checked={includeNotes}
-                onChange={(e) => setIncludeNotes(e.target.checked)}
-              />
-            </Form.Group>
-            
-            <h5>Report Preview</h5>
-            <div className="border p-3 mb-3">
-              <h4>{reportTitle}</h4>
-              <p>Generated on: {new Date().toLocaleDateString()}</p>
+      {/* Tailwind Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+              aria-hidden="true"
+              onClick={() => setShowModal(false)}
+            ></div>
+
+            {/* Modal panel */}
+            <div 
+              className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+              ref={modalRef}
+            >
+              {/* Modal header */}
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 sm:px-6 flex justify-between items-center">
+                <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  Insurance Valuation Report
+                </h3>
+                <button
+                  type="button"
+                  className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none"
+                  onClick={() => setShowModal(false)}
+                >
+                  <span className="sr-only">Close</span>
+                  <FontAwesomeIcon icon={faTimes} className="h-5 w-5" />
+                </button>
+              </div>
               
-              <h5>Owner Information:</h5>
-              <p>Name: {ownerInfo.name}<br />
-              Address: {ownerInfo.address}<br />
-              Email: {ownerInfo.email}<br />
-              Phone: {ownerInfo.phone}</p>
+              {/* Modal body */}
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="space-y-6">
+                  {/* Report Title */}
+                  <div>
+                    <label htmlFor="report-title" className="block text-sm font-medium text-gray-700">
+                      Report Title
+                    </label>
+                    <input
+                      type="text"
+                      id="report-title"
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      value={reportTitle}
+                      onChange={(e) => setReportTitle(e.target.value)}
+                    />
+                  </div>
+                  
+                  {/* Options */}
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <input
+                        id="include-photos"
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        checked={includePhotos}
+                        onChange={(e) => setIncludePhotos(e.target.checked)}
+                      />
+                      <label htmlFor="include-photos" className="ml-2 block text-sm text-gray-700">
+                        Include condition photos
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        id="include-notes"
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        checked={includeNotes}
+                        onChange={(e) => setIncludeNotes(e.target.checked)}
+                      />
+                      <label htmlFor="include-notes" className="ml-2 block text-sm text-gray-700">
+                        Include condition notes
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {/* Report Preview */}
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">Report Preview</h4>
+                    <div className="border border-gray-200 rounded-md p-4 bg-gray-50 overflow-auto max-h-96">
+                      <h3 className="text-xl font-bold mb-2">{reportTitle}</h3>
+                      <p className="text-sm text-gray-600 mb-4">Generated on: {new Date().toLocaleDateString()}</p>
+                      
+                      <h5 className="font-medium text-gray-800 mb-2">Owner Information:</h5>
+                      <p className="text-sm mb-4">
+                        Name: {ownerInfo.name}<br />
+                        Address: {ownerInfo.address}<br />
+                        Email: {ownerInfo.email}<br />
+                        Phone: {ownerInfo.phone}
+                      </p>
+                      
+                      <h5 className="font-medium text-gray-800 mb-2">Collection Summary:</h5>
+                      <p className="text-sm mb-4">
+                        Total Items: {ownedStarships.length}<br />
+                        Total Insurance Value: {formatCurrency(totalInsuranceValue)}
+                      </p>
+                      
+                      <h5 className="font-medium text-gray-800 mb-2">Item List:</h5>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                              <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                              <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Price</th>
+                              <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
+                              <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Market Value</th>
+                              <th scope="col" className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Value</th>
+                              {includeNotes && <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>}
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {ownedStarships.slice(0, 3).map(ship => (
+                              <tr key={ship._id}>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs">{ship.shipName} ({ship.issue})</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs">{ship.condition || 'Not specified'}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(ship.purchasePrice || 0)}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(ship.retailPrice || 0)}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(ship.marketValue || 0)}</td>
+                                <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(getInsuranceValue(ship))}</td>
+                                {includeNotes && <td className="px-3 py-2 whitespace-nowrap text-xs">{ship.conditionNotes || 'None'}</td>}
+                              </tr>
+                            ))}
+                            {ownedStarships.length > 3 && (
+                              <tr>
+                                <td colSpan={includeNotes ? 7 : 6} className="px-3 py-2 text-xs text-center text-gray-500">
+                                  ... and {ownedStarships.length - 3} more items
+                                </td>
+                              </tr>
+                            )}
+                            <tr className="bg-gray-50 font-medium">
+                              <td className="px-3 py-2 whitespace-nowrap text-xs">Total ({ownedStarships.length} items)</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-xs"></td>
+                              <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(ownedStarships.reduce((sum, ship) => sum + (ship.purchasePrice || 0), 0))}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(ownedStarships.reduce((sum, ship) => sum + (ship.retailPrice || 0), 0))}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(ownedStarships.reduce((sum, ship) => sum + (ship.marketValue || 0), 0))}</td>
+                              <td className="px-3 py-2 whitespace-nowrap text-xs text-right">{formatCurrency(totalInsuranceValue)}</td>
+                              {includeNotes && <td className="px-3 py-2 whitespace-nowrap text-xs"></td>}
+                            </tr>
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={includeNotes ? 7 : 6} className="px-3 py-2 text-xs text-gray-500 italic">
+                                Insurance Value is calculated as the highest of Purchase Price, Current Value, or Market Value
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                      
+                      {includePhotos && (
+                        <div className="mt-4">
+                          <h5 className="font-medium text-gray-800 mb-2">Item Photographs:</h5>
+                          <p className="text-sm text-gray-600 italic">Photos will be included in the PDF report</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
               
-              <h5>Collection Summary:</h5>
-              <p>Total Items: {ownedStarships.length}<br />
-              Total Insurance Value: {formatCurrency(totalInsuranceValue)}</p>
-              
-              <h5>Item List:</h5>
-              <Table striped bordered hover size="sm">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Condition</th>
-                    <th>Purchase Price</th>
-                    <th>Current Value</th>
-                    <th>Market Value</th>
-                    <th>Insurance Value</th>
-                    {includeNotes && <th>Notes</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ownedStarships.slice(0, 3).map(ship => (
-                    <tr key={ship._id}>
-                      <td>{ship.shipName} ({ship.issue})</td>
-                      <td>{ship.condition || 'Not specified'}</td>
-                      <td>{formatCurrency(ship.purchasePrice || 0)}</td>
-                      <td>{formatCurrency(ship.retailPrice || 0)}</td>
-                      <td>{formatCurrency(ship.marketValue || 0)}</td>
-                      <td>{formatCurrency(getInsuranceValue(ship))}</td>
-                      {includeNotes && <td>{ship.conditionNotes || 'None'}</td>}
-                    </tr>
-                  ))}
-                  {ownedStarships.length > 3 && (
-                    <tr>
-                      <td colSpan={includeNotes ? 7 : 6} className="text-center">
-                        ... and {ownedStarships.length - 3} more items
-                      </td>
-                    </tr>
-                  )}
-                  <tr className="table-secondary fw-bold">
-                    <td>Total ({ownedStarships.length} items)</td>
-                    <td></td>
-                    <td>{formatCurrency(ownedStarships.reduce((sum, ship) => sum + (ship.purchasePrice || 0), 0))}</td>
-                    <td>{formatCurrency(ownedStarships.reduce((sum, ship) => sum + (ship.retailPrice || 0), 0))}</td>
-                    <td>{formatCurrency(ownedStarships.reduce((sum, ship) => sum + (ship.marketValue || 0), 0))}</td>
-                    <td>{formatCurrency(totalInsuranceValue)}</td>
-                    {includeNotes && <td></td>}
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={includeNotes ? 7 : 6} className="text-muted fst-italic">
-                      <small>Insurance Value is calculated as the highest of Purchase Price, Current Value, or Market Value</small>
-                    </td>
-                  </tr>
-                </tfoot>
-              </Table>
-              
-              {includePhotos && (
-                <>
-                  <h5>Item Photographs:</h5>
-                  <p><i>Photos will be included in the PDF report</i></p>
-                </>
-              )}
+              {/* Modal footer */}
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={generateReport}
+                >
+                  Generate PDF Report
+                </button>
+                <button
+                  type="button"
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={generateReport}>
-            Generate PDF Report
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          </div>
+        </div>
+      )}
     </>
   );
 };

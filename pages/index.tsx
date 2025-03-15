@@ -1,11 +1,24 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, Suspense } from 'react';
 import Link from 'next/link';
 import { Dialog, Transition } from '@headlessui/react';
-
-import StarshipList from '../components/StarshipList';
-import StarshipDetails from '../components/StarshipDetails';
-import AddStarshipForm from '../components/AddStarshipForm';
+import dynamic from 'next/dynamic';
 import { Starship } from '../types';
+
+// Dynamically import large components
+const StarshipList = dynamic(() => import('../components/StarshipList'), {
+  loading: () => <div className="p-4 text-center">Loading starship list...</div>,
+  ssr: false
+});
+
+const StarshipDetails = dynamic(() => import('../components/StarshipDetails'), {
+  loading: () => <div className="p-4 text-center">Loading details...</div>,
+  ssr: false
+});
+
+const AddStarshipForm = dynamic(() => import('../components/AddStarshipForm'), {
+  loading: () => <div className="p-4 text-center">Loading form...</div>,
+  ssr: false
+});
 
 const Home: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);

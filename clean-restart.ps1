@@ -1,65 +1,55 @@
-Write-Host "Cleaning Next.js cache and restarting server..." -ForegroundColor Green
+Write-Host "Starting cleanup process..." -ForegroundColor Cyan
 
-# Set error action preference to continue on errors
-$ErrorActionPreference = "Continue"
-
-# Stop all node processes
-Write-Host "Stopping all Node.js processes..." -ForegroundColor Yellow
-taskkill /F /IM node.exe 2>$null
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Node.js processes terminated successfully." -ForegroundColor Green
-} else {
-    Write-Host "No Node.js processes found to terminate." -ForegroundColor Cyan
-}
-
-# Wait a moment to ensure processes are fully terminated
-Start-Sleep -Seconds 2
-
-# Remove Next.js build directories
-Write-Host "Removing Next.js build directories..." -ForegroundColor Yellow
-Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue
-Remove-Item -Recurse -Force dev-build -ErrorAction SilentlyContinue
-
-# Clear webpack cache
-Write-Host "Clearing webpack cache..." -ForegroundColor Yellow
-$webpackCacheDirs = @(
-    ".next/cache",
-    "dev-build/cache",
-    "node_modules/.cache"
-)
-
-foreach ($dir in $webpackCacheDirs) {
-    if (Test-Path $dir) {
-        Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue
-        Write-Host "Cleared cache in $dir" -ForegroundColor Green
+# Stop any running Node.js processes
+Write-Host "Stopping any running Node.js processes..." -ForegroundColor Yellow
+Get-Process | Where-Object { $_.ProcessName -eq "node" } | ForEach-Object { 
+    try {
+        $_.Kill()
+        Write-Host "Killed process: $($_.Id)" -ForegroundColor Green
+    } catch {
+        Write-Host "Failed to kill process: $($_.Id)" -ForegroundColor Red
     }
 }
 
-# Fix problematic modules
-Write-Host "Fixing problematic modules..." -ForegroundColor Yellow
-$linuxModule = "node_modules\@next\swc-linux-x64-musl"
-if (Test-Path $linuxModule) {
-    Remove-Item -Recurse -Force $linuxModule -ErrorAction SilentlyContinue
-    Write-Host "Removed problematic Linux module." -ForegroundColor Green
-    # Create empty directory with package.json to prevent errors
-    New-Item -ItemType Directory -Force -Path $linuxModule | Out-Null
-    New-Item -ItemType File -Force -Path "$linuxModule\package.json" -Value "{}" | Out-Null
+# Clean up Next.js cache and build directories
+Write-Host "Removing Next.js cache and build directories..." -ForegroundColor Yellow
+$directories = @(
+    ".next",
+    "node_modules/.cache"
+)
+
+foreach ($dir in $directories) {
+    if (Test-Path $dir) {
+        try {
+            Remove-Item -Path $dir -Recurse -Force
+            Write-Host "Removed: $dir" -ForegroundColor Green
+        } catch {
+            Write-Host "Failed to remove: $dir" -ForegroundColor Red
+            Write-Host $_.Exception.Message
+        }
+    } else {
+        Write-Host "Directory not found: $dir" -ForegroundColor Gray
+    }
+}
+
+# Clean up temporary files
+Write-Host "Removing temporary files..." -ForegroundColor Yellow
+$tempFiles = Get-ChildItem -Path "." -Include "*.log", "*.tmp", "*.temp" -File -Recurse
+foreach ($file in $tempFiles) {
+    try {
+        Remove-Item -Path $file.FullName -Force
+        Write-Host "Removed: $($file.FullName)" -ForegroundColor Green
+    } catch {
+        Write-Host "Failed to remove: $($file.FullName)" -ForegroundColor Red
+    }
 }
 
 # Clear npm cache
 Write-Host "Clearing npm cache..." -ForegroundColor Yellow
 npm cache clean --force
-Write-Host "npm cache cleared." -ForegroundColor Green
 
-# Wait a moment to ensure file handles are released
-Start-Sleep -Seconds 2
+# Restart the development server
+Write-Host "Starting development server..." -ForegroundColor Cyan
+npm run dev:fast
 
-# Install dependencies (optional, uncomment if needed)
-# Write-Host "Reinstalling dependencies..." -ForegroundColor Yellow
-# npm install
-
-# Start the development server with optimized settings
-Write-Host "Starting development server with optimized settings..." -ForegroundColor Green
-Start-Process -NoNewWindow npm -ArgumentList "run", "dev:fast"
-
-Write-Host "Clean restart completed!" -ForegroundColor Green 
+Write-Host "Cleanup process completed!" -ForegroundColor Green 

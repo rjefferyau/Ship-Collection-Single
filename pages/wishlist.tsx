@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Draggable, DropResult, DroppableStateSnapshot } from 'react-beautiful-dnd';
+import { DragDropContext, Draggable, DropResult, DroppableProvided, DraggableProvided, DroppableStateSnapshot, DraggableStateSnapshot } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { Starship } from '../types';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -323,7 +323,7 @@ const WishlistPage: React.FC = () => {
                   
                   <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                     <StrictModeDroppable droppableId="wishlist">
-                      {(provided, snapshot) => (
+                      {(provided: DroppableProvided, snapshot: DroppableStateSnapshot) => (
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
@@ -335,7 +335,7 @@ const WishlistPage: React.FC = () => {
                               draggableId={starship._id} 
                               index={index}
                             >
-                              {(provided, snapshot) => (
+                              {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}

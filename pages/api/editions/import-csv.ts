@@ -2,7 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { parse } from 'csv-parse/sync';
-import { db } from '../../../lib/firebase-admin';
+import dbConnect from '../../../lib/mongodb';
+import mongoose from 'mongoose';
 
 // Disable the default body parser to handle form data
 export const config = {
@@ -23,6 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // Connect to MongoDB
+    await dbConnect();
+    console.log('Connected to MongoDB');
+    
     // Parse the form data
     const form = new IncomingForm();
     
@@ -81,18 +86,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Save editions to the database
+    const db = mongoose.connection.db;
     const editionsCollection = db.collection('editions');
     let imported = 0;
 
     for (const edition of editions) {
       // Check if edition with the same name already exists
-      const existingEdition = await editionsCollection
-        .where('name', '==', edition.name)
-        .get();
+      const existingEdition = await editionsCollection.findOne({ name: edition.name });
 
-      if (existingEdition.empty) {
+      if (!existingEdition) {
         // Add new edition
-        await editionsCollection.add({
+        await editionsCollection.insertOne({
           ...edition,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -100,11 +104,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         imported++;
       } else {
         // Update existing edition
-        const docId = existingEdition.docs[0].id;
-        await editionsCollection.doc(docId).update({
-          ...edition,
-          updatedAt: new Date(),
-        });
+        await editionsCollection.updateOne(
+          { _id: existingEdition._id },
+          { 
+            $set: {
+              ...edition,
+              updatedAt: new Date(),
+            }
+          }
+        );
         imported++;
       }
     }

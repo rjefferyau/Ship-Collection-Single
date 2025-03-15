@@ -12,7 +12,8 @@
     "dev:clean": "rimraf .next dev-build && next dev",
     "type-check": "tsc --noEmit",
     "clear-cache": "rimraf .next dev-build && npm cache clean --force",
-    "dev:auto": "node server.js"
+    "dev:auto": "node server.js",
+    "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
     "@awesome.me/kit-d0637c0c40": "^1.0.4",
@@ -37,7 +38,6 @@
     "dotenv": "^16.4.7",
     "eslint": "^8.37.0",
     "eslint-config-next": "^13.2.4",
-    "firebase-admin": "^13.1.0",
     "formidable": "^2.1.2",
     "json2csv": "^6.0.0-alpha.2",
     "jspdf": "^3.0.0",
@@ -51,6 +51,7 @@
     "typescript": "^5.0.3"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.2.2",
     "@types/json2csv": "^5.0.7",
     "@types/node": "^20.11.19",
     "@types/react": "^18.2.55",

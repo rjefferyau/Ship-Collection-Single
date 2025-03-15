@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
@@ -18,6 +18,12 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Create refs for the menus
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
@@ -32,6 +38,58 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+  
+  // Close menus when route changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setIsSettingsMenuOpen(false);
+      setIsUserMenuOpen(false);
+      setIsMobileMenuOpen(false);
+    };
+
+    // Subscribe to router events
+    router.events.on('routeChangeStart', handleRouteChange);
+
+    // Cleanup
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router]);
+  
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Close settings menu if clicked outside
+      if (
+        isSettingsMenuOpen &&
+        settingsMenuRef.current &&
+        settingsButtonRef.current &&
+        !settingsMenuRef.current.contains(event.target as Node) &&
+        !settingsButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsSettingsMenuOpen(false);
+      }
+      
+      // Close user menu if clicked outside
+      if (
+        isUserMenuOpen &&
+        userMenuRef.current &&
+        userButtonRef.current &&
+        !userMenuRef.current.contains(event.target as Node) &&
+        !userButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSettingsMenuOpen, isUserMenuOpen]);
 
   return (
     <nav className="bg-white shadow">
@@ -71,6 +129,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   aria-expanded={isSettingsMenuOpen}
                   aria-haspopup="true"
                   onClick={toggleSettingsMenu}
+                  ref={settingsButtonRef}
                 >
                   <span className="sr-only">Open settings menu</span>
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
@@ -87,24 +146,55 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   aria-orientation="vertical"
                   aria-labelledby="settings-menu-button"
                   tabIndex={-1}
+                  ref={settingsMenuRef}
                 >
-                  <Link href="/setup" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
                     Ship Setup
                   </Link>
-                  <Link href="/faction-setup" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/faction-setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
                     Faction Setup
                   </Link>
-                  <Link href="/edition-setup" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/edition-setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
                     Edition Setup
                   </Link>
-                  <Link href="/icon-setup" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/icon-setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
                     Icon Setup
                   </Link>
-                  <Link href="/currency-setup" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/currency-setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
                     Currency Setup
                   </Link>
                   <div className="border-t border-gray-100 my-1"></div>
-                  <Link href="/import-export" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/import-export" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
                     Import/Export
                   </Link>
                 </div>
@@ -121,6 +211,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   aria-expanded={isUserMenuOpen}
                   aria-haspopup="true"
                   onClick={toggleUserMenu}
+                  ref={userButtonRef}
                 >
                   <span className="sr-only">Open user menu</span>
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
@@ -137,14 +228,30 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   aria-orientation="vertical"
                   aria-labelledby="user-menu-button"
                   tabIndex={-1}
+                  ref={userMenuRef}
                 >
-                  <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/profile" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
                     Your Profile
                   </Link>
-                  <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/settings" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
                     Settings
                   </Link>
-                  <Link href="/logout" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                  <Link 
+                    href="/logout" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsUserMenuOpen(false)}
+                  >
                     Sign out
                   </Link>
                 </div>

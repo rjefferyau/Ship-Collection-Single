@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig = {
   reactStrictMode: false,
   distDir: '.next',
@@ -45,6 +49,22 @@ const nextConfig = {
         splitChunks: {
           cacheGroups: {
             default: false,
+            vendors: false,
+            // Add a new cache group for large dependencies
+            commons: {
+              name: 'commons',
+              chunks: 'all',
+              minChunks: 2,
+              reuseExistingChunk: true,
+            },
+            // Add a specific cache group for react
+            react: {
+              name: 'react',
+              chunks: 'all',
+              test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/,
+              priority: 40,
+              reuseExistingChunk: true,
+            },
           },
         },
         runtimeChunk: false,
@@ -72,4 +92,4 @@ const nextConfig = {
   staticPageGenerationTimeout: 120,
 }
 
-module.exports = nextConfig 
+module.exports = withBundleAnalyzer(nextConfig); 

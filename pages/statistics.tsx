@@ -1,5 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import Statistics from '../components/Statistics';
+import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the Statistics component
+const Statistics = dynamic(() => import('../components/Statistics'), {
+  loading: () => <div className="p-4 text-center">Loading statistics...</div>,
+  ssr: false
+});
 
 interface StatisticsData {
   totalStarships: number;

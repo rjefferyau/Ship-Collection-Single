@@ -4,6 +4,7 @@ import '../styles/globals.css';
 import '../styles/sidebar.css';
 import { useRouter } from 'next/router';
 import Layout from '../components/Layout';
+import { CurrencyProvider } from '../contexts/CurrencyContext';
 
 // IMPORTANT: Layout Management
 // 
@@ -41,9 +42,11 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="keywords" content="Star Trek, starships, collection, manager, tracking" />
         <title>{pageTitle}</title>
       </Head>
-      <Layout title={pageTitle}>
-        <Component {...pageProps} />
-      </Layout>
+      <CurrencyProvider>
+        <Layout title={pageTitle}>
+          <Component {...pageProps} />
+        </Layout>
+      </CurrencyProvider>
     </>
   );
 }

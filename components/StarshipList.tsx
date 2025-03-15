@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DataTable from './DataTable';
 import PdfViewer from './PdfViewer';
 import { Starship, SortConfig, Filters } from '../types';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface StarshipListProps {
   starships: Starship[];
@@ -33,11 +34,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
-  const [currencySettings, setCurrencySettings] = useState({
-    currency: 'GBP',
-    symbol: '£',
-    locale: 'en-GB'
-  });
+  const { formatCurrency } = useCurrency();
   
   // Add state for image modal
   const [showImageModal, setShowImageModal] = useState(false);
@@ -51,29 +48,17 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [factionMenuOpen, setFactionMenuOpen] = useState(false);
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
 
-  // Load currency settings from localStorage
+  // Extract unique factions and editions from starships
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('currencySettings');
-      if (savedSettings) {
-        setCurrencySettings(JSON.parse(savedSettings));
-      }
+    if (starships && starships.length > 0) {
+      // Get unique factions
+      const factions = Array.from(new Set(starships.map(ship => ship.faction))).filter(Boolean).sort();
+      setAvailableFactions(factions);
+      
+      // Get unique editions
+      const editions = Array.from(new Set(starships.map(ship => ship.edition))).filter(Boolean).sort();
+      setAvailableEditions(editions);
     }
-  }, []);
-
-  // Extract unique factions and editions
-  useEffect(() => {
-    if (!starships || starships.length === 0) {
-      setAvailableFactions([]);
-      setAvailableEditions([]);
-      return;
-    }
-    
-    const factions = Array.from(new Set(starships.map(ship => ship.faction))).filter(Boolean).sort();
-    const editions = Array.from(new Set(starships.map(ship => ship.edition))).filter(Boolean).sort();
-    
-    setAvailableFactions(factions);
-    setAvailableEditions(editions);
   }, [starships]);
 
   // Apply filters and sorting
@@ -303,17 +288,6 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const formatDate = (date: Date | undefined) => {
     if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
-  };
-
-  const formatCurrency = (value: number | undefined) => {
-    if (value === undefined || value === null) return '-';
-    
-    return new Intl.NumberFormat(currencySettings.locale, {
-      style: 'currency',
-      currency: currencySettings.currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
   };
 
   // Add handler for image click

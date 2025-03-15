@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
-import { Container, Row, Col, Card, Button, Form, Alert, Breadcrumb } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Alert } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faDollarSign, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faDollarSign, faSave, faUndo, faCog } from '@fortawesome/free-solid-svg-icons';
+import { useCurrency, defaultCurrencySettings } from '../contexts/CurrencyContext';
 
 interface CurrencyOption {
   code: string;
@@ -12,12 +13,7 @@ interface CurrencyOption {
 }
 
 const CurrencySetupPage: React.FC = () => {
-  const [currencySettings, setCurrencySettings] = useState({
-    currency: 'GBP',
-    symbol: '£',
-    locale: 'en-GB'
-  });
-  
+  const { currencySettings, setCurrencySettings, formatCurrency } = useCurrency();
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
@@ -31,16 +27,6 @@ const CurrencySetupPage: React.FC = () => {
     { code: 'JPY', name: 'Japanese Yen', symbol: '¥', locale: 'ja-JP' }
   ];
   
-  // Load currency settings from localStorage on component mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('currencySettings');
-      if (savedSettings) {
-        setCurrencySettings(JSON.parse(savedSettings));
-      }
-    }
-  }, []);
-  
   // Handle currency change
   const handleCurrencyChange = (currencyCode: string) => {
     const selectedCurrency = currencyOptions.find(c => c.code === currencyCode);
@@ -53,10 +39,10 @@ const CurrencySetupPage: React.FC = () => {
     }
   };
   
-  // Save currency settings to localStorage
+  // Save currency settings
   const saveCurrencySettings = () => {
     try {
-      localStorage.setItem('currencySettings', JSON.stringify(currencySettings));
+      // The context automatically saves to localStorage
       setSuccess('Currency settings saved successfully. Changes will take effect immediately.');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -67,26 +53,14 @@ const CurrencySetupPage: React.FC = () => {
   
   // Reset to defaults
   const resetToDefaults = () => {
-    const defaultSettings = {
-      currency: 'GBP',
-      symbol: '£',
-      locale: 'en-GB'
-    };
-    
-    setCurrencySettings(defaultSettings);
-    localStorage.setItem('currencySettings', JSON.stringify(defaultSettings));
+    setCurrencySettings(defaultCurrencySettings);
     setSuccess('Currency settings reset to defaults.');
     setTimeout(() => setSuccess(null), 3000);
   };
   
   // Format example price
   const formatExamplePrice = (value: number) => {
-    return new Intl.NumberFormat(currencySettings.locale, {
-      style: 'currency',
-      currency: currencySettings.currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
+    return formatCurrency(value);
   };
   
   return (
@@ -95,19 +69,37 @@ const CurrencySetupPage: React.FC = () => {
         <title>Currency Setup - Starship Collection Manager</title>
       </Head>
       
-      <div className="page-header">
-        <h1>Currency Setup</h1>
-        <Breadcrumb>
-          <Breadcrumb.Item href="/">
-            <FontAwesomeIcon icon={faHome} className="me-2" /> Home
-          </Breadcrumb.Item>
-          <Breadcrumb.Item href="/setup">
-            Setup
-          </Breadcrumb.Item>
-          <Breadcrumb.Item active>
-            <FontAwesomeIcon icon={faDollarSign} className="me-2" /> Currency Setup
-          </Breadcrumb.Item>
-        </Breadcrumb>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Currency Setup</h1>
+        <nav className="flex" aria-label="Breadcrumb">
+          <ol className="inline-flex items-center space-x-1 md:space-x-3">
+            <li className="inline-flex items-center">
+              <a href="/" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+                <FontAwesomeIcon icon={faHome} className="mr-2" /> Home
+              </a>
+            </li>
+            <li>
+              <div className="flex items-center">
+                <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+                </svg>
+                <a href="/setup" className="ml-1 text-sm font-medium text-gray-700 hover:text-indigo-600 md:ml-2">
+                  <FontAwesomeIcon icon={faCog} className="mr-2" /> Setup
+                </a>
+              </div>
+            </li>
+            <li>
+              <div className="flex items-center">
+                <svg className="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+                </svg>
+                <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2">
+                  <FontAwesomeIcon icon={faDollarSign} className="mr-2" /> Currency Setup
+                </span>
+              </div>
+            </li>
+          </ol>
+        </nav>
       </div>
       
       {success && (

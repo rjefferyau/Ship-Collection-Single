@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDollarSign, faTag, faShoppingCart, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface Starship {
   _id: string;
@@ -22,21 +23,7 @@ interface PriceVaultProps {
 }
 
 const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
-  const [currencySettings, setCurrencySettings] = useState({
-    currency: 'GBP',
-    symbol: '£',
-    locale: 'en-GB'
-  });
-
-  // Load currency settings from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('currencySettings');
-      if (savedSettings) {
-        setCurrencySettings(JSON.parse(savedSettings));
-      }
-    }
-  }, []);
+  const { formatCurrency } = useCurrency();
 
   // Filter starships based on viewMode
   const filteredStarships = viewMode === 'all' 
@@ -71,15 +58,6 @@ const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
   const profitPercentage = totalPurchasePrice > 0 
     ? Math.round((potentialProfit / totalPurchasePrice) * 100) 
     : 0;
-
-  const formatCurrency = (value: number | undefined) => {
-    if (value === undefined) return `${currencySettings.symbol}0.00`;
-    
-    return new Intl.NumberFormat(currencySettings.locale, {
-      style: 'currency',
-      currency: currencySettings.currency
-    }).format(value);
-  };
 
   return (
     <div>

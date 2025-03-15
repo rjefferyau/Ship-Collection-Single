@@ -3,13 +3,13 @@ Write-Host "Cleaning Next.js cache and restarting server..." -ForegroundColor Gr
 # Set error action preference to continue on errors
 $ErrorActionPreference = "Continue"
 
-# Kill all Node.js processes
+# Stop all node processes
 Write-Host "Stopping all Node.js processes..." -ForegroundColor Yellow
-taskkill /f /im node.exe 2>$null
+taskkill /F /IM node.exe 2>$null
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Node.js processes terminated successfully." -ForegroundColor Green
 } else {
-    Write-Host "No Node.js processes were running." -ForegroundColor Yellow
+    Write-Host "No Node.js processes found to terminate." -ForegroundColor Cyan
 }
 
 # Wait a moment to ensure processes are fully terminated
@@ -46,9 +46,10 @@ if (Test-Path $linuxModule) {
     New-Item -ItemType File -Force -Path "$linuxModule\package.json" -Value "{}" | Out-Null
 }
 
-# Clear npm cache (optional, can be commented out for faster restarts)
-# Write-Host "Clearing npm cache..." -ForegroundColor Yellow
-# npm cache clean --force
+# Clear npm cache
+Write-Host "Clearing npm cache..." -ForegroundColor Yellow
+npm cache clean --force
+Write-Host "npm cache cleared." -ForegroundColor Green
 
 # Wait a moment to ensure file handles are released
 Start-Sleep -Seconds 2
@@ -57,6 +58,8 @@ Start-Sleep -Seconds 2
 # Write-Host "Reinstalling dependencies..." -ForegroundColor Yellow
 # npm install
 
-# Start the development server
-Write-Host "Starting Next.js development server..." -ForegroundColor Green
-npm run dev 
+# Start the development server with optimized settings
+Write-Host "Starting development server with optimized settings..." -ForegroundColor Green
+Start-Process -NoNewWindow npm -ArgumentList "run", "dev:fast"
+
+Write-Host "Clean restart completed!" -ForegroundColor Green 

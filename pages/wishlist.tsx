@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Draggable, DropResult, DroppableStateSnapshot } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import { Starship } from '../types';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const WishlistPage: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
@@ -10,11 +11,7 @@ const WishlistPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('wishlist');
-  const [currencySettings, setCurrencySettings] = useState({
-    currency: 'GBP',
-    symbol: '£',
-    locale: 'en-GB'
-  });
+  const { currencySettings, formatCurrency } = useCurrency();
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
   const [orderData, setOrderData] = useState({
@@ -23,15 +20,7 @@ const WishlistPage: React.FC = () => {
   });
   const [processingOrder, setProcessingOrder] = useState(false);
 
-  // Load currency settings from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('currencySettings');
-      if (savedSettings) {
-        setCurrencySettings(JSON.parse(savedSettings));
-      }
-    }
-    
     fetchStarships();
   }, []);
 
@@ -57,18 +46,6 @@ const WishlistPage: React.FC = () => {
     }
   };
 
-  // Format currency based on settings
-  const formatCurrency = (value: number | undefined) => {
-    if (value === undefined || value === null) return '-';
-    
-    return new Intl.NumberFormat(currencySettings.locale, {
-      style: 'currency',
-      currency: currencySettings.currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
-
   // Format date
   const formatDate = (date: Date | string | undefined) => {
     if (!date) return '-';
@@ -79,18 +56,28 @@ const WishlistPage: React.FC = () => {
   // Toggle wishlist status
   const handleToggleWishlist = async (id: string) => {
     try {
+      console.log(`Toggling wishlist for item with ID: ${id}`);
+      
       const response = await fetch(`/api/starships/toggle-wishlist/${id}`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
+      const data = await response.json();
+      console.log('Toggle wishlist response:', data);
+      
       if (!response.ok) {
-        throw new Error('Failed to update wishlist status');
+        throw new Error(data.error || data.message || 'Failed to update wishlist status');
       }
       
+      // Refresh the starships data
       await fetchStarships();
       setSuccess('Wishlist updated successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
+      console.error('Error toggling wishlist:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setTimeout(() => setError(null), 3000);
     }

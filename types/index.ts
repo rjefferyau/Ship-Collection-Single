@@ -39,5 +39,5 @@ export interface Filters {
   search: string;
   faction: string[];
   edition: string[];
-  owned: 'all' | 'owned' | 'not-owned';
+  owned: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order';
 } 

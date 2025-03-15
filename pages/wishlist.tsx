@@ -354,13 +354,13 @@ const WishlistPage: React.FC = () => {
                                   {...provided.draggableProps}
                                   className={`wishlist-item mb-3 ${snapshot.isDragging ? 'is-dragging' : ''}`}
                                 >
-                                  <div className="flex items-center">
+                                  <div className="flex items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
                                     <div 
                                       className="priority-badge"
                                       {...provided.dragHandleProps}
                                       title="Drag to reorder"
                                     >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                       </svg>
                                     </div>
@@ -372,6 +372,7 @@ const WishlistPage: React.FC = () => {
                                       <button 
                                         onClick={(e) => { e.preventDefault(); handleOpenOrderModal(starship); }}
                                         className="text-indigo-600 hover:text-indigo-900 mr-2"
+                                        title="Mark as On Order"
                                       >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                           <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
@@ -380,6 +381,7 @@ const WishlistPage: React.FC = () => {
                                       <button 
                                         onClick={(e) => { e.preventDefault(); handleToggleWishlist(starship._id); }}
                                         className="text-red-600 hover:text-red-900"
+                                        title="Remove from Wishlist"
                                       >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -387,6 +389,9 @@ const WishlistPage: React.FC = () => {
                                       </button>
                                     </div>
                                   </div>
+                                  {index < wishlistItems.length - 1 && (
+                                    <div className="border-b border-gray-200 my-3"></div>
+                                  )}
                                 </div>
                               )}
                             </Draggable>
@@ -396,39 +401,76 @@ const WishlistPage: React.FC = () => {
                       )}
                     </StrictModeDroppable>
                   </DragDropContext>
+                  
+                  {wishlistItems.length === 0 && (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">Your wishlist is empty</h3>
+                      <p className="text-gray-500">Add items to your wishlist from the collection page</p>
+                    </div>
+                  )}
                 </div>
               )}
               
               {activeTab === 'on-order' && (
                 <div>
-                  {onOrderItems.map((starship) => (
+                  {onOrderItems.map((starship, index) => (
                     <div key={starship._id} className="on-order-item mb-3">
-                      <div className="flex items-center">
+                      <div className="flex items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 transition-colors">
+                        <div className="flex-shrink-0 mr-2">
+                          <div className="rounded-full p-1 bg-blue-100 text-blue-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                            </svg>
+                          </div>
+                        </div>
                         <div className="flex-grow">
                           <h5 className="text-sm font-medium text-gray-900">{starship.shipName}</h5>
                           <div className="text-sm text-gray-500">{starship.edition} #{starship.issue} - {starship.faction}</div>
+                          {starship.orderDate && (
+                            <div className="text-xs text-blue-600 mt-1">
+                              Ordered on: {formatDate(starship.orderDate)}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center">
                           <button 
                             onClick={(e) => { e.preventDefault(); handleMarkAsReceived(starship._id); }}
                             className="text-green-600 hover:text-green-900 mr-2"
+                            title="Mark as Received"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           </button>
                           <button 
                             onClick={(e) => { e.preventDefault(); handleRemoveFromOrder(starship._id); }}
                             className="text-red-600 hover:text-red-900"
+                            title="Remove from Orders"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
                           </button>
                         </div>
                       </div>
+                      {index < onOrderItems.length - 1 && (
+                        <div className="border-b border-gray-200 my-3"></div>
+                      )}
                     </div>
                   ))}
+                  
+                  {onOrderItems.length === 0 && (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">No items on order</h3>
+                      <p className="text-gray-500">Mark items as on order from your wishlist</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -8,6 +8,7 @@ interface StarshipListProps {
   onToggleOwned: (id: string) => Promise<void>;
   onSelectStarship: (starship: Starship) => void;
   onToggleWishlist?: (id: string) => Promise<void>;
+  onCycleStatus?: (id: string) => Promise<void>;
   onEditionChange?: (edition: string) => void;
   currentEdition?: string;
 }
@@ -17,6 +18,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
   onToggleOwned,
   onSelectStarship,
   onToggleWishlist,
+  onCycleStatus,
   onEditionChange,
   currentEdition = 'Regular'
 }) => {
@@ -107,6 +109,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
       result = result.filter(ship => ship.owned);
     } else if (filters.owned === 'not-owned') {
       result = result.filter(ship => !ship.owned);
+    } else if (filters.owned === 'wishlist') {
+      result = result.filter(ship => ship.wishlist && !ship.owned && !ship.onOrder);
+    } else if (filters.owned === 'on-order') {
+      result = result.filter(ship => ship.onOrder && !ship.owned);
     }
     
     // Apply sorting
@@ -265,7 +271,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
     }
   };
 
-  const setOwnedFilter = (value: 'all' | 'owned' | 'not-owned') => {
+  const setOwnedFilter = (value: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order') => {
     setFilters(prev => ({ ...prev, owned: value }));
   };
 
@@ -394,95 +400,74 @@ const StarshipList: React.FC<StarshipListProps> = ({
       render: (starship: Starship) => formatCurrency(starship.purchasePrice),
     },
     {
-      key: 'owned',
-      header: 'Owned',
+      key: 'status',
+      header: 'Status',
       sortable: true,
       render: (starship: Starship) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleOwned(starship._id);
-          }}
-          className={`rounded-full p-1 ${
-            starship.owned 
-              ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-              : 'bg-red-100 text-red-600 hover:bg-red-200'
-          }`}
-        >
-          {starship.owned ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
-      ),
-    },
-    {
-      key: 'wishlist',
-      header: 'Wishlist',
-      sortable: true,
-      render: (starship: Starship) => {
-        // If owned, don't show wishlist button
-        if (starship.owned) {
-          return null;
-        }
-        
-        // If on order, show blue airplane icon
-        if (starship.onOrder) {
-          return (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onToggleWishlist) onToggleWishlist(starship._id);
-              }}
-              className="rounded-full p-1 bg-blue-100 text-blue-600 hover:bg-blue-200"
-              title="On Order"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-              </svg>
-            </button>
-          );
-        }
-        
-        // If wishlist, show gold star
-        if (starship.wishlist) {
-          return (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onToggleWishlist) onToggleWishlist(starship._id);
-              }}
-              className="rounded-full p-1 bg-yellow-100 text-yellow-500 hover:bg-yellow-200"
-              title="On Wishlist"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            </button>
-          );
-        }
-        
-        // Default case: not owned, not on order, not on wishlist
-        return onToggleWishlist ? (
+        <div className="flex items-center space-x-2">
+          {/* Owned/Not Owned Icon */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onToggleWishlist(starship._id);
+              onToggleOwned(starship._id);
             }}
-            className="rounded-full p-1 bg-gray-100 text-gray-400 hover:bg-gray-200"
-            title="Add to Wishlist"
+            className={`rounded-full p-1 ${
+              starship.owned 
+                ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                : 'bg-red-100 text-red-600 hover:bg-red-200'
+            }`}
+            title={starship.owned ? "Owned" : "Not Owned"}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
+            {starship.owned ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            )}
           </button>
-        ) : null;
-      },
+
+          {/* Wishlist/On Order Icon - Only show if not owned */}
+          {!starship.owned && (onCycleStatus || onToggleWishlist) && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onCycleStatus) {
+                  onCycleStatus(starship._id);
+                } else if (onToggleWishlist) {
+                  onToggleWishlist(starship._id);
+                }
+              }}
+              className={`rounded-full p-1 ${
+                starship.onOrder
+                  ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                  : starship.wishlist
+                    ? 'bg-yellow-100 text-yellow-500 hover:bg-yellow-200'
+                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+              }`}
+              title={
+                starship.onOrder 
+                  ? "On Order - Click to remove" 
+                  : starship.wishlist 
+                    ? "On Wishlist - Click to mark as on order" 
+                    : "Add to Wishlist"
+              }
+            >
+              {starship.onOrder ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -618,19 +603,22 @@ const StarshipList: React.FC<StarshipListProps> = ({
             )}
           </div>
           
-          {/* Owned Filter */}
+          {/* Status Filter (formerly Owned Filter) */}
           <div className="relative inline-block text-left">
             <div>
               <button
                 type="button"
                 className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                id="owned-menu-button"
+                id="status-menu-button"
                 aria-expanded="true"
                 aria-haspopup="true"
                 onClick={() => setOwnedMenuOpen(!ownedMenuOpen)}
               >
-                {filters.owned === 'all' ? 'All Ships' : 
-                 filters.owned === 'owned' ? 'Owned Only' : 'Not Owned Only'}
+                Status: {filters.owned === 'all' ? 'All' : 
+                 filters.owned === 'owned' ? 'Owned' : 
+                 filters.owned === 'not-owned' ? 'Not Owned' :
+                 filters.owned === 'wishlist' ? 'Wishlist' :
+                 filters.owned === 'on-order' ? 'On Order' : 'All'}
                 <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -642,7 +630,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
                 className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
                 role="menu"
                 aria-orientation="vertical"
-                aria-labelledby="owned-menu-button"
+                aria-labelledby="status-menu-button"
                 tabIndex={-1}
               >
                 <div className="py-1" role="none">
@@ -680,10 +668,40 @@ const StarshipList: React.FC<StarshipListProps> = ({
                     onClick={() => setOwnedFilter('not-owned')}
                   >
                     <span className="flex items-center">
-                      <svg className="mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="mr-2 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                       </svg>
                       Not Owned Only
+                    </span>
+                  </button>
+                  <button
+                    className={`${
+                      filters.owned === 'wishlist' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => setOwnedFilter('wishlist')}
+                  >
+                    <span className="flex items-center">
+                      <svg className="mr-2 h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      Wishlist Only
+                    </span>
+                  </button>
+                  <button
+                    className={`${
+                      filters.owned === 'on-order' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                    } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                    role="menuitem"
+                    tabIndex={-1}
+                    onClick={() => setOwnedFilter('on-order')}
+                  >
+                    <span className="flex items-center">
+                      <svg className="mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                      </svg>
+                      On Order Only
                     </span>
                   </button>
                 </div>

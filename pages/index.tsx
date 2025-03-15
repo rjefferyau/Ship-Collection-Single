@@ -102,6 +102,48 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleCycleStatus = async (id: string) => {
+    try {
+      const response = await fetch(`/api/starships/${id}/cycle-status`, {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to cycle status');
+      }
+      
+      const result = await response.json();
+      
+      // Update the starship in the local state
+      setStarships(prevStarships => 
+        prevStarships.map(ship => 
+          ship._id === id ? { 
+            ...ship, 
+            wishlist: result.data.wishlist,
+            wishlistPriority: result.data.wishlistPriority,
+            onOrder: result.data.onOrder,
+            orderDate: result.data.orderDate,
+            pricePaid: result.data.pricePaid
+          } : ship
+        )
+      );
+      
+      // If the selected starship is the one being updated, update it too
+      if (selectedStarship && selectedStarship._id === id) {
+        setSelectedStarship(prev => prev ? { 
+          ...prev, 
+          wishlist: result.data.wishlist,
+          wishlistPriority: result.data.wishlistPriority,
+          onOrder: result.data.onOrder,
+          orderDate: result.data.orderDate,
+          pricePaid: result.data.pricePaid
+        } : null);
+      }
+    } catch (err) {
+      console.error('Error cycling status:', err);
+    }
+  };
+
   const handleSelectStarship = (starship: Starship) => {
     setSelectedStarship(starship);
   };
@@ -148,6 +190,7 @@ const Home: React.FC = () => {
           onToggleOwned={handleToggleOwned}
           onSelectStarship={handleSelectStarship}
           onToggleWishlist={handleToggleWishlist}
+          onCycleStatus={handleCycleStatus}
           onEditionChange={handleEditionChange}
           currentEdition={currentEdition}
         />

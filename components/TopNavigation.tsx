@@ -148,13 +148,32 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   tabIndex={-1}
                   ref={settingsMenuRef}
                 >
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                    Primary Setup
+                  </div>
                   <Link 
                     href="/setup" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Ship Setup
+                    Collection Setup
+                  </Link>
+                  <Link 
+                    href="/collection-type-setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Collection Types
+                  </Link>
+                  <Link 
+                    href="/franchise-setup" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Franchises
                   </Link>
                   <Link 
                     href="/faction-setup" 
@@ -162,23 +181,19 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Faction Setup
+                    Factions
                   </Link>
+                  
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 mt-1">
+                    Secondary Setup
+                  </div>
                   <Link 
                     href="/edition-setup" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Edition Setup
-                  </Link>
-                  <Link 
-                    href="/icon-setup" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
-                    role="menuitem"
-                    onClick={() => setIsSettingsMenuOpen(false)}
-                  >
-                    Icon Setup
+                    Editions
                   </Link>
                   <Link 
                     href="/currency-setup" 
@@ -186,15 +201,27 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Currency Setup
+                    Currency Settings
                   </Link>
                   <Link 
-                    href="/database-check" 
+                    href="/icon-setup" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Database Check & Maintenance
+                    UI Icons
+                  </Link>
+                  
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100 mt-1">
+                    Utilities
+                  </div>
+                  <Link 
+                    href="/management" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Bulk Management
                   </Link>
                   <Link 
                     href="/import-export" 
@@ -205,12 +232,12 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     Import/Export
                   </Link>
                   <Link 
-                    href="/collection-type-setup" 
+                    href="/database-check" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Collection Type Setup
+                    Database Maintenance
                   </Link>
                 </div>
               )}

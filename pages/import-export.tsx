@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
-import Layout from '../components/Layout';
 import Link from 'next/link';
 
 const ImportExportPage: React.FC = () => {
@@ -87,25 +86,29 @@ const ImportExportPage: React.FC = () => {
   };
   
   return (
-    <Layout title="Import/Export - Ship Collection">
+    <>
+      <Head>
+        <title>Import/Export - Ship Collection</title>
+      </Head>
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Import/Export</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Import/Export</h1>
           <nav className="flex mt-2" aria-label="Breadcrumb">
-            <ol className="flex items-center space-x-2">
-              <li>
-                <Link href="/" className="text-gray-500 hover:text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <Link href="/" className="text-gray-700 hover:text-indigo-600 inline-flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                   </svg>
                   Home
                 </Link>
               </li>
               <li className="flex items-center">
-                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <svg className="w-3 h-3 text-gray-400 mx-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
-                <span className="text-gray-500">Import/Export</span>
+                <span className="text-gray-500 ml-1">Import/Export</span>
               </li>
             </ol>
           </nav>
@@ -113,14 +116,14 @@ const ImportExportPage: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Export Card */}
-          <div className="card">
-            <div className="card-header flex items-center">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
-              <h2 className="text-lg font-medium text-gray-900">Export Collection</h2>
+              <h2 className="text-lg font-medium text-gray-800">Export Collection</h2>
             </div>
-            <div className="card-body">
+            <div className="p-5">
               {exportSuccess && (
                 <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4">
                   <div className="flex">
@@ -161,7 +164,7 @@ const ImportExportPage: React.FC = () => {
                   id="exportFormat"
                   value={exportFormat}
                   onChange={(e) => setExportFormat(e.target.value)}
-                  className="form-select"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                 >
                   <option value="json">JSON (Recommended)</option>
                   <option value="csv">CSV</option>
@@ -176,7 +179,7 @@ const ImportExportPage: React.FC = () => {
                   type="button"
                   onClick={handleExport}
                   disabled={isLoading}
-                  className="btn-primary"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   {isLoading ? (
                     <span className="flex items-center">
@@ -200,14 +203,14 @@ const ImportExportPage: React.FC = () => {
           </div>
           
           {/* Import Card */}
-          <div className="card">
-            <div className="card-header flex items-center">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-600 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.707-8.707a1 1 0 00-1.414 0l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L5.414 13H17a1 1 0 100-2H5.414l1.293-1.293a1 1 0 000-1.414z" clipRule="evenodd" />
               </svg>
-              <h2 className="text-lg font-medium text-gray-900">Import Collection</h2>
+              <h2 className="text-lg font-medium text-gray-800">Import Collection</h2>
             </div>
-            <div className="card-body">
+            <div className="p-5">
               {importSuccess && (
                 <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4">
                   <div className="flex">
@@ -249,29 +252,19 @@ const ImportExportPage: React.FC = () => {
                     type="file"
                     id="importFile"
                     accept=".json,.csv"
-                    onChange={(e) => {
-                      const files = (e.target as HTMLInputElement).files;
-                      if (files && files.length > 0) {
-                        setImportFile(files[0]);
-                      }
-                    }}
-                    className="block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-medium
-                      file:bg-indigo-50 file:text-indigo-700
-                      hover:file:bg-indigo-100"
+                    onChange={(e) => setImportFile(e.target.files ? e.target.files[0] : null)}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                   />
                   <p className="mt-1 text-sm text-gray-500">
-                    Select a JSON or CSV file that was previously exported from Ship Collection.
+                    Select a JSON or CSV file exported from this application.
                   </p>
                 </div>
                 
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!importFile || isLoading}
-                    className="btn-primary"
+                    disabled={isLoading || !importFile}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <span className="flex items-center">
@@ -295,40 +288,8 @@ const ImportExportPage: React.FC = () => {
             </div>
           </div>
         </div>
-        
-        {/* Notes Card */}
-        <div className="mt-6">
-          <div className="card">
-            <div className="card-header">
-              <h2 className="text-lg font-medium text-gray-900">Import/Export Notes</h2>
-            </div>
-            <div className="card-body">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-base font-medium text-gray-900 mb-2">About Importing</h3>
-                  <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                    <li>Importing will merge with your existing collection, not replace it.</li>
-                    <li>If a starship with the same edition and issue number already exists, its data will be updated.</li>
-                    <li>New starships will be added to your collection.</li>
-                    <li>For best results, use JSON format which preserves all data fields.</li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h3 className="text-base font-medium text-gray-900 mb-2">About Exporting</h3>
-                  <ul className="list-disc pl-5 text-gray-600 space-y-1">
-                    <li>Exports include all starships in your collection, including wishlist items.</li>
-                    <li>JSON format is recommended for backups as it preserves all data.</li>
-                    <li>CSV format is useful for viewing your collection in spreadsheet applications.</li>
-                    <li>Regular backups are recommended to prevent data loss.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

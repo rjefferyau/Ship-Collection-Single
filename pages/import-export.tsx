@@ -88,7 +88,7 @@ const ImportExportPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Import/Export - Ship Collection</title>
+        <title>Import/Export - CollectHub</title>
       </Head>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -154,7 +154,7 @@ const ImportExportPage: React.FC = () => {
                 </div>
               )}
               
-              <p className="mb-4 text-gray-600">Export your entire starship collection to a file that you can backup or transfer to another device.</p>
+              <p className="mb-4 text-gray-600">Export your entire collectibles data to a file that you can backup or transfer to another device.</p>
               
               <div className="mb-4">
                 <label htmlFor="exportFormat" className="block text-sm font-medium text-gray-700 mb-1">

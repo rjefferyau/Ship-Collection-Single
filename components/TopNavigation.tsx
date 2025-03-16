@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCubes } from '@fortawesome/free-solid-svg-icons';
 
 interface NavItem {
   name: string;
@@ -98,7 +100,8 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <Link href="/" className="flex items-center">
-                <span className="text-xl font-bold text-indigo-600">Ship Collection</span>
+                <FontAwesomeIcon icon={faCubes} className="mr-2 text-indigo-600" />
+                <span className="text-xl font-bold text-indigo-600">CollectHub</span>
               </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

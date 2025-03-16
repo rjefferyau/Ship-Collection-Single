@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
         </div>
         <div className="mt-4 md:mt-0 md:order-1 text-center md:text-left">
           <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} Ship Collection. All rights reserved.
+            &copy; {new Date().getFullYear()} CollectHub. All rights reserved.
           </p>
         </div>
       </div>

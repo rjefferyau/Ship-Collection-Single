@@ -1,4 +1,4 @@
-// Type definitions for the Starship Collection Manager
+// Type definitions for CollectHub
 
 // Starship interface
 interface Starship {

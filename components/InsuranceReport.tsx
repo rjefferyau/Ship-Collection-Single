@@ -31,7 +31,7 @@ const InsuranceReport: React.FC<InsuranceReportProps> = ({ starships, ownerInfo 
   const [showModal, setShowModal] = useState(false);
   const [includePhotos, setIncludePhotos] = useState(true);
   const [includeNotes, setIncludeNotes] = useState(true);
-  const [reportTitle, setReportTitle] = useState('Starship Collection Insurance Valuation');
+  const [reportTitle, setReportTitle] = useState('CollectHub Insurance Valuation');
   
   // Close modal when clicking outside
   const modalRef = useRef<HTMLDivElement>(null);

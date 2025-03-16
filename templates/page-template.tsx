@@ -27,7 +27,7 @@ const PageTemplate: React.FC = () => {
     <>
       {/* Optional: Add page-specific head content */}
       <Head>
-        <title>Page Title - Starship Collection Manager</title>
+        <title>Page Title - CollectHub</title>
       </Head>
       
       {/* Main content - this will be wrapped by the Layout component from _app.tsx */}

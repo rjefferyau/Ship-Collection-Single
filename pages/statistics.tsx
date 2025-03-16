@@ -185,7 +185,7 @@ const StatisticsPage: React.FC = () => {
     <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Collection Statistics</h1>
-        <p className="text-gray-600">Insights and analytics about your starship collection</p>
+        <p className="text-gray-600">Insights and analytics about your collectibles</p>
       </div>
 
       {/* Filter controls */}

@@ -42,7 +42,7 @@ export default async function handler(
     // Create new faction documents
     const factionsToCreate = newFactions.map(name => ({
       name,
-      description: `Imported from starship collection`
+      description: `Imported from CollectHub`
     }));
     
     // Insert the new factions

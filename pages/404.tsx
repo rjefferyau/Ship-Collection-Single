@@ -5,7 +5,7 @@ export default function Custom404() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Head>
-        <title>Page Not Found | Starship Collection</title>
+        <title>Page Not Found | CollectHub</title>
       </Head>
       <div className="text-center p-8 max-w-md">
         <div className="mb-6">

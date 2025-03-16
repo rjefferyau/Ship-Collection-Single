@@ -304,7 +304,7 @@ const DatabaseFix: React.FC = () => {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-700">
-                <strong>Warning:</strong> This operation will permanently delete the old starship collections.
+                <strong>Warning:</strong> This operation will permanently delete the old collection data.
                 Make sure you have verified that the migration was successful and all your data is accessible in the new collection.
               </p>
             </div>
@@ -324,7 +324,7 @@ const DatabaseFix: React.FC = () => {
         ) : (
           <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
             <p className="text-sm text-red-700 mb-4">
-              Are you absolutely sure you want to delete the old starship collections? This operation cannot be undone.
+              Are you absolutely sure you want to delete the old collection data? This operation cannot be undone.
             </p>
             <div className="flex space-x-3">
               <button

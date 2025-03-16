@@ -262,7 +262,7 @@ const FactionManager: React.FC = () => {
               }`}
               onClick={handleImportFactions}
               disabled={importStatus.loading}
-              title="Import existing factions from starship collection"
+              title="Import existing factions from CollectHub"
             >
               {importStatus.loading ? (
                 <>
@@ -399,7 +399,7 @@ const FactionManager: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <p className="text-sm">
-                    No factions found. Click "Add New Faction" to create one or "Import Existing" to import from your starship collection.
+                    No factions found. Click "Add New Faction" to create one or "Import Existing" to import from your CollectHub.
                   </p>
                 </div>
               </div>
@@ -424,7 +424,7 @@ const FactionManager: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{faction.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {faction.description || '-'}
-                        {faction.description?.includes('Imported from starship collection') && (
+                        {faction.description?.includes('Imported from CollectHub') && (
                           <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             Imported
                           </span>

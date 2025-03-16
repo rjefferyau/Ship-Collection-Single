@@ -8,7 +8,7 @@ const FactionSetupPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Faction Setup - Starship Collection Manager</title>
+        <title>Faction Setup - CollectHub</title>
       </Head>
       
       <div className="mb-6">

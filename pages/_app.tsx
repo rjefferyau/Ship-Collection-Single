@@ -22,23 +22,23 @@ function MyApp({ Component, pageProps }: AppProps) {
   
   // Determine page title based on current path
   let pageTitle = 'The Collection';
-  if (path === '/fancy-view') pageTitle = 'Gallery | Starship Collection';
-  else if (path === '/statistics') pageTitle = 'Statistics | Starship Collection';
-  else if (path === '/price-vault') pageTitle = 'Price Vault | Starship Collection';
-  else if (path === '/wishlist') pageTitle = 'Wishlist | Starship Collection';
-  else if (path === '/management') pageTitle = 'Management | Starship Collection';
-  else if (path === '/setup') pageTitle = 'Setup | Starship Collection';
-  else if (path === '/icon-setup') pageTitle = 'Icon Setup | Starship Collection';
-  else if (path === '/faction-setup') pageTitle = 'Faction Setup | Starship Collection';
-  else if (path === '/edition-setup') pageTitle = 'Edition Setup | Starship Collection';
-  else if (path === '/import-export') pageTitle = 'Import/Export | Starship Collection';
-  else if (path === '/currency-setup') pageTitle = 'Currency Setup | Starship Collection';
+  if (path === '/fancy-view') pageTitle = 'Gallery | CollectHub';
+  else if (path === '/statistics') pageTitle = 'Statistics | CollectHub';
+  else if (path === '/price-vault') pageTitle = 'Price Vault | CollectHub';
+  else if (path === '/wishlist') pageTitle = 'Wishlist | CollectHub';
+  else if (path === '/management') pageTitle = 'Management | CollectHub';
+  else if (path === '/setup') pageTitle = 'Setup | CollectHub';
+  else if (path === '/icon-setup') pageTitle = 'Icon Setup | CollectHub';
+  else if (path === '/faction-setup') pageTitle = 'Faction Setup | CollectHub';
+  else if (path === '/edition-setup') pageTitle = 'Edition Setup | CollectHub';
+  else if (path === '/import-export') pageTitle = 'Import/Export | CollectHub';
+  else if (path === '/currency-setup') pageTitle = 'Currency Setup | CollectHub';
   
   return (
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Starship Collection Manager - Track and manage your Star Trek starship collection" />
+        <meta name="description" content="CollectHub - Track and manage your collectibles" />
         <meta name="keywords" content="Star Trek, starships, collection, manager, tracking" />
         <title>{pageTitle}</title>
       </Head>

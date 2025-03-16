@@ -66,7 +66,7 @@ const CurrencySetupPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Currency Setup - Starship Collection Manager</title>
+        <title>Currency Setup - CollectHub</title>
       </Head>
       
       <div className="mb-6">

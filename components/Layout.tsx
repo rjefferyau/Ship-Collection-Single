@@ -8,7 +8,7 @@ interface LayoutProps {
   title?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, title = 'Ship Collection' }) => {
+const Layout: React.FC<LayoutProps> = ({ children, title = 'CollectHub' }) => {
   const navItems = [
     {
       name: 'Home',

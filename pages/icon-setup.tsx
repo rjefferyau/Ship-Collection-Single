@@ -129,7 +129,7 @@ const IconSetupPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Icon Setup - Starship Collection Manager</title>
+        <title>Icon Setup - CollectHub</title>
       </Head>
       
       <div className="mb-6">

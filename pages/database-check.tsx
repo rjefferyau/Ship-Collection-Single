@@ -11,7 +11,7 @@ const DatabaseCheckPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Database Check - Starship Collection Manager</title>
+        <title>Database Check - CollectHub</title>
       </Head>
       
       <div className="mb-6">

@@ -119,7 +119,7 @@ const ImportExport: React.FC<ImportExportProps> = ({ onDataChange }) => {
           
           <div className="mb-4">
             <p className="text-sm text-gray-600">
-              Export your entire starship collection to a file that you can back up or import later.
+              Export your entire collectibles data to a file that you can back up or import later.
             </p>
           </div>
           

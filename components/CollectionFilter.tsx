@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLayerGroup, faFilm, faFilter, faTimes, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
@@ -17,12 +17,42 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   const [selectedFranchise, setSelectedFranchise] = useState<string>('');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
+  
+  // Dropdown state
+  const [collectionTypeDropdownOpen, setCollectionTypeDropdownOpen] = useState(false);
+  const [franchiseDropdownOpen, setFranchiseDropdownOpen] = useState(false);
+  
+  // Refs for click outside handling
+  const collectionTypeDropdownRef = useRef<HTMLDivElement>(null);
+  const franchiseDropdownRef = useRef<HTMLDivElement>(null);
 
   // Fetch collection types and franchises on component mount
   useEffect(() => {
     fetchCollectionTypes();
     fetchFranchises();
     fetchItemCounts();
+    
+    // Add click outside handler
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        collectionTypeDropdownRef.current && 
+        !collectionTypeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCollectionTypeDropdownOpen(false);
+      }
+      
+      if (
+        franchiseDropdownRef.current && 
+        !franchiseDropdownRef.current.contains(event.target as Node)
+      ) {
+        setFranchiseDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   // Notify parent component when filters change
@@ -101,7 +131,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   const hasActiveFilters = selectedCollectionType || selectedFranchise;
 
   return (
-    <div className={`bg-white shadow-lg rounded-xl overflow-hidden transition-all duration-300 ${className}`}>
+    <div className={`bg-white shadow-lg rounded-xl transition-all duration-300 ${className}`}>
       {/* Header with toggle */}
       <div 
         className="bg-indigo-600 px-5 py-4 flex justify-between items-center cursor-pointer"
@@ -148,22 +178,44 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
                 <FontAwesomeIcon icon={faLayerGroup} className="text-indigo-500 mr-2" />
                 Collection Type
               </label>
-              <div className="relative">
-                <select
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 appearance-none bg-white"
-                  value={selectedCollectionType}
-                  onChange={(e) => setSelectedCollectionType(e.target.value)}
+              <div className="relative" ref={collectionTypeDropdownRef}>
+                <button
+                  type="button"
+                  className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
+                  onClick={() => setCollectionTypeDropdownOpen(!collectionTypeDropdownOpen)}
                 >
-                  <option value="">All Collection Types</option>
-                  {collectionTypes.map((type) => (
-                    <option key={type._id} value={type.name}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4" />
-                </div>
+                  {selectedCollectionType || 'All Collection Types'}
+                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 text-gray-400" />
+                  </span>
+                </button>
+                
+                {collectionTypeDropdownOpen && (
+                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
+                       style={{ width: collectionTypeDropdownRef.current?.offsetWidth, top: (collectionTypeDropdownRef.current?.getBoundingClientRect().bottom || 0) + 5, left: collectionTypeDropdownRef.current?.getBoundingClientRect().left }}>
+                    <div 
+                      className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
+                      onClick={() => {
+                        setSelectedCollectionType('');
+                        setCollectionTypeDropdownOpen(false);
+                      }}
+                    >
+                      All Collection Types
+                    </div>
+                    {collectionTypes.map((type) => (
+                      <div 
+                        key={type._id}
+                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 ${selectedCollectionType === type.name ? 'bg-indigo-100' : ''}`}
+                        onClick={() => {
+                          setSelectedCollectionType(type.name);
+                          setCollectionTypeDropdownOpen(false);
+                        }}
+                      >
+                        {type.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {selectedCollectionType && (
                 <div className="flex items-center mt-2">
@@ -186,22 +238,44 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
                 <FontAwesomeIcon icon={faFilm} className="text-indigo-500 mr-2" />
                 Franchise
               </label>
-              <div className="relative">
-                <select
-                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 appearance-none bg-white"
-                  value={selectedFranchise}
-                  onChange={(e) => setSelectedFranchise(e.target.value)}
+              <div className="relative" ref={franchiseDropdownRef}>
+                <button
+                  type="button"
+                  className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
+                  onClick={() => setFranchiseDropdownOpen(!franchiseDropdownOpen)}
                 >
-                  <option value="">All Franchises</option>
-                  {franchises.map((franchise) => (
-                    <option key={franchise._id} value={franchise.name}>
-                      {franchise.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                  <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4" />
-                </div>
+                  {selectedFranchise || 'All Franchises'}
+                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 text-gray-400" />
+                  </span>
+                </button>
+                
+                {franchiseDropdownOpen && (
+                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
+                       style={{ width: franchiseDropdownRef.current?.offsetWidth, top: (franchiseDropdownRef.current?.getBoundingClientRect().bottom || 0) + 5, left: franchiseDropdownRef.current?.getBoundingClientRect().left }}>
+                    <div 
+                      className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
+                      onClick={() => {
+                        setSelectedFranchise('');
+                        setFranchiseDropdownOpen(false);
+                      }}
+                    >
+                      All Franchises
+                    </div>
+                    {franchises.map((franchise) => (
+                      <div 
+                        key={franchise._id}
+                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 ${selectedFranchise === franchise.name ? 'bg-indigo-100' : ''}`}
+                        onClick={() => {
+                          setSelectedFranchise(franchise.name);
+                          setFranchiseDropdownOpen(false);
+                        }}
+                      >
+                        {franchise.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {selectedFranchise && (
                 <div className="flex items-center mt-2">

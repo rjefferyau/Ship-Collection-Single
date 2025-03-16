@@ -126,9 +126,13 @@ const FancyViewPage: React.FC = () => {
   }, [selectedCollectionType, selectedFranchise]);
 
   return (
-    <div className="container mx-auto px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Gallery View</h1>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Gallery View</h1>
+        <p className="text-gray-600">Visual showcase of your starship collection</p>
+      </div>
+      
+      <div className="mb-4 flex justify-end">
         <button
           onClick={() => setShowAddModal(true)}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"

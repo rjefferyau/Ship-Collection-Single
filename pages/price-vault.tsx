@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PriceVault from '../components/PriceVault';
 import InsuranceReport from '../components/InsuranceReport';
+import CollectionFilter from '../components/CollectionFilter';
 import { Starship } from '../types';
 
 // Define a local interface that matches what PriceVault expects
@@ -23,7 +24,7 @@ interface PriceVaultStarship {
 const PriceVaultPage: React.FC = () => {
   // Maintain two separate state variables for the different component types
   const [priceVaultStarships, setPriceVaultStarships] = useState<PriceVaultStarship[]>([]);
-  const [apiStarships, setApiStarships] = useState<Starship[]>([]);
+  const [apiStarships, setApiStarships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -113,7 +114,7 @@ const PriceVaultPage: React.FC = () => {
       setApiStarships(data.data || []);
       
       // Convert API starships to the format expected by PriceVault
-      const convertedStarships: PriceVaultStarship[] = (data.data || []).map((ship: Starship) => ({
+      const convertedStarships: PriceVaultStarship[] = (data.data || []).map((ship: any) => ({
         _id: ship._id,
         issue: ship.issue,
         edition: ship.edition,
@@ -184,14 +185,10 @@ const PriceVaultPage: React.FC = () => {
     }
   };
 
-  // Function to handle collection type selection
-  const handleCollectionTypeChange = (collectionType: string) => {
-    setSelectedCollectionType(collectionType === selectedCollectionType ? '' : collectionType);
-  };
-
-  // Function to handle franchise selection
-  const handleFranchiseChange = (franchise: string) => {
-    setSelectedFranchise(franchise === selectedFranchise ? '' : franchise);
+  // Function to handle filter changes from CollectionFilter component
+  const handleFilterChange = (collectionType: string, franchise: string) => {
+    setSelectedCollectionType(collectionType);
+    setSelectedFranchise(franchise);
   };
 
   return (
@@ -201,36 +198,8 @@ const PriceVaultPage: React.FC = () => {
         <p className="text-gray-600">Track and manage the value of your collection</p>
       </div>
 
-      {/* Filter controls */}
-      <div className="mb-6 flex flex-wrap gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Collection Type</label>
-          <select
-            value={selectedCollectionType}
-            onChange={(e) => handleCollectionTypeChange(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="">All Collection Types</option>
-            {allCollectionTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Franchise</label>
-          <select
-            value={selectedFranchise}
-            onChange={(e) => handleFranchiseChange(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="">All Franchises</option>
-            {allFranchises.map((franchise) => (
-              <option key={franchise} value={franchise}>{franchise}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {/* Collection Filter */}
+      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
 
       {/* Success and error messages */}
       {success && (
@@ -246,11 +215,7 @@ const PriceVaultPage: React.FC = () => {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
-          <p className="text-gray-600">Track and manage pricing information for your collection</p>
-        </div>
+      <div className="mb-4 flex flex-wrap justify-end">
         <div className="flex space-x-2">
           <InsuranceReport starships={apiStarships} ownerInfo={ownerInfo} />
           

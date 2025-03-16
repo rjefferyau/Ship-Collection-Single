@@ -97,14 +97,17 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
     <nav className="bg-white shadow">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center">
-                <FontAwesomeIcon icon={faCubes} className="mr-2 text-indigo-600" />
-                <span className="text-xl font-bold text-indigo-600">CollectHub</span>
-              </Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+          {/* Logo on the left */}
+          <div className="flex-shrink-0 flex items-center">
+            <Link href="/" className="flex items-center">
+              <FontAwesomeIcon icon={faCubes} className="mr-2 text-indigo-600" />
+              <span className="text-xl font-bold text-indigo-600">CollectHub</span>
+            </Link>
+          </div>
+          
+          {/* Centered navigation items */}
+          <div className="hidden sm:flex items-end justify-center flex-1 mx-8">
+            <div className="flex space-x-8">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -113,7 +116,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     router.pathname === item.href
                       ? 'border-indigo-500 text-gray-900'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+                  } flex items-center px-1 border-b-2 text-sm font-medium h-16`}
                 >
                   <span className="mr-2">{item.icon}</span>
                   {item.name}
@@ -121,7 +124,9 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
               ))}
             </div>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+          
+          {/* Right side icons */}
+          <div className="hidden sm:flex sm:items-center space-x-4">
             {/* Settings Menu Button */}
             <div className="relative">
               <div>

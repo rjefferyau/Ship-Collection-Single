@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Draggable, DropResult, DroppableProvided, DraggableProvided, DroppableStateSnapshot, DraggableStateSnapshot } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
+import CollectionFilter from '../components/CollectionFilter';
 import { Starship } from '../types';
 import { useCurrency } from '../contexts/CurrencyContext';
 
@@ -94,12 +95,10 @@ const WishlistPage: React.FC = () => {
     }
   };
 
-  const handleCollectionTypeChange = (collectionType: string) => {
-    setSelectedCollectionType(collectionType === selectedCollectionType ? '' : collectionType);
-  };
-
-  const handleFranchiseChange = (franchise: string) => {
-    setSelectedFranchise(franchise === selectedFranchise ? '' : franchise);
+  // Function to handle filter changes from CollectionFilter component
+  const handleFilterChange = (collectionType: string, franchise: string) => {
+    setSelectedCollectionType(collectionType);
+    setSelectedFranchise(franchise);
   };
 
   // Format date
@@ -314,36 +313,8 @@ const WishlistPage: React.FC = () => {
         <p className="text-gray-600">Manage your wishlist and track orders</p>
       </div>
 
-      {/* Filter controls */}
-      <div className="mb-6 flex flex-wrap gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Collection Type</label>
-          <select
-            value={selectedCollectionType}
-            onChange={(e) => handleCollectionTypeChange(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="">All Collection Types</option>
-            {allCollectionTypes.map((type) => (
-              <option key={type} value={type}>{type}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Franchise</label>
-          <select
-            value={selectedFranchise}
-            onChange={(e) => handleFranchiseChange(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-          >
-            <option value="">All Franchises</option>
-            {allFranchises.map((franchise) => (
-              <option key={franchise} value={franchise}>{franchise}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {/* Collection Filter */}
+      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
 
       {/* Success and error messages */}
       {success && (

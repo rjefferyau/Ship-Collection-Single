@@ -1,9 +1,11 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf, faInfoCircle, faTag, faCalendarAlt, faUsers, faCube, faIndustry, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf, faInfoCircle, faTag, faCalendarAlt, faUsers, faCube, faIndustry, faLayerGroup, faMapMarkerAlt, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import PdfViewer from './PdfViewer';
+import SightingsModal from './modals/SightingsModal';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 interface Faction {
   _id: string;
@@ -45,6 +47,14 @@ interface Starship {
   retailPrice?: number;
   purchasePrice?: number;
   marketValue?: number;
+  sightings?: Array<{
+    _id?: string;
+    location: string;
+    date: Date | string;
+    price: number;
+    url?: string;
+    notes?: string;
+  }>;
 }
 
 interface StarshipDetailsProps {
@@ -70,6 +80,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [loadingManufacturers, setLoadingManufacturers] = useState(false);
+  const [showSightingsModal, setShowSightingsModal] = useState(false);
   
   // Add state for editable fields
   const [editedValues, setEditedValues] = useState({
@@ -82,6 +93,8 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  const { formatCurrency } = useCurrency();
   
   // Update edited values when starship changes
   useEffect(() => {
@@ -245,6 +258,18 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       />
     );
   };
+
+  const handleSightingsUpdated = () => {
+    // Refresh the starship data to show updated sightings
+    onRefresh();
+  };
+
+  // Add this useEffect near the top of the component
+  useEffect(() => {
+    if (starship.wishlist && !starship.owned) {
+      console.log('Starship sightings:', starship.sightings);
+    }
+  }, [starship]);
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -667,7 +692,109 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
         )}
         
         {renderPdfViewer()}
+        
+        {/* Sightings Section */}
+        {starship.wishlist && !starship.owned && (
+          <div className="mt-4 border-t border-gray-200 pt-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium text-gray-900">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-indigo-600" />
+                Market Sightings
+              </h3>
+              <button
+                onClick={() => setShowSightingsModal(true)}
+                className="text-sm text-indigo-600 hover:text-indigo-900 flex items-center"
+              >
+                <FontAwesomeIcon icon={faPlus} className="mr-1" />
+                Add Sighting
+              </button>
+            </div>
+            
+            {/* Display Market Value */}
+            {starship.marketValue !== undefined && starship.marketValue > 0 && (
+              <div className="mb-3 p-3 bg-blue-50 rounded-md border border-blue-100">
+                <div className="flex items-center">
+                  <FontAwesomeIcon icon={faTag} className="text-blue-500 mr-2" />
+                  <span className="font-medium text-blue-700">Current Market Value:</span>
+                  <span className="ml-2 text-blue-800 font-bold">{formatCurrency(starship.marketValue)}</span>
+                </div>
+                <p className="text-xs text-blue-600 mt-1">
+                  Based on the most recent sighting price
+                </p>
+              </div>
+            )}
+            
+            {starship.sightings && starship.sightings.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {starship.sightings.slice(0, 3).map((sighting, index) => (
+                      <tr key={sighting._id || index}>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {sighting.location}
+                          {sighting.url && (
+                            <a 
+                              href={sighting.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="ml-2 text-indigo-600 hover:text-indigo-900"
+                            >
+                              <FontAwesomeIcon icon={faExternalLinkAlt} />
+                            </a>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(sighting.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                          {formatCurrency(sighting.price)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {starship.sightings.length > 3 && (
+                  <div className="mt-2 text-sm text-gray-500 text-right">
+                    <button 
+                      onClick={() => setShowSightingsModal(true)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      View all {starship.sightings.length} sightings
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">
+                No market sightings recorded yet. Add information about where you've seen this item for sale.
+              </p>
+            )}
+          </div>
+        )}
       </div>
+      
+      {showSightingsModal && (
+        <SightingsModal
+          isOpen={showSightingsModal}
+          onClose={() => setShowSightingsModal(false)}
+          starship={starship}
+          onSightingsUpdated={handleSightingsUpdated}
+        />
+      )}
     </div>
   );
 };

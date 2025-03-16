@@ -26,6 +26,13 @@ export interface IStarship extends Document {
   conditionPhotos?: string[]; // URLs to photos documenting condition
   lastInspectionDate?: Date; // When the item was last inspected
   editionObjectId?: mongoose.Types.ObjectId; // Add edition ObjectId reference for improved MongoDB relationships
+  sightings?: Array<{
+    location: string; // Where the item was seen (store name, website, etc.)
+    date: Date; // When it was seen
+    price: number; // Price at the time of sighting
+    url?: string; // Link to the listing if available
+    notes?: string; // Any additional notes about the sighting
+  }>;
 }
 
 const StarshipSchema: Schema = new Schema({
@@ -99,7 +106,29 @@ const StarshipSchema: Schema = new Schema({
   notes: {
     type: String,
     trim: true
-  }
+  },
+  sightings: [{
+    location: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    price: {
+      type: Number
+    },
+    url: {
+      type: String,
+      trim: true
+    },
+    notes: {
+      type: String,
+      trim: true
+    }
+  }]
 }, {
   timestamps: true,
   collection: 'starshipv5',

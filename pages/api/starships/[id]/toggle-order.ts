@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import mongoose from 'mongoose';
-import dbConnect from '../../../../lib/mongodb';
+import dbConnect from '../../../../lib/dbConnect';
 import Starship from '../../../../models/Starship';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -24,84 +24,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const { onOrder, pricePaid, orderDate } = req.body;
     
-    // Try to find the starship using raw MongoDB queries
+    // Find the starship using the Mongoose model
     console.log(`Looking for starship with ID: ${id}`);
     
-    // Get the raw MongoDB connection
-    const db = mongoose.connection.db;
+    const starship = await Starship.findById(id);
     
-    // Try to find the document in starshipv4 collection
-    let rawDoc = await db.collection('starshipv4').findOne({ _id: id as any });
-    let collectionName = 'starshipv4';
-    
-    if (!rawDoc) {
-      console.log(`Document not found in starshipv4, trying starshipv3 collection`);
-      // Try to find the document in starshipv3 collection
-      rawDoc = await db.collection('starshipv3').findOne({ _id: id as any });
-      collectionName = 'starshipv3';
-    }
-    
-    if (!rawDoc) {
-      console.log(`Starship not found in any collection`);
+    if (!starship) {
+      console.log(`Starship not found with ID: ${id}`);
       return res.status(404).json({ success: false, message: 'Starship not found' });
     }
     
-    console.log(`Document found in ${collectionName}: ${rawDoc._id}`);
+    console.log(`Starship found: ${starship.shipName}`);
     
-    // Prepare the update
-    const updateData: any = { 
-      onOrder: onOrder,
-      updatedAt: new Date()
-    };
-    
-    // If marking as on order, update the price paid and order date
+    // Update the starship
     if (onOrder) {
-      updateData.pricePaid = pricePaid;
-      updateData.orderDate = orderDate ? new Date(orderDate) : new Date();
+      starship.onOrder = true;
+      starship.pricePaid = pricePaid || undefined;
+      starship.orderDate = orderDate ? new Date(orderDate) : new Date();
       
       // If it was on the wishlist, remove it from the wishlist
-      if (rawDoc.wishlist) {
-        updateData.wishlist = false;
-        updateData.wishlistPriority = null;
+      if (starship.wishlist) {
+        starship.wishlist = false;
+        starship.wishlistPriority = undefined;
       }
     } else {
       // If removing from order, clear the price paid and order date
-      updateData.pricePaid = null;
-      updateData.orderDate = null;
+      starship.onOrder = false;
+      starship.pricePaid = undefined;
+      starship.orderDate = undefined;
       
       // Add it back to the wishlist
-      updateData.wishlist = true;
+      starship.wishlist = true;
       
       // Find the highest priority in the wishlist to add this at the end
-      const highestPriorityDoc = await db.collection(collectionName)
-        .find({ wishlist: true })
+      const highestPriorityDoc = await Starship.findOne({ wishlist: true })
         .sort({ wishlistPriority: -1 })
-        .limit(1)
-        .toArray();
+        .limit(1);
       
       // Set the priority to one more than the highest, or 1 if there are no wishlist items
-      updateData.wishlistPriority = highestPriorityDoc.length > 0 && highestPriorityDoc[0].wishlistPriority 
-        ? highestPriorityDoc[0].wishlistPriority + 1 
+      starship.wishlistPriority = highestPriorityDoc && highestPriorityDoc.wishlistPriority 
+        ? highestPriorityDoc.wishlistPriority + 1 
         : 1;
     }
     
-    console.log(`Updating document in ${collectionName}`);
+    console.log(`Updating starship: ${starship.shipName}`);
     
-    // Update the document
-    const result = await db.collection(collectionName).updateOne(
-      { _id: id as any },
-      { $set: updateData }
-    );
+    // Save the updated starship
+    await starship.save();
     
-    console.log(`Update result: ${result.modifiedCount} document(s) modified`);
-    
-    // Get the updated document
-    const updatedDoc = await db.collection(collectionName).findOne({ _id: id as any });
+    console.log(`Starship updated successfully`);
     
     return res.status(200).json({ 
       success: true, 
       message: onOrder ? 'Starship marked as on order' : 'Starship removed from orders and added to wishlist',
-      data: updatedDoc 
+      data: starship 
     });
   } catch (error: any) {
     console.error('Error updating order status:', error);

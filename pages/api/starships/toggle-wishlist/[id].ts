@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import mongoose from 'mongoose';
-import dbConnect from '../../../../lib/mongodb';
+import dbConnect from '../../../../lib/dbConnect';
 import Starship from '../../../../models/Starship';
 
 export default async function handler(

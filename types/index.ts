@@ -1,3 +1,12 @@
+export interface Sighting {
+  _id?: string;
+  location: string;
+  date: Date | string;
+  price: number;
+  url?: string;
+  notes?: string;
+}
+
 export interface Starship {
   _id: string;
   issue: string;
@@ -20,6 +29,7 @@ export interface Starship {
   retailPrice?: number;
   purchasePrice?: number;
   marketValue?: number;
+  sightings?: Sighting[];
 }
 
 export interface Faction {

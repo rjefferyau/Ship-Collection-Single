@@ -7,6 +7,7 @@ export interface Starship {
   faction: string;
   collectionType: string;
   franchise: string;
+  manufacturer?: string;
   releaseDate?: Date;
   imageUrl?: string;
   magazinePdfUrl?: string;

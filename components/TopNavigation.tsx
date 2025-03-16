@@ -247,6 +247,14 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   >
                     Database Maintenance
                   </Link>
+                  <Link 
+                    href="/other-tools" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Other Tools
+                  </Link>
                 </div>
               )}
             </div>
@@ -386,6 +394,9 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
               </Link>
               <Link href="/import-export" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
                 Import/Export
+              </Link>
+              <Link href="/other-tools" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
+                Other Tools
               </Link>
             </div>
           </div>

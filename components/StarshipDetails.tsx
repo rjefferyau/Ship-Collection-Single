@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf, faInfoCircle, faTag, faCalendarAlt, faUsers, faCube } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf, faInfoCircle, faTag, faCalendarAlt, faUsers, faCube, faIndustry, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import PdfViewer from './PdfViewer';
 
@@ -17,12 +17,22 @@ interface Edition {
   description?: string;
 }
 
+interface Manufacturer {
+  _id: string;
+  name: string;
+  description?: string;
+  website?: string;
+  country?: string;
+  franchises?: string[];
+}
+
 interface Starship {
   _id: string;
   issue: string;
   edition: string;
   shipName: string;
   faction: string;
+  manufacturer?: string;
   releaseDate?: Date;
   imageUrl?: string;
   magazinePdfUrl?: string;
@@ -58,6 +68,8 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   const [uploadingPdf, setUploadingPdf] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
+  const [loadingManufacturers, setLoadingManufacturers] = useState(false);
   
   // Add state for editable fields
   const [editedValues, setEditedValues] = useState({
@@ -65,6 +77,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     edition: starship.edition,
     shipName: starship.shipName,
     faction: starship.faction,
+    manufacturer: starship.manufacturer || '',
     releaseDate: starship.releaseDate ? new Date(starship.releaseDate).toISOString().split('T')[0] : '',
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -77,9 +90,33 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       edition: starship.edition,
       shipName: starship.shipName,
       faction: starship.faction,
+      manufacturer: starship.manufacturer || '',
       releaseDate: starship.releaseDate ? new Date(starship.releaseDate).toISOString().split('T')[0] : '',
     });
   }, [starship]);
+
+  // Fetch manufacturers when editing starts
+  useEffect(() => {
+    if (isEditing) {
+      fetchManufacturers();
+    }
+  }, [isEditing]);
+
+  // Fetch manufacturers
+  const fetchManufacturers = async () => {
+    setLoadingManufacturers(true);
+    try {
+      const response = await fetch('/api/manufacturers');
+      if (response.ok) {
+        const data = await response.json();
+        setManufacturers(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching manufacturers:', error);
+    } finally {
+      setLoadingManufacturers(false);
+    }
+  };
 
   // Format date for display
   const formatDate = (date: Date | undefined) => {
@@ -304,6 +341,7 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                     edition: starship.edition,
                     shipName: starship.shipName,
                     faction: starship.faction,
+                    manufacturer: starship.manufacturer || '',
                     releaseDate: starship.releaseDate ? new Date(starship.releaseDate).toISOString().split('T')[0] : '',
                   });
                 }
@@ -437,11 +475,11 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
             </h4>
             <dl className="space-y-3">
               <div className="flex items-center py-2 border-b border-gray-100">
-                <dt className="w-1/3 font-medium text-gray-500 flex items-center">
+                <dt className="w-2/5 font-medium text-gray-500 flex items-center">
                   <FontAwesomeIcon icon={faTag} className="mr-2 text-gray-400 w-4" />
                   Issue:
                 </dt>
-                <dd className="w-2/3 text-gray-900">
+                <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
                     <input
                       type="text"
@@ -456,11 +494,11 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                 </dd>
               </div>
               <div className="flex items-center py-2 border-b border-gray-100">
-                <dt className="w-1/3 font-medium text-gray-500 flex items-center">
-                  <FontAwesomeIcon icon={faBoxOpen} className="mr-2 text-gray-400 w-4" />
+                <dt className="w-2/5 font-medium text-gray-500 flex items-center">
+                  <FontAwesomeIcon icon={faLayerGroup} className="mr-2 text-gray-400 w-4" />
                   Edition:
                 </dt>
-                <dd className="w-2/3 text-gray-900">
+                <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
                     <input
                       type="text"
@@ -475,11 +513,11 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                 </dd>
               </div>
               <div className="flex items-center py-2 border-b border-gray-100">
-                <dt className="w-1/3 font-medium text-gray-500 flex items-center">
+                <dt className="w-2/5 font-medium text-gray-500 flex items-center">
                   <FontAwesomeIcon icon={faUsers} className="mr-2 text-gray-400 w-4" />
                   Faction:
                 </dt>
-                <dd className="w-2/3 text-gray-900">
+                <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
                     <input
                       type="text"
@@ -493,12 +531,37 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                   )}
                 </dd>
               </div>
-              <div className="flex items-center py-2">
-                <dt className="w-1/3 font-medium text-gray-500 flex items-center">
-                  <FontAwesomeIcon icon={faCalendarAlt} className="mr-2 text-gray-400 w-4" />
-                  Release:
+              <div className="flex items-center py-2 border-b border-gray-100">
+                <dt className="w-2/5 font-medium text-gray-500 flex items-center">
+                  <FontAwesomeIcon icon={faIndustry} className="mr-2 text-gray-400 w-4" />
+                  Manufacturer:
                 </dt>
-                <dd className="w-2/3 text-gray-900">
+                <dd className="w-3/5 text-gray-900">
+                  {isEditing ? (
+                    <select
+                      name="manufacturer"
+                      value={editedValues.manufacturer}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">Select a manufacturer</option>
+                      {manufacturers.map(manufacturer => (
+                        <option key={manufacturer._id} value={manufacturer.name}>
+                          {manufacturer.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    starship.manufacturer || '-'
+                  )}
+                </dd>
+              </div>
+              <div className="flex items-center py-2 border-b border-gray-100">
+                <dt className="w-2/5 font-medium text-gray-500 flex items-center">
+                  <FontAwesomeIcon icon={faCalendarAlt} className="mr-2 text-gray-400 w-4" />
+                  Release Date:
+                </dt>
+                <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
                     <input
                       type="date"

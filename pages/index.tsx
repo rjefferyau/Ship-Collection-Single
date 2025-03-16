@@ -347,7 +347,7 @@ const Home: React.FC = () => {
       <ModalContainer 
         isOpen={!!selectedStarship} 
         onClose={() => setSelectedStarship(null)}
-        maxWidth="3xl"
+        maxWidth="5xl"
         showCloseButton={true}
       >
         {selectedStarship && (

@@ -8,6 +8,7 @@ export interface IStarship extends Document {
   shipName: string;  // "Ship Name" from CSV
   faction: string;   // "Race/Faction" from CSV
   franchise?: string; // The franchise this item belongs to
+  manufacturer?: string; // The manufacturer of the starship
   releaseDate?: Date; // "Release Date" from CSV
   imageUrl?: string;  // "Image" field
   magazinePdfUrl?: string; // URL to the PDF magazine
@@ -58,6 +59,10 @@ const StarshipSchema: Schema = new Schema({
     trim: true
   },
   franchise: {
+    type: String,
+    trim: true
+  },
+  manufacturer: {
     type: String,
     trim: true
   },
@@ -116,6 +121,7 @@ StarshipSchema.index({ edition: 1 });
 StarshipSchema.index({ shipName: 1 });
 StarshipSchema.index({ faction: 1 });
 StarshipSchema.index({ franchise: 1 });
+StarshipSchema.index({ manufacturer: 1 });
 StarshipSchema.index({ owned: 1 });
 StarshipSchema.index({ editionObjectId: 1 });
 

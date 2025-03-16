@@ -31,6 +31,15 @@ interface Franchise {
   collectionType?: string; // Associated collection type
 }
 
+interface Manufacturer {
+  _id: string;
+  name: string;
+  description?: string;
+  website?: string;
+  country?: string;
+  franchises?: string[];
+}
+
 interface StarshipFormData {
   issue: string;
   edition: string;
@@ -38,6 +47,7 @@ interface StarshipFormData {
   faction: string;
   collectionType: string;
   franchise: string;
+  manufacturer?: string;
   releaseDate?: string;
   imageUrl?: string;
   magazinePdfUrl?: string;
@@ -65,6 +75,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
     faction: '',
     collectionType: defaultCollectionType || '',
     franchise: defaultFranchise || '',
+    manufacturer: '',
     releaseDate: '',
     imageUrl: '',
     magazinePdfUrl: '',
@@ -84,17 +95,20 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
   const [allEditions, setAllEditions] = useState<Edition[]>([]);
   const [allCollectionTypes, setAllCollectionTypes] = useState<CollectionType[]>([]);
   const [allFranchises, setAllFranchises] = useState<Franchise[]>([]);
+  const [allManufacturers, setAllManufacturers] = useState<Manufacturer[]>([]);
   
   // Filtered data states
   const [availableFranchises, setAvailableFranchises] = useState<Franchise[]>([]);
   const [availableFactions, setAvailableFactions] = useState<Faction[]>([]);
   const [availableEditions, setAvailableEditions] = useState<Edition[]>([]);
+  const [availableManufacturers, setAvailableManufacturers] = useState<Manufacturer[]>([]);
   
   // Loading states
   const [loadingFactions, setLoadingFactions] = useState(false);
   const [loadingEditions, setLoadingEditions] = useState(false);
   const [loadingCollectionTypes, setLoadingCollectionTypes] = useState(false);
   const [loadingFranchises, setLoadingFranchises] = useState(false);
+  const [loadingManufacturers, setLoadingManufacturers] = useState(false);
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -102,6 +116,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
     fetchFranchises();
     fetchFactions();
     fetchEditions();
+    fetchManufacturers();
   }, []);
 
   // Filter franchises when collection type changes
@@ -176,6 +191,42 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
       }
     }
   }, [availableFranchises, defaultFranchise]);
+
+  // Add fetchManufacturers function
+  const fetchManufacturers = async () => {
+    setLoadingManufacturers(true);
+    
+    try {
+      const response = await fetch('/api/manufacturers');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch manufacturers');
+      }
+      
+      const data = await response.json();
+      setAllManufacturers(data.data || []);
+      setAvailableManufacturers(data.data || []);
+    } catch (err) {
+      console.error('Error fetching manufacturers:', err);
+    } finally {
+      setLoadingManufacturers(false);
+    }
+  };
+
+  // Update useEffect for franchise changes to filter manufacturers
+  useEffect(() => {
+    if (formData.franchise) {
+      // Filter manufacturers by franchise if available
+      const filteredManufacturers = allManufacturers.filter(
+        manufacturer => !manufacturer.franchises || 
+                        manufacturer.franchises.length === 0 || 
+                        manufacturer.franchises.includes(formData.franchise)
+      );
+      setAvailableManufacturers(filteredManufacturers);
+    } else {
+      setAvailableManufacturers(allManufacturers);
+    }
+  }, [formData.franchise, allManufacturers]);
 
   const fetchFactions = async () => {
     setLoadingFactions(true);
@@ -578,6 +629,43 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                   {loadingFactions && (
                     <div className="mt-1 text-sm text-gray-500">
                       <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading factions...
+                    </div>
+                  )}
+                </div>
+
+                {/* Manufacturer */}
+                <div>
+                  <label htmlFor="manufacturer" className="block text-sm font-medium text-gray-700 mb-1">
+                    Manufacturer
+                  </label>
+                  <div className="flex">
+                    <select
+                      id="manufacturer"
+                      name="manufacturer"
+                      value={formData.manufacturer || ''}
+                      onChange={handleChange}
+                      disabled={loadingManufacturers || !formData.franchise}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                    >
+                      <option value="">Select a manufacturer</option>
+                      {availableManufacturers.map(manufacturer => (
+                        <option key={manufacturer._id} value={manufacturer.name}>
+                          {manufacturer.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => window.open('/manufacturer-setup', '_blank')}
+                      title="Manage manufacturers"
+                      className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <FontAwesomeIcon icon={faPlus} />
+                    </button>
+                  </div>
+                  {loadingManufacturers && (
+                    <div className="mt-1 text-sm text-gray-500">
+                      <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading manufacturers...
                     </div>
                   )}
                 </div>

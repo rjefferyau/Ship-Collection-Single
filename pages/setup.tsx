@@ -3,8 +3,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faHome, faCog, faIcons, faUsers, 
-  faBookOpen, faFileImport, faDollarSign, faArrowRight, faDatabase,
+  faHome, faCog, faIndustry, faUsers, faTag, 
+  faDatabase, faShip, faTools, faBoxOpen,
+  faFileImport, faDollarSign, faArrowRight,
   faLayerGroup, faFilm, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -71,33 +72,49 @@ const SetupPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Faction Setup Card - Primary */}
+        {/* Manufacturer Setup Card - Primary */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-indigo-600">
           <div className="p-5">
             <div className="flex items-center mb-4">
-              <FontAwesomeIcon icon={faUsers} className="text-indigo-600 text-2xl mr-3" />
+              <FontAwesomeIcon icon={faIndustry} className="text-indigo-600 text-2xl mr-3" />
+              <h2 className="text-xl font-semibold text-gray-800">Manufacturers</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Manage manufacturers and their associated franchises. Assign manufacturers to starships.
+            </p>
+            <Link href="/manufacturer-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              Manage Manufacturers
+            </Link>
+          </div>
+        </div>
+        
+        {/* Faction Setup Card - Primary */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-blue-600">
+          <div className="p-5">
+            <div className="flex items-center mb-4">
+              <FontAwesomeIcon icon={faUsers} className="text-blue-600 text-2xl mr-3" />
               <h2 className="text-xl font-semibold text-gray-800">Factions</h2>
             </div>
             <p className="text-gray-600 mb-4">
-              Configure the factions or groups that your collection items belong to (e.g., Federation, Empire).
+              Manage factions and assign them to starships. Group ships by their allegiance.
             </p>
-            <Link href="/faction-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <Link href="/faction-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
               Manage Factions
             </Link>
           </div>
         </div>
         
         {/* Edition Setup Card - Secondary */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-yellow-500">
           <div className="p-5">
             <div className="flex items-center mb-4">
-              <FontAwesomeIcon icon={faBookOpen} className="text-indigo-600 text-2xl mr-3" />
+              <FontAwesomeIcon icon={faBoxOpen} className="text-yellow-500 text-2xl mr-3" />
               <h2 className="text-xl font-semibold text-gray-800">Editions</h2>
             </div>
             <p className="text-gray-600 mb-4">
-              Manage different editions or series of your collection items (e.g., Original Series, Special Edition).
+              Manage starship editions and collection series. Group ships by their product line.
             </p>
-            <Link href="/edition-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <Link href="/edition-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
               Manage Editions
             </Link>
           </div>
@@ -119,11 +136,11 @@ const SetupPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Icon Setup Card - Secondary */}
+        {/* UI Icons Card - Utility */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-5">
             <div className="flex items-center mb-4">
-              <FontAwesomeIcon icon={faIcons} className="text-indigo-600 text-2xl mr-3" />
+              <FontAwesomeIcon icon={faLayerGroup} className="text-indigo-600 text-2xl mr-3" />
               <h2 className="text-xl font-semibold text-gray-800">UI Icons</h2>
             </div>
             <p className="text-gray-600 mb-4">
@@ -151,34 +168,66 @@ const SetupPage: React.FC = () => {
           </div>
         </div>
         
-        {/* Import/Export Card - Utility */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden bg-gray-50">
+        {/* Database Maintenance Card - Utility */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-purple-600">
           <div className="p-5">
             <div className="flex items-center mb-4">
-              <FontAwesomeIcon icon={faFileImport} className="text-indigo-600 text-2xl mr-3" />
-              <h2 className="text-xl font-semibold text-gray-800">Import/Export</h2>
+              <FontAwesomeIcon icon={faDatabase} className="text-purple-600 text-2xl mr-3" />
+              <h2 className="text-xl font-semibold text-gray-800">Database</h2>
             </div>
             <p className="text-gray-600 mb-4">
-              Transfer your collection data between systems or create backups for safekeeping.
+              Manage database operations including backups, restores, and data imports/exports.
             </p>
-            <Link href="/import-export" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              Import/Export Data
+            <Link href="/database-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+              Database Management
             </Link>
           </div>
         </div>
         
-        {/* Database Check Card - Utility */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden bg-gray-50">
+        {/* Import/Export Card - Utility */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-yellow-500">
           <div className="p-5">
             <div className="flex items-center mb-4">
-              <FontAwesomeIcon icon={faDatabase} className="text-indigo-600 text-2xl mr-3" />
-              <h2 className="text-xl font-semibold text-gray-800">Database Maintenance</h2>
+              <FontAwesomeIcon icon={faFileImport} className="text-yellow-500 text-2xl mr-3" />
+              <h2 className="text-xl font-semibold text-gray-800">Import/Export</h2>
             </div>
             <p className="text-gray-600 mb-4">
-              Check database health, fix inconsistencies, and perform maintenance operations on your collection data.
+              Import data from CSV files or export your collection data for backup or analysis.
             </p>
-            <Link href="/database-check" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-              Database Tools
+            <Link href="/import-export" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500">
+              Import/Export Tools
+            </Link>
+          </div>
+        </div>
+        
+        {/* Tags Card */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-green-600">
+          <div className="p-5">
+            <div className="flex items-center mb-4">
+              <FontAwesomeIcon icon={faTag} className="text-green-600 text-2xl mr-3" />
+              <h2 className="text-xl font-semibold text-gray-800">Tags</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Create and manage tags to categorize your starships. Apply tags to multiple ships at once.
+            </p>
+            <Link href="/tag-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+              Manage Tags
+            </Link>
+          </div>
+        </div>
+        
+        {/* Other Tools Card */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-gray-600">
+          <div className="p-5">
+            <div className="flex items-center mb-4">
+              <FontAwesomeIcon icon={faTools} className="text-gray-600 text-2xl mr-3" />
+              <h2 className="text-xl font-semibold text-gray-800">Other Tools</h2>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Access additional utilities and one-off tools for database maintenance and fixes.
+            </p>
+            <Link href="/other-tools" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+              Access Tools
             </Link>
           </div>
         </div>

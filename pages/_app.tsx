@@ -33,6 +33,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   else if (path === '/edition-setup') pageTitle = 'Edition Setup | CollectHub';
   else if (path === '/import-export') pageTitle = 'Import/Export | CollectHub';
   else if (path === '/currency-setup') pageTitle = 'Currency Setup | CollectHub';
+  else if (path === '/other-tools') pageTitle = 'Other Tools | CollectHub';
   
   return (
     <>

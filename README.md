@@ -15,6 +15,7 @@ A web application for managing your collection of Star Trek starships. Built wit
 - Modern UI with responsive design
 - Multiple view modes (table view and gallery view)
 - Database maintenance tools
+- Manufacturer management and assignment
 
 ## Prerequisites
 
@@ -98,6 +99,14 @@ A web application for managing your collection of Star Trek starships. Built wit
 - Track retail prices and what you paid for each starship.
 - View price trends and statistics.
 
+### Manufacturer Management
+
+- Create and manage manufacturers for your starships
+- Associate manufacturers with specific franchises
+- Automatically assign manufacturers to starships based on their franchise
+- View manufacturer information in starship details
+- For more information, see [Manufacturer Assignment Documentation](docs/manufacturer-assignment.md)
+
 ### Viewing Statistics
 
 The statistics section shows:
@@ -112,10 +121,11 @@ The application includes tools for database maintenance:
 1. **Database Check**: View detailed information about your database, including connection status, collection statistics, and storage usage.
 2. **Database Fix**: Fix database issues by migrating to new collections with proper ID references.
 3. **Delete Old Collections**: After successful migration, you can delete old collections to free up space.
+4. **Fix Edition Names**: Correct issues with edition internal names that may cause starships to not appear in the correct franchise.
 
 To access these tools:
 1. Go to the settings menu (gear icon)
-2. Select "Database Check & Maintenance"
+2. Select "Database Check & Maintenance" or "Fix Edition Names"
 
 ## Development
 

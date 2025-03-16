@@ -69,6 +69,7 @@ export default async function handler(
           'editionInternalName',
           'shipName',
           'faction',
+          'manufacturer',
           'releaseDate',
           'retailPrice',
           'purchasePrice',

@@ -1,7 +1,7 @@
-import React, { Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import ModalContainer from './ModalContainer';
 
 interface PdfViewerProps {
   pdfUrl: string;
@@ -21,69 +21,44 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ pdfUrl, onClose, title = 'PDF Doc
   };
 
   return (
-    <Transition.Root show={true} as={Fragment}>
-      <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={onClose}>
-        <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-          </Transition.Child>
-
-          {/* This element is to trick the browser into centering the modal contents. */}
-          <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
-            &#8203;
-          </span>
-          
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            enterTo="opacity-100 translate-y-0 sm:scale-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-            leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-          >
-            <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
-                      {title}
-                    </Dialog.Title>
-                    <div className="mt-4 text-center">
-                      <p className="text-sm text-gray-500">Click the button below to download the PDF document.</p>
-                      <button
-                        type="button"
-                        className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        onClick={downloadPdf}
-                      >
-                        <FontAwesomeIcon icon={faDownload} className="mr-2" /> Download PDF
-                      </button>
-                    </div>
-                  </div>
-                </div>
+    <ModalContainer isOpen={true} onClose={onClose} maxWidth="lg" showCloseButton={true}>
+      <div className="p-6">
+        <div className="relative">
+          {/* Header with gradient background */}
+          <div className="bg-gradient-to-r from-red-600 to-pink-600 rounded-t-lg p-6 mb-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center border-2 border-white/50 shadow-md mr-4">
+                <FontAwesomeIcon icon={faFilePdf} className="text-white text-xl" />
               </div>
-              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                <button
-                  type="button"
-                  className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={onClose}
-                >
-                  Close
-                </button>
-              </div>
+              <h3 className="text-xl font-bold text-white">{title}</h3>
             </div>
-          </Transition.Child>
+          </div>
+          
+          <div className="text-center mb-6">
+            <p className="text-gray-600 mb-4">Click the button below to download the PDF document.</p>
+            <button
+              type="button"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+              onClick={downloadPdf}
+            >
+              <FontAwesomeIcon icon={faDownload} className="mr-2" /> Download PDF
+            </button>
+          </div>
+          
+          {/* PDF Preview (if possible) */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="aspect-w-16 aspect-h-9 bg-gray-100">
+              <iframe 
+                src={`${pdfUrl}#toolbar=0&navpanes=0`} 
+                className="w-full h-full" 
+                title={title}
+                sandbox="allow-scripts allow-same-origin"
+              />
+            </div>
+          </div>
         </div>
-      </Dialog>
-    </Transition.Root>
+      </div>
+    </ModalContainer>
   );
 };
 

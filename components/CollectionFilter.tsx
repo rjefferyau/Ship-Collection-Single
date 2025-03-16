@@ -131,10 +131,10 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   const hasActiveFilters = selectedCollectionType || selectedFranchise;
 
   return (
-    <div className={`bg-white shadow-lg rounded-xl transition-all duration-300 ${className}`}>
+    <div className={`bg-white rounded-lg ${className}`}>
       {/* Header with toggle */}
       <div 
-        className="bg-indigo-600 px-5 py-4 flex justify-between items-center cursor-pointer"
+        className="bg-indigo-600 px-5 py-4 flex justify-between items-center cursor-pointer rounded-t-lg"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center">
@@ -170,7 +170,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
       
       {/* Filter content */}
       {isExpanded && (
-        <div className="p-5 bg-gray-50">
+        <div className="p-5 bg-white rounded-b-lg border-t border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Collection Type Selection */}
             <div className="space-y-2">
@@ -181,7 +181,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
               <div className="relative" ref={collectionTypeDropdownRef}>
                 <button
                   type="button"
-                  className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
+                  className="block w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
                   onClick={() => setCollectionTypeDropdownOpen(!collectionTypeDropdownOpen)}
                 >
                   {selectedCollectionType || 'All Collection Types'}
@@ -191,7 +191,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
                 </button>
                 
                 {collectionTypeDropdownOpen && (
-                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
+                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none sm:text-sm"
                        style={{ width: collectionTypeDropdownRef.current?.offsetWidth, top: (collectionTypeDropdownRef.current?.getBoundingClientRect().bottom || 0) + 5, left: collectionTypeDropdownRef.current?.getBoundingClientRect().left }}>
                     <div 
                       className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
@@ -241,7 +241,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
               <div className="relative" ref={franchiseDropdownRef}>
                 <button
                   type="button"
-                  className="block w-full rounded-lg border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
+                  className="block w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
                   onClick={() => setFranchiseDropdownOpen(!franchiseDropdownOpen)}
                 >
                   {selectedFranchise || 'All Franchises'}
@@ -251,7 +251,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
                 </button>
                 
                 {franchiseDropdownOpen && (
-                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm"
+                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none sm:text-sm"
                        style={{ width: franchiseDropdownRef.current?.offsetWidth, top: (franchiseDropdownRef.current?.getBoundingClientRect().bottom || 0) + 5, left: franchiseDropdownRef.current?.getBoundingClientRect().left }}>
                     <div 
                       className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"

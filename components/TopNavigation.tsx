@@ -196,7 +196,6 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                   >
                     Database Check & Maintenance
                   </Link>
-                  <div className="border-t border-gray-100 my-1"></div>
                   <Link 
                     href="/import-export" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
@@ -204,6 +203,30 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
                     Import/Export
+                  </Link>
+                  <Link 
+                    href="/collection-types" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Collection Types
+                  </Link>
+                  <Link 
+                    href="/franchises" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Franchises
+                  </Link>
+                  <Link 
+                    href="/factions" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Factions
                   </Link>
                 </div>
               )}

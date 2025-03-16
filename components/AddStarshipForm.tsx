@@ -1,19 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Button, Row, Col, Alert, Spinner, InputGroup } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faSpinner, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
 
 interface Faction {
   _id: string;
   name: string;
   description?: string;
+  franchise?: string; // Associated franchise
 }
 
 interface Edition {
   _id: string;
   name: string;
+  internalName: string; // Internal unique identifier
   description?: string;
   retailPrice?: number;
+  franchise: string; // Associated franchise
+}
+
+interface CollectionType {
+  _id: string;
+  name: string;
+  description?: string;
+}
+
+interface Franchise {
+  _id: string;
+  name: string;
+  description?: string;
+  collectionType?: string; // Associated collection type
 }
 
 interface StarshipFormData {
@@ -21,6 +36,8 @@ interface StarshipFormData {
   edition: string;
   shipName: string;
   faction: string;
+  collectionType: string;
+  franchise: string;
   releaseDate?: string;
   imageUrl?: string;
   magazinePdfUrl?: string;
@@ -32,14 +49,22 @@ interface StarshipFormData {
 
 interface AddStarshipFormProps {
   onStarshipAdded: () => void;
+  defaultCollectionType?: string;
+  defaultFranchise?: string;
 }
 
-const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) => {
+const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ 
+  onStarshipAdded, 
+  defaultCollectionType,
+  defaultFranchise 
+}) => {
   const initialFormData: StarshipFormData = {
     issue: '',
     edition: '',
     shipName: '',
     faction: '',
+    collectionType: defaultCollectionType || '',
+    franchise: defaultFranchise || '',
     releaseDate: '',
     imageUrl: '',
     magazinePdfUrl: '',
@@ -53,16 +78,104 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [factions, setFactions] = useState<Faction[]>([]);
+  
+  // Data states
+  const [allFactions, setAllFactions] = useState<Faction[]>([]);
+  const [allEditions, setAllEditions] = useState<Edition[]>([]);
+  const [allCollectionTypes, setAllCollectionTypes] = useState<CollectionType[]>([]);
+  const [allFranchises, setAllFranchises] = useState<Franchise[]>([]);
+  
+  // Filtered data states
+  const [availableFranchises, setAvailableFranchises] = useState<Franchise[]>([]);
+  const [availableFactions, setAvailableFactions] = useState<Faction[]>([]);
+  const [availableEditions, setAvailableEditions] = useState<Edition[]>([]);
+  
+  // Loading states
   const [loadingFactions, setLoadingFactions] = useState(false);
-  const [editions, setEditions] = useState<Edition[]>([]);
   const [loadingEditions, setLoadingEditions] = useState(false);
+  const [loadingCollectionTypes, setLoadingCollectionTypes] = useState(false);
+  const [loadingFranchises, setLoadingFranchises] = useState(false);
 
-  // Fetch factions and editions on component mount
+  // Fetch all data on component mount
   useEffect(() => {
+    fetchCollectionTypes();
+    fetchFranchises();
     fetchFactions();
     fetchEditions();
   }, []);
+
+  // Filter franchises when collection type changes
+  useEffect(() => {
+    if (formData.collectionType && allFranchises.length > 0) {
+      // Filter franchises based on collection type
+      // For now, we'll show all franchises since we don't have the association data yet
+      setAvailableFranchises(allFranchises);
+      
+      // Reset franchise selection if the current selection is not valid for this collection type
+      if (formData.franchise) {
+        const isValidFranchise = allFranchises.some(f => f.name === formData.franchise);
+        if (!isValidFranchise) {
+          setFormData(prev => ({ ...prev, franchise: '' }));
+        }
+      }
+    } else {
+      setAvailableFranchises([]);
+      setFormData(prev => ({ ...prev, franchise: '' }));
+    }
+  }, [formData.collectionType, allFranchises]);
+
+  // Filter factions and editions when franchise changes
+  useEffect(() => {
+    if (formData.franchise) {
+      // Filter factions based on franchise
+      const filteredFactions = allFactions.filter(f => 
+        !f.franchise || f.franchise === formData.franchise
+      );
+      setAvailableFactions(filteredFactions);
+      
+      // Filter editions based on franchise
+      const filteredEditions = allEditions.filter(e => 
+        e.franchise === formData.franchise
+      );
+      setAvailableEditions(filteredEditions);
+      
+      // Reset faction and edition selections if they're not valid for this franchise
+      if (formData.faction) {
+        const isValidFaction = filteredFactions.some(f => f.name === formData.faction);
+        if (!isValidFaction) {
+          setFormData(prev => ({ ...prev, faction: '' }));
+        }
+      }
+      
+      if (formData.edition) {
+        const isValidEdition = filteredEditions.some(e => e.name === formData.edition);
+        if (!isValidEdition) {
+          setFormData(prev => ({ ...prev, edition: '' }));
+        }
+      }
+    } else {
+      setAvailableFactions([]);
+      setAvailableEditions([]);
+      setFormData(prev => ({ ...prev, faction: '', edition: '' }));
+    }
+  }, [formData.franchise, allFactions, allEditions]);
+
+  // Set default values when data is loaded
+  useEffect(() => {
+    if (allCollectionTypes.length > 0 && !formData.collectionType && defaultCollectionType) {
+      const defaultType = allCollectionTypes.find(t => t.name === defaultCollectionType)?.name || allCollectionTypes[0].name;
+      setFormData(prev => ({ ...prev, collectionType: defaultType }));
+    }
+  }, [allCollectionTypes, defaultCollectionType]);
+
+  useEffect(() => {
+    if (availableFranchises.length > 0 && !formData.franchise && defaultFranchise) {
+      const defaultFranchiseValue = availableFranchises.find(f => f.name === defaultFranchise)?.name || '';
+      if (defaultFranchiseValue) {
+        setFormData(prev => ({ ...prev, franchise: defaultFranchiseValue }));
+      }
+    }
+  }, [availableFranchises, defaultFranchise]);
 
   const fetchFactions = async () => {
     setLoadingFactions(true);
@@ -75,7 +188,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
       }
       
       const data = await response.json();
-      setFactions(data.data || []);
+      setAllFactions(data.data || []);
     } catch (err) {
       console.error('Error fetching factions:', err);
     } finally {
@@ -90,7 +203,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
       const data = await res.json();
       
       if (data.success) {
-        setEditions(data.data);
+        setAllEditions(data.data);
       } else {
         setError('Failed to fetch editions');
       }
@@ -101,10 +214,48 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
     }
   };
 
-  // Fetch edition details to get default RRP
-  const fetchEditionDetails = async (editionName: string) => {
+  const fetchCollectionTypes = async () => {
+    setLoadingCollectionTypes(true);
+    
     try {
-      const response = await fetch(`/api/editions/by-name?name=${encodeURIComponent(editionName)}`);
+      const response = await fetch('/api/collection-types');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch collection types');
+      }
+      
+      const data = await response.json();
+      setAllCollectionTypes(data.data || []);
+    } catch (err) {
+      console.error('Error fetching collection types:', err);
+    } finally {
+      setLoadingCollectionTypes(false);
+    }
+  };
+
+  const fetchFranchises = async () => {
+    setLoadingFranchises(true);
+    
+    try {
+      const response = await fetch('/api/franchises');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch franchises');
+      }
+      
+      const data = await response.json();
+      setAllFranchises(data.data || []);
+    } catch (err) {
+      console.error('Error fetching franchises:', err);
+    } finally {
+      setLoadingFranchises(false);
+    }
+  };
+
+  // Fetch edition details to get default RRP
+  const fetchEditionDetails = async (editionInternalName: string) => {
+    try {
+      const response = await fetch(`/api/editions/by-internal-name?internalName=${encodeURIComponent(editionInternalName)}`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data && data.data.retailPrice) {
@@ -145,9 +296,21 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.issue.trim() || !formData.edition.trim() || !formData.shipName.trim() || !formData.faction.trim()) {
-      setError('Issue, Edition, Ship Name, and Race/Faction are required');
+    // Validate required fields based on collection type
+    const requiredFields = ['collectionType', 'franchise'];
+    
+    // For Diecast Model, require issue, edition, shipName, and faction
+    if (formData.collectionType === 'Diecast Model') {
+      requiredFields.push('issue', 'edition', 'shipName', 'faction');
+    } else {
+      // For other collection types, at least require a name
+      requiredFields.push('shipName');
+    }
+    
+    const missingFields = requiredFields.filter(field => !formData[field as keyof StarshipFormData]);
+    
+    if (missingFields.length > 0) {
+      setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
     }
     
@@ -186,10 +349,10 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add starship');
+        throw new Error(errorData.message || 'Failed to add item');
       }
 
-      setSuccess('Starship added successfully!');
+      setSuccess('Item added successfully!');
       setFormData(initialFormData);
       onStarshipAdded();
     } catch (err) {
@@ -199,250 +362,386 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({ onStarshipAdded }) =>
     }
   };
 
+  // Determine which fields to show based on collection type
+  const showStarshipFields = formData.collectionType === 'Diecast Model';
+
   return (
-    <div className="add-starship-form">
-      <h3 className="mb-3">Add New Starship</h3>
+    <div className="space-y-6">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      )}
       
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">{success}</Alert>}
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Success!</strong>
+          <span className="block sm:inline"> {success}</span>
+        </div>
+      )}
       
-      <Form onSubmit={handleSubmit}>
-        <Row>
-          <Col md={6}>
-            <Form.Group className="mb-3">
-              <Form.Label>Issue</Form.Label>
-              <Form.Control
-                type="text"
-                name="issue"
-                value={formData.issue}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Collection Type and Franchise - Always shown first */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Collection Type */}
+          <div>
+            <label htmlFor="collectionType" className="block text-sm font-medium text-gray-700 mb-1">
+              Collection Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex">
+              <select
+                id="collectionType"
+                name="collectionType"
+                value={formData.collectionType}
                 onChange={handleChange}
                 required
-              />
-            </Form.Group>
-          </Col>
-          
-          <Col md={6}>
-            <Form.Group className="mb-3">
-              <Form.Label>Edition</Form.Label>
-              <div className="d-flex">
-                <Form.Select
-                  name="edition"
-                  value={formData.edition}
-                  onChange={handleChange}
-                  required
-                  disabled={loadingEditions}
-                  className="me-2"
-                >
-                  <option value="">Select an edition</option>
-                  {editions.map(edition => (
-                    <option key={edition._id} value={edition.name}>
-                      {edition.name}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Button 
-                  variant="outline-secondary" 
-                  size="sm"
-                  onClick={() => window.open('/setup?tab=editions', '_blank')}
-                  title="Manage editions"
-                >
-                  <FontAwesomeIcon icon={faPlus} />
-                </Button>
+                disabled={loadingCollectionTypes}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+              >
+                <option value="">Select a collection type</option>
+                {allCollectionTypes.map(type => (
+                  <option key={type._id} value={type.name}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => window.open('/collection-type-setup', '_blank')}
+                title="Manage collection types"
+                className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
+            </div>
+            {loadingCollectionTypes && (
+              <div className="mt-1 text-sm text-gray-500">
+                <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading collection types...
               </div>
-              {loadingEditions && (
-                <div className="mt-2">
-                  <Spinner animation="border" size="sm" /> Loading editions...
-                </div>
-              )}
-            </Form.Group>
-          </Col>
-        </Row>
+            )}
+          </div>
+          
+          {/* Franchise - Only enabled if collection type is selected */}
+          <div>
+            <label htmlFor="franchise" className="block text-sm font-medium text-gray-700 mb-1">
+              Franchise <span className="text-red-500">*</span>
+            </label>
+            <div className="flex">
+              <select
+                id="franchise"
+                name="franchise"
+                value={formData.franchise}
+                onChange={handleChange}
+                required
+                disabled={!formData.collectionType || loadingFranchises}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+              >
+                <option value="">Select a franchise</option>
+                {availableFranchises.map(franchise => (
+                  <option key={franchise._id} value={franchise.name}>
+                    {franchise.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => window.open('/franchise-setup', '_blank')}
+                title="Manage franchises"
+                className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
+            </div>
+            {loadingFranchises && (
+              <div className="mt-1 text-sm text-gray-500">
+                <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading franchises...
+              </div>
+            )}
+            {!formData.collectionType && (
+              <div className="mt-1 text-sm text-amber-600">
+                Please select a collection type first
+              </div>
+            )}
+          </div>
+        </div>
 
-        <Row>
-          <Col md={6}>
-            <Form.Group className="mb-3">
-              <Form.Label>Ship Name</Form.Label>
-              <Form.Control
+        {/* Conditional fields based on collection type */}
+        {formData.collectionType && formData.franchise && (
+          <>
+            {/* Ship Name - Always shown */}
+            <div>
+              <label htmlFor="shipName" className="block text-sm font-medium text-gray-700 mb-1">
+                Item Name <span className="text-red-500">*</span>
+              </label>
+              <input
                 type="text"
+                id="shipName"
                 name="shipName"
                 value={formData.shipName}
                 onChange={handleChange}
                 required
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
-            </Form.Group>
-          </Col>
-          
-          <Col md={6}>
-            <Form.Group className="mb-3">
-              <Form.Label>Race/Faction</Form.Label>
-              <div className="d-flex">
-                <Form.Select
-                  name="faction"
-                  value={formData.faction}
-                  onChange={handleChange}
-                  required
-                  disabled={loadingFactions}
-                  className="me-2"
-                >
-                  <option value="">Select a faction</option>
-                  {factions.map(faction => (
-                    <option key={faction._id} value={faction.name}>
-                      {faction.name}
-                    </option>
-                  ))}
-                </Form.Select>
-                <Button 
-                  variant="outline-secondary" 
-                  size="sm"
-                  onClick={() => window.open('/setup?tab=factions', '_blank')}
-                  title="Manage factions"
-                >
-                  <FontAwesomeIcon icon={faPlus} />
-                </Button>
-              </div>
-              {loadingFactions && (
-                <div className="mt-2">
-                  <Spinner animation="border" size="sm" /> Loading factions...
+            </div>
+
+            {/* Starship-specific fields */}
+            {showStarshipFields && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Issue */}
+                  <div>
+                    <label htmlFor="issue" className="block text-sm font-medium text-gray-700 mb-1">
+                      Issue <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="issue"
+                      name="issue"
+                      value={formData.issue}
+                      onChange={handleChange}
+                      required={showStarshipFields}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                  
+                  {/* Edition */}
+                  <div>
+                    <label htmlFor="edition" className="block text-sm font-medium text-gray-700 mb-1">
+                      Edition <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex">
+                      <select
+                        id="edition"
+                        name="edition"
+                        value={formData.edition}
+                        onChange={handleChange}
+                        required={showStarshipFields}
+                        disabled={loadingEditions || !formData.franchise}
+                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                      >
+                        <option value="">Select an edition</option>
+                        {availableEditions.map(edition => (
+                          <option key={edition._id} value={edition.internalName}>
+                            {edition.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => window.open('/setup?tab=editions', '_blank')}
+                        title="Manage editions"
+                        className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        <FontAwesomeIcon icon={faPlus} />
+                      </button>
+                    </div>
+                    {loadingEditions && (
+                      <div className="mt-1 text-sm text-gray-500">
+                        <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading editions...
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </Form.Group>
-          </Col>
-        </Row>
 
-        <Row>
-          <Col md={6}>
-            <Form.Group className="mb-3">
-              <Form.Label>Release Date</Form.Label>
-              <Form.Control
-                type="date"
-                name="releaseDate"
-                value={formData.releaseDate || ''}
-                onChange={handleChange}
-              />
-              <Form.Text className="text-muted">
-                Format: YYYY-MM-DD
-              </Form.Text>
-            </Form.Group>
-          </Col>
-          
-          <Col md={6}>
-            <Form.Group className="mb-3">
-              <Form.Label>Image URL</Form.Label>
-              <Form.Control
-                type="text"
-                name="imageUrl"
-                value={formData.imageUrl || ''}
-                onChange={handleChange}
-              />
-            </Form.Group>
-          </Col>
-        </Row>
+                {/* Race/Faction */}
+                <div>
+                  <label htmlFor="faction" className="block text-sm font-medium text-gray-700 mb-1">
+                    Race/Faction <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex">
+                    <select
+                      id="faction"
+                      name="faction"
+                      value={formData.faction}
+                      onChange={handleChange}
+                      required={showStarshipFields}
+                      disabled={loadingFactions || !formData.franchise}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                    >
+                      <option value="">Select a faction</option>
+                      {availableFactions.map(faction => (
+                        <option key={faction._id} value={faction.name}>
+                          {faction.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => window.open('/setup?tab=factions', '_blank')}
+                      title="Manage factions"
+                      className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      <FontAwesomeIcon icon={faPlus} />
+                    </button>
+                  </div>
+                  {loadingFactions && (
+                    <div className="mt-1 text-sm text-gray-500">
+                      <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading factions...
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
-        <Form.Group className="mb-3">
-          <Form.Check
-            type="checkbox"
-            label="Owned"
-            name="owned"
-            checked={formData.owned}
-            onChange={handleChange}
-          />
-        </Form.Group>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Release Date */}
+              <div>
+                <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  Release Date
+                </label>
+                <input
+                  type="date"
+                  id="releaseDate"
+                  name="releaseDate"
+                  value={formData.releaseDate || ''}
+                  onChange={handleChange}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <p className="mt-1 text-sm text-gray-500">Format: YYYY-MM-DD</p>
+              </div>
+              
+              {/* Image URL */}
+              <div>
+                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                  Image URL
+                </label>
+                <input
+                  type="text"
+                  id="imageUrl"
+                  name="imageUrl"
+                  value={formData.imageUrl || ''}
+                  onChange={handleChange}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
 
-        {/* Add pricing fields */}
-        <hr className="my-4" />
-        <h5>Pricing Information</h5>
+            {/* Owned Checkbox */}
+            <div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="owned"
+                  name="owned"
+                  checked={formData.owned}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="owned" className="ml-2 block text-sm text-gray-900">
+                  Owned
+                </label>
+              </div>
+            </div>
+
+            {/* Pricing Information */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing Information</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Retail Price */}
+                <div>
+                  <label htmlFor="retailPrice" className="block text-sm font-medium text-gray-700 mb-1">
+                    Retail Price (RRP)
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      id="retailPrice"
+                      name="retailPrice"
+                      value={formData.retailPrice || ''}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+                
+                {/* Purchase Price */}
+                <div>
+                  <label htmlFor="purchasePrice" className="block text-sm font-medium text-gray-700 mb-1">
+                    Purchase Price
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      id="purchasePrice"
+                      name="purchasePrice"
+                      value={formData.purchasePrice || ''}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+                
+                {/* Market Value */}
+                <div>
+                  <label htmlFor="marketValue" className="block text-sm font-medium text-gray-700 mb-1">
+                    Market Value
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      id="marketValue"
+                      name="marketValue"
+                      value={formData.marketValue || ''}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
         
-        <Row>
-          <Col md={4}>
-            <Form.Group className="mb-3" controlId="formRetailPrice">
-              <Form.Label>Retail Price (RRP)</Form.Label>
-              <InputGroup>
-                <InputGroup.Text>$</InputGroup.Text>
-                <Form.Control 
-                  type="number" 
-                  name="retailPrice"
-                  value={formData.retailPrice || ''}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="Retail price"
-                />
-              </InputGroup>
-            </Form.Group>
-          </Col>
-          
-          <Col md={4}>
-            <Form.Group className="mb-3" controlId="formPurchasePrice">
-              <Form.Label>Purchase Price</Form.Label>
-              <InputGroup>
-                <InputGroup.Text>$</InputGroup.Text>
-                <Form.Control 
-                  type="number" 
-                  name="purchasePrice"
-                  value={formData.purchasePrice || ''}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="Your purchase price"
-                />
-              </InputGroup>
-            </Form.Group>
-          </Col>
-          
-          <Col md={4}>
-            <Form.Group className="mb-3" controlId="formMarketValue">
-              <Form.Label>Market Value</Form.Label>
-              <InputGroup>
-                <InputGroup.Text>$</InputGroup.Text>
-                <Form.Control 
-                  type="number" 
-                  name="marketValue"
-                  value={formData.marketValue || ''}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="Current market value"
-                />
-              </InputGroup>
-            </Form.Group>
-          </Col>
-        </Row>
-        
-        <div className="d-flex justify-content-between">
-          <Button 
-            variant="primary" 
-            type="submit" 
+        {/* Form Actions */}
+        <div className="flex justify-between pt-4">
+          <button
+            type="submit"
             disabled={isSubmitting}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
-                <Spinner
-                  as="span"
-                  animation="border"
-                  size="sm"
-                  role="status"
-                  aria-hidden="true"
-                  className="me-2"
-                />
+                <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-2" />
                 Saving...
               </>
             ) : (
               <>
-                <FontAwesomeIcon icon={faPlus} className="me-2" />
-                Add Starship
+                <FontAwesomeIcon icon={faSave} className="mr-2" />
+                Add Item
               </>
             )}
-          </Button>
+          </button>
           
-          <Button 
-            variant="secondary" 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setFormData(initialFormData)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
+            <FontAwesomeIcon icon={faUndo} className="mr-2" />
             Reset Form
-          </Button>
+          </button>
         </div>
-      </Form>
+      </form>
     </div>
   );
 };

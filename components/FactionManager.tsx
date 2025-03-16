@@ -6,6 +6,7 @@ interface Faction {
   _id: string;
   name: string;
   description?: string;
+  franchise: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +34,7 @@ const FactionManager: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
+  const [availableFranchises, setAvailableFranchises] = useState<string[]>(['Star Trek', 'Battlestar Galactica', 'Star Wars', 'Marvel', 'DC']);
   const [importStatus, setImportStatus] = useState<{ loading: boolean; result: ImportResult | null; error: string | null }>({
     loading: false,
     result: null,
@@ -74,10 +76,11 @@ const FactionManager: React.FC = () => {
       setEditingFaction({
         _id: faction._id,
         name: faction.name,
-        description: faction.description
+        description: faction.description,
+        franchise: faction.franchise || 'Star Trek'
       });
     } else {
-      setEditingFaction({ name: '', description: '' });
+      setEditingFaction({ name: '', description: '', franchise: 'Star Trek' });
     }
     setShowModal(true);
     setFormError(null);
@@ -89,7 +92,7 @@ const FactionManager: React.FC = () => {
     setFormError(null);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setEditingFaction(prev => prev ? { ...prev, [name]: value } : null);
   };
@@ -411,6 +414,7 @@ const FactionManager: React.FC = () => {
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Franchise</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[150px]">Actions</th>
                   </tr>
                 </thead>
@@ -426,6 +430,7 @@ const FactionManager: React.FC = () => {
                           </span>
                         )}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{faction.franchise || 'Star Trek'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex space-x-2">
                           <button 
@@ -539,6 +544,23 @@ const FactionManager: React.FC = () => {
                       onChange={handleInputChange}
                       placeholder="Enter faction description"
                     />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label htmlFor="factionFranchise" className="block text-sm font-medium text-gray-700 mb-1">
+                      Franchise
+                    </label>
+                    <select 
+                      id="factionFranchise"
+                      name="franchise"
+                      className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      value={editingFaction?.franchise || 'Star Trek'}
+                      onChange={handleInputChange}
+                    >
+                      {availableFranchises.map(franchise => (
+                        <option key={franchise} value={franchise}>{franchise}</option>
+                      ))}
+                    </select>
                   </div>
                   
                   <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">

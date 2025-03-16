@@ -17,39 +17,55 @@ export default async function handler(
     case 'GET':
       try {
         const faction = await Faction.findById(id);
+        
         if (!faction) {
           return res.status(404).json({ success: false, error: 'Faction not found' });
         }
+        
         res.status(200).json({ success: true, data: faction });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
       break;
+      
     case 'PUT':
       try {
-        const faction = await Faction.findByIdAndUpdate(id, req.body, {
-          new: true,
-          runValidators: true,
-        });
-        if (!faction) {
+        const oldFaction = await Faction.findById(id);
+        
+        if (!oldFaction) {
           return res.status(404).json({ success: false, error: 'Faction not found' });
         }
-        res.status(200).json({ success: true, data: faction });
+        
+        const updatedFaction = await Faction.findByIdAndUpdate(
+          id,
+          { 
+            name: req.body.name,
+            description: req.body.description,
+            franchise: req.body.franchise || oldFaction.franchise || 'Star Trek'
+          },
+          { new: true, runValidators: true }
+        );
+        
+        res.status(200).json({ success: true, data: updatedFaction });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
       break;
+      
     case 'DELETE':
       try {
         const deletedFaction = await Faction.findByIdAndDelete(id);
+        
         if (!deletedFaction) {
           return res.status(404).json({ success: false, error: 'Faction not found' });
         }
+        
         res.status(200).json({ success: true, data: {} });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
       break;
+      
     default:
       res.status(400).json({ success: false });
       break;

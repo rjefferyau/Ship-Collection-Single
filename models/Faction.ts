@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IFaction extends Document {
   name: string;
   description?: string;
+  franchise: string; // The franchise this faction belongs to (e.g., "Star Trek", "Battlestar Galactica")
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +18,12 @@ const FactionSchema: Schema = new Schema(
     },
     description: {
       type: String,
+      trim: true
+    },
+    franchise: {
+      type: String,
+      required: [true, 'Franchise is required'],
+      default: 'Star Trek',
       trim: true
     }
   },

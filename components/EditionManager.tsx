@@ -5,12 +5,29 @@ import { faEdit, faTrash, faPlus, faSync, faMagic, faDollarSign, faRefresh, faUp
 interface Edition {
   _id: string;
   name: string;
+  internalName: string;
   description?: string;
   retailPrice?: number;
+  franchise: string;
+  isDefault?: boolean;
+}
+
+interface Franchise {
+  _id: string;
+  name: string;
+  description?: string;
+}
+
+interface CollectionType {
+  _id: string;
+  name: string;
+  description?: string;
 }
 
 const EditionManager: React.FC = () => {
   const [editions, setEditions] = useState<Edition[]>([]);
+  const [filteredEditions, setFilteredEditions] = useState<Edition[]>([]);
+  const [selectedFranchiseFilter, setSelectedFranchiseFilter] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -25,13 +42,23 @@ const EditionManager: React.FC = () => {
   const [isUploadingCsv, setIsUploadingCsv] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCsvModal, setShowCsvModal] = useState(false);
+  
+  // Franchises and Collection Types
+  const [franchises, setFranchises] = useState<Franchise[]>([]);
+  const [loadingFranchises, setLoadingFranchises] = useState(false);
+  const [collectionTypes, setCollectionTypes] = useState<CollectionType[]>([]);
+  const [loadingCollectionTypes, setLoadingCollectionTypes] = useState(false);
 
   // Form state
   const [editMode, setEditMode] = useState(false);
   const [currentEdition, setCurrentEdition] = useState<Edition | null>(null);
   const [name, setName] = useState('');
+  const [internalName, setInternalName] = useState('');
   const [description, setDescription] = useState('');
   const [retailPrice, setRetailPrice] = useState<string>('');
+  const [franchise, setFranchise] = useState('');
+  const [autoGenerateInternalName, setAutoGenerateInternalName] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
 
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -39,7 +66,20 @@ const EditionManager: React.FC = () => {
 
   useEffect(() => {
     fetchEditions();
+    fetchFranchises();
+    fetchCollectionTypes();
   }, []);
+
+  // Apply franchise filter when editions or selected franchise changes
+  useEffect(() => {
+    if (selectedFranchiseFilter) {
+      setFilteredEditions(editions.filter(edition => 
+        edition.franchise === selectedFranchiseFilter
+      ));
+    } else {
+      setFilteredEditions(editions);
+    }
+  }, [editions, selectedFranchiseFilter]);
 
   const fetchEditions = async () => {
     try {
@@ -49,20 +89,93 @@ const EditionManager: React.FC = () => {
       
       if (data.success) {
         setEditions(data.data);
+        // Initial filtered editions will be set by the useEffect
       } else {
-        setError('Failed to fetch editions');
+        setError(data.error || 'Failed to fetch editions');
       }
     } catch (err) {
-      setError('Error connecting to the server');
+      setError('Error fetching editions');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchFranchises = async () => {
+    try {
+      setLoadingFranchises(true);
+      const res = await fetch('/api/franchises');
+      const data = await res.json();
+      
+      if (data.success) {
+        setFranchises(data.data);
+        // Set default franchise if none is selected and franchises are available
+        if (!franchise && data.data.length > 0) {
+          setFranchise(data.data[0].name);
+        }
+      } else {
+        setError('Failed to fetch franchises');
+      }
+    } catch (err) {
+      setError('Error connecting to the server');
+    } finally {
+      setLoadingFranchises(false);
+    }
+  };
+
+  const fetchCollectionTypes = async () => {
+    try {
+      setLoadingCollectionTypes(true);
+      const res = await fetch('/api/collection-types');
+      const data = await res.json();
+      
+      if (data.success) {
+        setCollectionTypes(data.data);
+      } else {
+        setError('Failed to fetch collection types');
+      }
+    } catch (err) {
+      setError('Error connecting to the server');
+    } finally {
+      setLoadingCollectionTypes(false);
+    }
+  };
+
+  // Function to generate internal name from name and franchise
+  const generateInternalName = (editionName: string, franchiseName: string) => {
+    if (!editionName || !franchiseName) return '';
+    const nameSlug = editionName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    const franchiseSlug = franchiseName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    return `${nameSlug}-${franchiseSlug}`;
+  };
+
+  // Update internal name when name or franchise changes
+  useEffect(() => {
+    if (autoGenerateInternalName) {
+      setInternalName(generateInternalName(name, franchise));
+    }
+  }, [name, franchise, autoGenerateInternalName]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Validate form
+    if (!name) {
+      setError('Edition name is required');
+      return;
+    }
+
+    if (!franchise) {
+      setError('Franchise is required');
+      return;
+    }
+
+    if (!internalName) {
+      setError('Internal name is required');
+      return;
+    }
 
     try {
       const endpoint = editMode && currentEdition 
@@ -78,8 +191,11 @@ const EditionManager: React.FC = () => {
         },
         body: JSON.stringify({ 
           name, 
+          internalName,
           description,
-          retailPrice: retailPrice ? parseFloat(retailPrice) : null
+          retailPrice: retailPrice ? parseFloat(retailPrice) : null,
+          franchise,
+          isDefault
         }),
       });
 
@@ -92,7 +208,18 @@ const EditionManager: React.FC = () => {
         resetForm();
         fetchEditions();
       } else {
-        setError(data.error || 'Failed to save edition');
+        // Handle MongoDB duplicate key error
+        if (data.error && typeof data.error === 'object') {
+          if (data.error.code === 11000) {
+            setError(`An edition with this name already exists. Please use a different name.`);
+          } else if (data.error.message) {
+            setError(data.error.message);
+          } else {
+            setError('Failed to save edition: ' + JSON.stringify(data.error));
+          }
+        } else {
+          setError(data.error || 'Failed to save edition');
+        }
       }
     } catch (err) {
       setError('Error connecting to the server');
@@ -100,12 +227,23 @@ const EditionManager: React.FC = () => {
   };
 
   const handleEdit = (edition: Edition) => {
+    if (!edition || !edition._id) {
+      setError('Error! Could not find edition. It may have been deleted.');
+      return;
+    }
+    
     setCurrentEdition(edition);
+    setEditMode(true);
     setName(edition.name);
+    setInternalName(edition.internalName || '');
     setDescription(edition.description || '');
     setRetailPrice(edition.retailPrice?.toString() || '');
-    setEditMode(true);
-    setUpdateStarshipPrices(false);
+    setFranchise(edition.franchise || '');
+    setIsDefault(edition.isDefault || false);
+    setAutoGenerateInternalName(false);
+    
+    // Clear any previous errors
+    setError('');
   };
 
   const confirmDelete = (edition: Edition) => {
@@ -143,11 +281,15 @@ const EditionManager: React.FC = () => {
   };
 
   const resetForm = () => {
+    setEditMode(false);
     setCurrentEdition(null);
     setName('');
+    setInternalName('');
     setDescription('');
     setRetailPrice('');
-    setEditMode(false);
+    setFranchise(franchises.length > 0 ? franchises[0].name : '');
+    setIsDefault(false);
+    setAutoGenerateInternalName(true);
     setUpdateStarshipPrices(false);
   };
 
@@ -206,34 +348,30 @@ const EditionManager: React.FC = () => {
 
   const handleUpdatePrices = async (edition: Edition) => {
     if (!edition.retailPrice) {
-      setError('This edition does not have a retail price set.');
+      setError('This edition does not have a retail price set');
       return;
     }
-
+    
     try {
       setIsUpdatingPrices(true);
       setPriceUpdateStatus('');
-      setError('');
-      setSuccess('');
-
-      const response = await fetch('/api/editions/update-prices', {
+      
+      const response = await fetch(`/api/editions/${edition._id}/update-prices`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          editionName: edition.name,
+        body: JSON.stringify({ 
           retailPrice: edition.retailPrice
         }),
       });
-
+      
       const data = await response.json();
-
+      
       if (data.success) {
-        setPriceUpdateStatus(`Updated retail price for ${data.modifiedCount} starships in ${edition.name} edition.`);
-        setSuccess(`Updated retail price for ${data.modifiedCount} starships in ${edition.name} edition.`);
+        setPriceUpdateStatus(`Successfully updated prices for ${data.updatedCount} starships`);
       } else {
-        setError(data.error || 'Failed to update starship prices');
+        setError(data.error || 'Failed to update prices');
       }
     } catch (err) {
       setError('Error connecting to the server');
@@ -305,303 +443,504 @@ const EditionManager: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  return (
-    <div className="edition-manager">
-      <h2>Manage Editions</h2>
+  const handleSetDefault = async (edition: Edition) => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
       
-      <div className="mb-4">
-        <button 
-          className="btn btn-outline-primary me-2 mb-2"
-          onClick={handleImport}
-          disabled={isImporting}
-        >
-          {isImporting ? (
-            <>
-              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-              <span className="ms-2">Importing...</span>
-            </>
-          ) : (
-            <>
-              <FontAwesomeIcon icon={faSync} className="me-2" />
-              Import Editions from Starships
-            </>
-          )}
-        </button>
-        
-        <button 
-          className="btn btn-outline-success me-2 mb-2"
-          onClick={handleUpdateStarships}
-          disabled={isUpdating}
-        >
-          {isUpdating ? (
-            <>
-              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-              <span className="ms-2">Updating...</span>
-            </>
-          ) : (
-            <>
-              <FontAwesomeIcon icon={faMagic} className="me-2" />
-              Standardize Edition Names in Starships
-            </>
-          )}
-        </button>
+      // Make sure we have a valid ID
+      if (!edition._id) {
+        setError('Invalid edition ID');
+        return;
+      }
+      
+      console.log('Setting default edition with ID:', edition._id);
+      
+      // First fetch the edition to make sure it exists
+      const checkResponse = await fetch(`/api/editions/${edition._id}`);
+      if (!checkResponse.ok) {
+        setError('Could not find edition. It may have been deleted.');
+        return;
+      }
+      
+      const response = await fetch(`/api/editions/${edition._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          isDefault: true
+        }),
+      });
 
-        <button 
-          className="btn btn-outline-info mb-2"
-          onClick={() => setShowCsvModal(true)}
-        >
-          <FontAwesomeIcon icon={faUpload} className="me-2" />
-          Import Editions from CSV
-        </button>
-      </div>
-      
-      {importStatus && <div className="alert alert-info mb-3">{importStatus}</div>}
-      {updateStatus && <div className="alert alert-info mb-3">{updateStatus}</div>}
-      {priceUpdateStatus && <div className="alert alert-info mb-3">{priceUpdateStatus}</div>}
-      {csvUploadStatus && <div className="alert alert-info mb-3">{csvUploadStatus}</div>}
-      {error && <div className="alert alert-danger mb-3">{error}</div>}
-      {success && <div className="alert alert-success mb-3">{success}</div>}
-      
-      <div className="row">
-        <div className="col-md-6">
-          <h3>Editions List</h3>
-          {loading && !editions.length ? (
-            <div className="text-center my-4">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <div className="list-group mb-4">
-              {editions.length === 0 ? (
-                <div className="list-group-item">No editions found</div>
-              ) : (
-                editions.map(edition => (
-                  <div key={edition._id} className="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                      <div className="fw-bold">{edition.name}</div>
-                      {edition.description && <small className="text-muted">{edition.description}</small>}
-                      {edition.retailPrice && (
-                        <div>
-                          <small className="text-muted">
-                            <FontAwesomeIcon icon={faDollarSign} className="me-1" />
-                            RRP: ${edition.retailPrice.toFixed(2)}
-                          </small>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      {edition.retailPrice && (
-                        <button 
-                          className="btn btn-outline-success btn-sm me-2"
-                          onClick={() => handleUpdatePrices(edition)}
-                          disabled={isUpdatingPrices}
-                          title="Update all starships in this edition with this retail price"
-                        >
-                          {isUpdatingPrices ? (
-                            <div className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
-                          ) : (
-                            <FontAwesomeIcon icon={faRefresh} />
-                          )}
-                        </button>
-                      )}
-                      <button 
-                        className="btn btn-outline-primary btn-sm me-2"
-                        onClick={() => handleEdit(edition)}
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button 
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => confirmDelete(edition)}
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(`${edition.name} set as default edition for ${edition.franchise}`);
+        fetchEditions();
+      } else {
+        setError(data.error || 'Failed to set default edition');
+      }
+    } catch (err) {
+      console.error('Error setting default edition:', err);
+      setError('Error connecting to the server');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Alerts */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+          <button 
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            onClick={() => setError('')}
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
         </div>
+      )}
+      
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Success!</strong>
+          <span className="block sm:inline"> {success}</span>
+          <button 
+            className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            onClick={() => setSuccess('')}
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </div>
+      )}
+
+      {/* Edition Form */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          {editMode ? 'Edit Edition' : 'Add New Edition'}
+        </h2>
         
-        <div className="col-md-6">
-          <h3>{editMode ? 'Edit Edition' : 'Add New Edition'}</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <label htmlFor="editionName" className="form-label">Name</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="editionName" 
-                value={name} 
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Name */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Edition Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
               />
             </div>
             
-            <div className="mb-3">
-              <label htmlFor="editionDescription" className="form-label">Description (optional)</label>
-              <textarea 
-                className="form-control" 
-                id="editionDescription" 
-                rows="3" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)}
-              ></textarea>
-            </div>
-            
-            <div className="mb-3">
-              <label htmlFor="editionRetailPrice" className="form-label">Collection Retail Price (RRP)</label>
-              <div className="input-group">
-                <span className="input-group-text">
-                  <FontAwesomeIcon icon={faDollarSign} />
-                </span>
-                <input 
-                  type="number" 
-                  className="form-control" 
-                  id="editionRetailPrice" 
-                  placeholder="Enter retail price (optional)" 
-                  value={retailPrice}
-                  onChange={(e) => setRetailPrice(e.target.value)}
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-              <div className="form-text">
-                This will be used as the default RRP for starships in this edition
-              </div>
-            </div>
-            
-            {editMode && retailPrice && (
-              <div className="mb-3">
-                <input 
-                  type="checkbox"
-                  className="form-check-input"
-                  id="updateStarshipPrices"
-                  checked={updateStarshipPrices}
-                  onChange={(e) => setUpdateStarshipPrices(e.target.checked)}
-                />
-                <label htmlFor="updateStarshipPrices" className="form-check-label">
-                  Update all starships in this edition with this retail price
-                </label>
-                <div className="form-text">
-                  This will only update starships that don't already have a retail price set
-                </div>
-              </div>
-            )}
-            
-            <div className="d-flex justify-content-between">
-              <button type="submit" className="btn btn-primary">
-                {editMode ? 'Update Edition' : 'Add Edition'}
-              </button>
-              {editMode && (
-                <button type="reset" className="btn btn-secondary">
-                  Cancel
+            {/* Franchise */}
+            <div>
+              <label htmlFor="franchise" className="block text-sm font-medium text-gray-700 mb-1">
+                Franchise <span className="text-red-500">*</span>
+              </label>
+              <div className="flex">
+                <select
+                  id="franchise"
+                  value={franchise}
+                  onChange={(e) => setFranchise(e.target.value)}
+                  required
+                  disabled={loadingFranchises}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                >
+                  <option value="">Select a franchise</option>
+                  {franchises.map((f) => (
+                    <option key={f._id} value={f.name}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => window.open('/franchise-setup', '_blank')}
+                  title="Manage franchises"
+                  className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <FontAwesomeIcon icon={faPlus} />
                 </button>
+              </div>
+              {loadingFranchises && (
+                <div className="mt-1 text-sm text-gray-500">
+                  <FontAwesomeIcon icon={faSync} className="animate-spin mr-1" /> Loading franchises...
+                </div>
               )}
             </div>
-          </form>
-        </div>
-      </div>
-      
-      {/* CSV Upload Modal */}
-      <div className="modal" style={{ display: showCsvModal ? 'block' : 'none' }}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Import Editions from CSV</h5>
-              <button type="button" className="btn-close" onClick={() => setShowCsvModal(false)}></button>
-            </div>
-            <div className="modal-body">
-              <p>Upload a CSV file with edition data to import multiple editions at once.</p>
-              
-              <div className="card mb-3">
-                <div className="card-header">CSV Format</div>
-                <div className="card-body">
-                  <p>Your CSV file should have the following columns:</p>
-                  <ul>
-                    <li><strong>name</strong> (required): The name of the edition</li>
-                    <li><strong>description</strong> (optional): A description of the edition</li>
-                    <li><strong>retailPrice</strong> (optional): The retail price of ships in this edition</li>
-                  </ul>
-                  
-                  <div className="bg-light p-2 rounded mb-3">
-                    <pre className="mb-0">
-                      name,description,retailPrice<br/>
-                      Regular,Standard edition ships,14.99<br/>
-                      Special,Limited edition ships,19.99<br/>
-                      XL,Extra large ships,49.99
-                    </pre>
-                  </div>
-                  
-                  <button 
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={downloadSampleCsv}
-                  >
-                    <FontAwesomeIcon icon={faDownload} className="me-2" />
-                    Download Sample CSV
-                  </button>
-                </div>
-              </div>
-              
-              <div className="mb-3">
-                <label htmlFor="csvFileUpload" className="form-label">Select CSV File</label>
-                <input 
-                  type="file" 
-                  className="form-control" 
-                  id="csvFileUpload" 
-                  accept=".csv" 
-                  onChange={handleCsvUpload}
-                  ref={fileInputRef}
-                  disabled={isUploadingCsv}
+          </div>
+
+          {/* Internal Name */}
+          <div>
+            <div className="flex justify-between items-center">
+              <label htmlFor="internalName" className="block text-sm font-medium text-gray-700 mb-1">
+                Internal Name <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="autoGenerateInternalName"
+                  checked={autoGenerateInternalName}
+                  onChange={(e) => setAutoGenerateInternalName(e.target.checked)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
-                <div className="form-text">
-                  Only CSV files are supported
-                </div>
+                <label htmlFor="autoGenerateInternalName" className="ml-2 block text-xs text-gray-600">
+                  Auto-generate
+                </label>
               </div>
-              
-              {isUploadingCsv && (
-                <div className="text-center my-3">
-                  <div className="spinner-border" role="status">
-                    <span className="visually-hidden">Uploading...</span>
-                  </div>
-                  <p className="mt-2">Uploading and processing your CSV file...</p>
-                </div>
-              )}
             </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowCsvModal(false)}>
-                Close
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <input
+                type="text"
+                id="internalName"
+                value={internalName}
+                onChange={(e) => setInternalName(e.target.value)}
+                disabled={autoGenerateInternalName}
+                required
+                className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${
+                  autoGenerateInternalName ? 'bg-gray-100' : ''
+                }`}
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              This is the unique identifier used internally. It must be unique across all franchises.
+            </p>
+          </div>
+          
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+          
+          {/* Retail Price */}
+          <div>
+            <label htmlFor="retailPrice" className="block text-sm font-medium text-gray-700 mb-1">
+              Retail Price (RRP)
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm">$</span>
+              </div>
+              <input
+                type="number"
+                id="retailPrice"
+                value={retailPrice}
+                onChange={(e) => setRetailPrice(e.target.value)}
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          
+          {/* Default Edition Checkbox */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="isDefault"
+              checked={isDefault}
+              onChange={(e) => setIsDefault(e.target.checked)}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            />
+            <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-900">
+              Set as default edition (shown by default on the collection page)
+            </label>
+          </div>
+          
+          {/* Update Starship Prices Checkbox - Only show when editing */}
+          {editMode && (
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="updateStarshipPrices"
+                checked={updateStarshipPrices}
+                onChange={(e) => setUpdateStarshipPrices(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="updateStarshipPrices" className="ml-2 block text-sm text-gray-900">
+                Update retail price for all starships in this edition
+              </label>
+            </div>
+          )}
+          
+          {/* Form Actions */}
+          <div className="flex justify-between pt-4">
+            <button
+              type="submit"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {editMode ? 'Update Edition' : 'Add Edition'}
+            </button>
+            
+            {editMode && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Cancel
               </button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* Editions List */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
+                Editions
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                Manage editions for your collection
+              </p>
+            </div>
+            
+            {/* Franchise Filter */}
+            <div className="mt-3 md:mt-0">
+              <label htmlFor="franchiseFilter" className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Franchise
+              </label>
+              <select
+                id="franchiseFilter"
+                className="block w-full md:w-64 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                value={selectedFranchiseFilter}
+                onChange={(e) => setSelectedFranchiseFilter(e.target.value)}
+              >
+                <option value="">All Franchises</option>
+                {franchises.map((f) => (
+                  <option key={f._id} value={f.name}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
+        
+        {loading ? (
+          <div className="p-4 text-center">
+            <FontAwesomeIcon icon={faSync} className="animate-spin mr-2" />
+            Loading editions...
+          </div>
+        ) : filteredEditions.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            {selectedFranchiseFilter 
+              ? `No editions found for ${selectedFranchiseFilter}. Add your first edition above.`
+              : 'No editions found. Add your first edition above.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Franchise
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Internal Name
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Retail Price
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Default
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredEditions.map((edition) => (
+                  <tr key={edition._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {edition.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {edition.franchise || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {edition.internalName || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                      {edition.description || 'No description'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {edition.retailPrice ? `$${edition.retailPrice.toFixed(2)}` : 'Not set'}
+                      {edition.retailPrice && (
+                        <button
+                          onClick={() => handleUpdatePrices(edition)}
+                          disabled={isUpdatingPrices}
+                          title="Update starship prices with this RRP"
+                          className="ml-2 text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+                        >
+                          <FontAwesomeIcon icon={faDollarSign} />
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {edition.isDefault ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <FontAwesomeIcon icon={faCheckCircle} className="mr-1" /> Default
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            console.log('Setting default edition:', edition);
+                            handleSetDefault(edition);
+                          }}
+                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          title="Set as default edition"
+                        >
+                          Set Default
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleEdit(edition)}
+                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        title="Edit"
+                      >
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(edition)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Delete"
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Utility Actions */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Utilities</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <button
+              onClick={handleImport}
+              disabled={isImporting}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {isImporting ? (
+                <>
+                  <FontAwesomeIcon icon={faSync} className="animate-spin mr-2" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                  Import Editions
+                </>
+              )}
+            </button>
+            {importStatus && (
+              <p className="mt-2 text-sm text-gray-600">{importStatus}</p>
+            )}
+          </div>
+          
+          <div>
+            <button
+              onClick={handleUpdateStarships}
+              disabled={isUpdating}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {isUpdating ? (
+                <>
+                  <FontAwesomeIcon icon={faSync} className="animate-spin mr-2" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faMagic} className="mr-2" />
+                  Standardize Editions
+                </>
+              )}
+            </button>
+            {updateStatus && (
+              <p className="mt-2 text-sm text-gray-600">{updateStatus}</p>
+            )}
+          </div>
+        </div>
+        
+        {priceUpdateStatus && (
+          <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md">
+            <FontAwesomeIcon icon={faCheckCircle} className="mr-2" />
+            {priceUpdateStatus}
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
-      <div className="modal" style={{ display: showDeleteModal ? 'block' : 'none' }}>
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Confirm Delete</h5>
-              <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
-            </div>
-            <div className="modal-body">
-              Are you sure you want to delete the edition "{editionToDelete?.name}"?
-              This action cannot be undone.
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
-                Cancel
-              </button>
-              <button type="button" className="btn btn-danger" onClick={handleDelete}>
-                Delete
-              </button>
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3 text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg leading-6 font-medium text-gray-900 mt-2">Delete Edition</h3>
+              <div className="mt-2 px-7 py-3">
+                <p className="text-sm text-gray-500">
+                  Are you sure you want to delete the edition "{editionToDelete?.name}"? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex justify-center gap-4 mt-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

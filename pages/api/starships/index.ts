@@ -1,11 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '../../../lib/mongodb';
 import Starship, { IStarship } from '../../../models/Starship';
+import Edition from '../../../models/Edition';
 
 export interface Starship {
   _id: string;
   issue: string;
   edition: string;
+  editionInternalName?: string;
   shipName: string;
   faction: string;
   releaseDate: string;
@@ -35,7 +37,32 @@ export default async function handler(
   switch (method) {
     case 'GET':
       try {
-        const starships = await Starship.find({});
+        // Extract query parameters
+        const { collectionType, franchise } = req.query;
+        
+        // Build filter object based on query parameters
+        const filter: any = {};
+        
+        if (collectionType && collectionType !== '') {
+          // Handle the case where collectionType might be undefined in the database
+          // Use $or to match either the specified collectionType or undefined collectionType
+          filter.$or = [
+            { collectionType: collectionType },
+            { collectionType: { $exists: false } }
+          ];
+        }
+        
+        if (franchise && franchise !== '') {
+          // Use case-insensitive regex for franchise matching using string pattern
+          filter.franchise = { $regex: `^${franchise}$`, $options: 'i' };
+        }
+        
+        console.log('Fetching starships with filter:', JSON.stringify(filter, null, 2));
+        
+        // Query with the filter
+        const starships = await Starship.find(filter);
+        console.log(`Found ${starships.length} starships matching filter`);
+        
         res.status(200).json({ success: true, data: starships });
       } catch (error) {
         res.status(400).json({ success: false, error });
@@ -43,6 +70,17 @@ export default async function handler(
       break;
     case 'POST':
       try {
+        // If edition is provided but editionInternalName is not, try to find the internal name
+        if (req.body.edition && !req.body.editionInternalName) {
+          const edition = await Edition.findOne({ name: req.body.edition });
+          if (edition && edition.internalName) {
+            req.body.editionInternalName = edition.internalName;
+          } else {
+            // If no internal name is found, use the edition name as a fallback
+            req.body.editionInternalName = req.body.edition;
+          }
+        }
+        
         const starship = await Starship.create(req.body);
         res.status(201).json({ success: true, data: starship });
       } catch (error) {

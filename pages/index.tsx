@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Dialog, Transition } from '@headlessui/react';
 import dynamic from 'next/dynamic';
 import { Starship } from '../types';
+import CollectionFilter from '../components/CollectionFilter';
 
 // Dynamically import large components
 const StarshipList = dynamic(() => import('../components/StarshipList'), {
@@ -27,13 +28,103 @@ const Home: React.FC = () => {
   const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentEdition, setCurrentEdition] = useState<string>('Regular');
+  const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
+  const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+
+  // Fetch default edition on component mount
+  useEffect(() => {
+    fetchDefaultEdition().then(() => {
+      // After fetching the default edition, fetch starships
+      fetchStarships();
+    });
+  }, []);
+
+  // Also fetch default edition when franchise changes
+  useEffect(() => {
+    if (selectedFranchise) {
+      fetchDefaultEdition(selectedFranchise).then(() => {
+        // After fetching the default edition, fetch starships
+        fetchStarships();
+      });
+    }
+  }, [selectedFranchise]);
+
+  const fetchDefaultEdition = async (franchise?: string) => {
+    try {
+      let url = '/api/editions?default=true';
+      
+      // If a franchise is specified, add it to the query
+      if (franchise) {
+        url += `&franchise=${encodeURIComponent(franchise)}`;
+      }
+      
+      console.log('Fetching default edition for franchise:', franchise || 'all');
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch default edition');
+      }
+      
+      const data = await response.json();
+      console.log('Default edition data:', data);
+      
+      if (data.success && data.data && data.data.length > 0) {
+        // Set the default edition as the current edition
+        const defaultEdition = data.data[0].internalName;
+        console.log('Setting default edition:', defaultEdition);
+        setCurrentEdition(defaultEdition);
+        return defaultEdition;
+      } else {
+        // If no default edition is found, try to find any edition for this franchise
+        if (franchise) {
+          const fallbackResponse = await fetch(`/api/editions?franchise=${encodeURIComponent(franchise)}`);
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
+              const firstEdition = fallbackData.data[0].internalName;
+              console.log('No default edition found, using first available edition:', firstEdition);
+              setCurrentEdition(firstEdition);
+              return firstEdition;
+            }
+          }
+        }
+        
+        console.log('No default edition found, using Regular');
+        setCurrentEdition('regular-star-trek');
+        return 'regular-star-trek';
+      }
+    } catch (err) {
+      console.error('Error fetching default edition:', err);
+      // If there's an error, we'll just use the default 'Regular'
+      setCurrentEdition('regular-star-trek');
+      return 'regular-star-trek';
+    }
+  };
 
   const fetchStarships = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/starships');
+      let url = '/api/starships';
+      
+      // Add filter parameters if either one is selected
+      const queryParams = new URLSearchParams();
+      
+      if (selectedCollectionType) {
+        queryParams.append('collectionType', selectedCollectionType);
+      }
+      
+      if (selectedFranchise) {
+        queryParams.append('franchise', selectedFranchise);
+      }
+      
+      // Only append query string if we have parameters
+      if (queryParams.toString()) {
+        url = `${url}?${queryParams.toString()}`;
+      }
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -49,9 +140,20 @@ const Home: React.FC = () => {
     }
   };
 
+  // Fetch starships when filters change
   useEffect(() => {
-    fetchStarships();
-  }, []);
+    // Only fetch starships if this is not the initial load
+    // The initial load is handled by the fetchDefaultEdition effect
+    if (selectedCollectionType || selectedFranchise) {
+      fetchStarships();
+    }
+  }, [selectedCollectionType, selectedFranchise]);
+
+  const handleFilterChange = (collectionType: string, franchise: string) => {
+    console.log('Filter changed:', { collectionType, franchise });
+    setSelectedCollectionType(collectionType);
+    setSelectedFranchise(franchise);
+  };
 
   const handleToggleOwned = async (id: string) => {
     try {
@@ -184,9 +286,12 @@ const Home: React.FC = () => {
           onClick={() => setShowAddModal(true)}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
         >
-          Add New Starship
+          Add New Item
         </button>
       </div>
+
+      {/* Collection Filter */}
+      <CollectionFilter onFilterChange={handleFilterChange} />
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -244,10 +349,14 @@ const Home: React.FC = () => {
                   <div className="sm:flex sm:items-start">
                     <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                       <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
-                        Add New Starship
+                        Add New Item
                       </Dialog.Title>
                       <div className="mt-2">
-                        <AddStarshipForm onStarshipAdded={handleRefreshStarships} />
+                        <AddStarshipForm 
+                          onStarshipAdded={handleRefreshStarships} 
+                          defaultCollectionType={selectedCollectionType}
+                          defaultFranchise={selectedFranchise}
+                        />
                       </div>
                     </div>
                   </div>

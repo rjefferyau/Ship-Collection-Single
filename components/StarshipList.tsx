@@ -28,11 +28,15 @@ const StarshipList: React.FC<StarshipListProps> = ({
     search: '',
     faction: [],
     edition: [currentEdition],
+    collectionType: [],
+    franchise: [],
     owned: 'all'
   });
   const [filteredStarships, setFilteredStarships] = useState<Starship[]>(starships || []);
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
+  const [availableCollectionTypes, setAvailableCollectionTypes] = useState<string[]>([]);
+  const [availableFranchises, setAvailableFranchises] = useState<string[]>([]);
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
   const { formatCurrency } = useCurrency();
   
@@ -47,148 +51,51 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
   const [factionMenuOpen, setFactionMenuOpen] = useState(false);
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
+  const [collectionTypeMenuOpen, setCollectionTypeMenuOpen] = useState(false);
+  const [franchiseMenuOpen, setFranchiseMenuOpen] = useState(false);
 
-  // Extract unique factions and editions from starships
+  // Extract unique values for filters
   useEffect(() => {
-    if (starships && starships.length > 0) {
-      // Get unique factions
-      const factions = Array.from(new Set(starships.map(ship => ship.faction))).filter(Boolean).sort();
-      setAvailableFactions(factions);
-      
-      // Get unique editions
-      const editions = Array.from(new Set(starships.map(ship => ship.edition))).filter(Boolean).sort();
-      setAvailableEditions(editions);
-    }
-  }, [starships]);
-
-  // Apply filters and sorting
-  useEffect(() => {
-    if (!starships || starships.length === 0) {
-      setFilteredStarships([]);
-      return;
-    }
+    if (!starships || starships.length === 0) return;
     
-    let result = [...starships];
+    // Extract unique factions
+    const factions = Array.from(new Set(starships.map(ship => ship.faction))).sort();
+    setAvailableFactions(factions);
     
-    // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(ship => 
-        (ship.shipName ? ship.shipName.toLowerCase().includes(searchLower) : false) || 
-        (ship.issue ? ship.issue.toLowerCase().includes(searchLower) : false)
-      );
-    }
+    // Extract unique editions from starships
+    const editions = Array.from(new Set(
+      starships.map(ship => ship.editionInternalName || ship.edition)
+    )).filter(Boolean).sort();
     
-    // Apply faction filter
-    if (filters.faction.length > 0) {
-      result = result.filter(ship => filters.faction.includes(ship.faction));
-    }
+    setAvailableEditions(editions);
     
-    // Apply edition filter
-    if (filters.edition.length > 0) {
-      result = result.filter(ship => filters.edition.includes(ship.edition));
-    }
+    // Extract unique collection types
+    const collectionTypes = Array.from(new Set(starships.map(ship => ship.collectionType))).sort();
+    setAvailableCollectionTypes(collectionTypes);
     
-    // Apply owned filter
-    if (filters.owned === 'owned') {
-      result = result.filter(ship => ship.owned);
-    } else if (filters.owned === 'not-owned') {
-      result = result.filter(ship => !ship.owned);
-    } else if (filters.owned === 'wishlist') {
-      result = result.filter(ship => ship.wishlist && !ship.owned && !ship.onOrder);
-    } else if (filters.owned === 'on-order') {
-      result = result.filter(ship => ship.onOrder && !ship.owned);
-    }
+    // Extract unique franchises
+    const franchises = Array.from(new Set(starships.map(ship => ship.franchise))).sort();
+    setAvailableFranchises(franchises);
     
-    // Apply sorting
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        if (sortConfig.key === '') return 0;
-        
-        // Special handling for issue field - treat as numbers when possible
-        if (sortConfig.key === 'issue') {
-          // Extract numeric part from issue strings (e.g., "XL1" -> "1", "XL10" -> "10")
-          const aMatch = a.issue.match(/(\d+)$/);
-          const bMatch = b.issue.match(/(\d+)$/);
-          
-          const aNum = aMatch ? parseInt(aMatch[0], 10) : NaN;
-          const bNum = bMatch ? parseInt(bMatch[0], 10) : NaN;
-          
-          // If both have numeric parts, compare them numerically
-          if (!isNaN(aNum) && !isNaN(bNum)) {
-            // If they have the same prefix (or no prefix), sort by number
-            const aPrefix = a.issue.replace(/\d+$/, '');
-            const bPrefix = b.issue.replace(/\d+$/, '');
-            
-            if (aPrefix === bPrefix) {
-              return sortConfig.direction === 'asc' 
-                ? aNum - bNum 
-                : bNum - aNum;
-            }
-            
-            // If prefixes are different, sort by prefix first
-            return sortConfig.direction === 'asc'
-              ? aPrefix.localeCompare(bPrefix)
-              : bPrefix.localeCompare(aPrefix);
-          }
-          
-          // If only one has a numeric part, prioritize numbers before strings
-          if (!isNaN(aNum) && isNaN(bNum)) {
-            return sortConfig.direction === 'asc' ? -1 : 1;
-          }
-          if (isNaN(aNum) && !isNaN(bNum)) {
-            return sortConfig.direction === 'asc' ? 1 : -1;
-          }
+    // Apply initial filtering based on currentEdition
+    if (currentEdition) {
+      const initialFiltered = starships.filter(ship => {
+        // If the ship has an editionInternalName, use that for filtering
+        if (ship.editionInternalName) {
+          return ship.editionInternalName === currentEdition;
         }
-        
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
-        
-        // Handle undefined or null values
-        if (aValue === undefined || aValue === null) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (bValue === undefined || bValue === null) return sortConfig.direction === 'asc' ? 1 : -1;
-        
-        if (aValue < bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
+        // Otherwise fall back to the edition name
+        return ship.edition === currentEdition;
       });
-    }
-    
-    setFilteredStarships(result);
-  }, [starships, filters, sortConfig]);
-
-  // Initialize with default sorting and filtering
-  useEffect(() => {
-    // Set default sorting to issue ascending
-    setSortConfig({ key: 'issue', direction: 'asc' });
-    
-    // Set filter to current edition
-    if (availableEditions.includes(currentEdition)) {
-      setFilters(prev => ({ ...prev, edition: [currentEdition] }));
-      setActiveEdition(currentEdition);
-    }
-
-    // Apply initial filtering
-    if (starships && starships.length > 0) {
-      let initialFiltered = [...starships];
       
-      // Filter by current edition
-      if (availableEditions.includes(currentEdition)) {
-        initialFiltered = initialFiltered.filter(ship => ship.edition === currentEdition);
-      }
-      
-      // Sort by issue number
+      // Sort by issue number if possible
       initialFiltered.sort((a, b) => {
-        // Extract numeric part from issue strings (e.g., "XL1" -> "1", "XL10" -> "10")
+        // Extract numeric part from issue
         const aMatch = a.issue.match(/(\d+)$/);
         const bMatch = b.issue.match(/(\d+)$/);
         
-        const aNum = aMatch ? parseInt(aMatch[0], 10) : NaN;
-        const bNum = bMatch ? parseInt(bMatch[0], 10) : NaN;
+        const aNum = aMatch ? parseInt(aMatch[1], 10) : NaN;
+        const bNum = bMatch ? parseInt(bMatch[1], 10) : NaN;
         
         // If both have numeric parts, compare them numerically
         if (!isNaN(aNum) && !isNaN(bNum)) {
@@ -218,13 +125,179 @@ const StarshipList: React.FC<StarshipListProps> = ({
       
       setFilteredStarships(initialFiltered);
     }
-  }, [availableEditions, starships, currentEdition]);
+  }, [starships, currentEdition]);
+
+  // Select the default edition tab when editions become available
+  useEffect(() => {
+    if (availableEditions.length > 0 && currentEdition) {
+      console.log('Editions available, selecting tab for:', currentEdition);
+      
+      // Make sure the current edition is in the available editions
+      if (availableEditions.includes(currentEdition)) {
+        setActiveEdition(currentEdition);
+        setFilters(prev => ({ ...prev, edition: [currentEdition] }));
+        
+        // Use a short timeout to ensure the DOM has updated
+        setTimeout(() => {
+          const editionTab = document.querySelector(`button[data-edition="${currentEdition}"]`);
+          if (editionTab) {
+            console.log('Found edition tab, simulating click');
+            (editionTab as HTMLButtonElement).click();
+          } else {
+            console.log('Edition tab not found in DOM');
+          }
+        }, 100);
+      } else {
+        console.log(`Current edition ${currentEdition} not in available editions:`, availableEditions);
+        
+        // If the current edition is not available, use the first available edition
+        if (availableEditions.length > 0) {
+          const firstEdition = availableEditions[0];
+          console.log(`Falling back to first available edition: ${firstEdition}`);
+          setActiveEdition(firstEdition);
+          setFilters(prev => ({ ...prev, edition: [firstEdition] }));
+          
+          // Notify parent of the change
+          if (onEditionChange) {
+            onEditionChange(firstEdition);
+          }
+          
+          // Use a short timeout to ensure the DOM has updated
+          setTimeout(() => {
+            const editionTab = document.querySelector(`button[data-edition="${firstEdition}"]`);
+            if (editionTab) {
+              console.log('Found edition tab, simulating click');
+              (editionTab as HTMLButtonElement).click();
+            }
+          }, 100);
+        }
+      }
+    }
+  }, [availableEditions, currentEdition, onEditionChange]);
+
+  // Initialize with the current edition
+  useEffect(() => {
+    console.log('StarshipList initializing with currentEdition:', currentEdition);
+    setActiveEdition(currentEdition);
+    setFilters(prev => ({ ...prev, edition: [currentEdition] }));
+  }, []);
 
   // Update activeEdition when currentEdition prop changes
   useEffect(() => {
+    console.log('currentEdition changed to:', currentEdition);
     setActiveEdition(currentEdition);
     setFilters(prev => ({ ...prev, edition: [currentEdition] }));
   }, [currentEdition]);
+
+  // Apply filters and sorting
+  useEffect(() => {
+    if (!starships || starships.length === 0) {
+      setFilteredStarships([]);
+      return;
+    }
+    
+    console.log('StarshipList received starships:', starships);
+    
+    let result = [...starships];
+    
+    // Apply search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(ship => 
+        (ship.shipName ? ship.shipName.toLowerCase().includes(searchLower) : false) || 
+        (ship.issue ? ship.issue.toLowerCase().includes(searchLower) : false)
+      );
+    }
+    
+    // Apply faction filter
+    if (filters.faction.length > 0) {
+      result = result.filter(ship => filters.faction.includes(ship.faction));
+    }
+    
+    // Apply edition filter - use editionInternalName if available, otherwise fall back to edition
+    if (filters.edition.length > 0) {
+      console.log('Applying edition filter:', filters.edition);
+      
+      // Always apply the edition filter
+      result = result.filter(ship => {
+        // If the ship has an editionInternalName, use that for filtering
+        if (ship.editionInternalName) {
+          return filters.edition.includes(ship.editionInternalName);
+        }
+        // Otherwise fall back to the edition name
+        return filters.edition.includes(ship.edition);
+      });
+      
+      console.log(`After edition filter: ${result.length} ships remaining`);
+    }
+    
+    // Apply collection type filter
+    if (filters.collectionType.length > 0) {
+      console.log('Applying collection type filter:', filters.collectionType);
+      result = result.filter(ship => {
+        console.log(`Ship ${ship.shipName} collection type:`, ship.collectionType);
+        return filters.collectionType.includes(ship.collectionType);
+      });
+    }
+    
+    // Apply franchise filter
+    if (filters.franchise.length > 0) {
+      console.log('Applying franchise filter:', filters.franchise);
+      result = result.filter(ship => {
+        console.log(`Ship ${ship.shipName} franchise:`, ship.franchise);
+        return filters.franchise.includes(ship.franchise);
+      });
+    }
+    
+    // Apply owned filter
+    if (filters.owned !== 'all') {
+      if (filters.owned === 'owned') {
+        result = result.filter(ship => ship.owned);
+      } else if (filters.owned === 'not-owned') {
+        result = result.filter(ship => !ship.owned);
+      } else if (filters.owned === 'wishlist') {
+        result = result.filter(ship => ship.wishlist);
+      } else if (filters.owned === 'on-order') {
+        result = result.filter(ship => ship.onOrder);
+      }
+    }
+    
+    console.log('Filtered starships:', result);
+    
+    // Apply sorting
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        const aValue = a[sortConfig.key as keyof Starship];
+        const bValue = b[sortConfig.key as keyof Starship];
+        
+        if (aValue === undefined && bValue === undefined) return 0;
+        if (aValue === undefined) return 1;
+        if (bValue === undefined) return -1;
+        
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === 'asc' 
+            ? aValue.localeCompare(bValue) 
+            : bValue.localeCompare(aValue);
+        }
+        
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortConfig.direction === 'asc' 
+            ? aValue - bValue 
+            : bValue - aValue;
+        }
+        
+        if (aValue instanceof Date && bValue instanceof Date) {
+          return sortConfig.direction === 'asc' 
+            ? aValue.getTime() - bValue.getTime() 
+            : bValue.getTime() - aValue.getTime();
+        }
+        
+        return 0;
+      });
+    }
+    
+    setFilteredStarships(result);
+  }, [starships, filters, sortConfig]);
 
   const handleSort = (key: keyof Starship) => {
     setSortConfig(prevConfig => ({
@@ -308,6 +381,23 @@ const StarshipList: React.FC<StarshipListProps> = ({
     }
   };
 
+  // Add these new functions for collection type and franchise filtering
+  const toggleCollectionTypeFilter = (collectionType: string) => {
+    const newCollectionTypes = filters.collectionType.includes(collectionType)
+      ? filters.collectionType.filter(t => t !== collectionType)
+      : [...filters.collectionType, collectionType];
+    
+    setFilters({ ...filters, collectionType: newCollectionTypes });
+  };
+  
+  const toggleFranchiseFilter = (franchise: string) => {
+    const newFranchises = filters.franchise.includes(franchise)
+      ? filters.franchise.filter(f => f !== franchise)
+      : [...filters.franchise, franchise];
+    
+    setFilters({ ...filters, franchise: newFranchises });
+  };
+
   // Define columns for the DataTable
   const columns = [
     {
@@ -357,8 +447,18 @@ const StarshipList: React.FC<StarshipListProps> = ({
       ),
     },
     {
+      key: 'franchise',
+      header: 'Franchise',
+      sortable: true,
+    },
+    {
       key: 'faction',
       header: 'Faction',
+      sortable: true,
+    },
+    {
+      key: 'collectionType',
+      header: 'Type',
       sortable: true,
     },
     {
@@ -495,6 +595,45 @@ const StarshipList: React.FC<StarshipListProps> = ({
       ),
     },
   ];
+
+  // Edition Tabs rendering
+  const renderEditionTabs = () => {
+    if (availableEditions.length === 0) {
+      return null;
+    }
+    
+    return (
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {availableEditions.map(edition => {
+            // Find a ship with this edition to get the display name
+            const shipWithEdition = starships.find(ship => 
+              (ship.editionInternalName && ship.editionInternalName === edition) || 
+              (!ship.editionInternalName && ship.edition === edition)
+            );
+            
+            // Use the display name from the ship, or fall back to the internal name
+            const displayName = shipWithEdition ? shipWithEdition.edition : edition;
+            
+            return (
+              <button
+                key={edition}
+                data-edition={edition}
+                onClick={() => handleEditionSelect(edition)}
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeEdition === edition
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {displayName}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -696,23 +835,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
       </div>
       
       {/* Edition Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {availableEditions.map(edition => (
-            <button
-              key={edition}
-              onClick={() => handleEditionSelect(edition)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                activeEdition === edition
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {edition}
-            </button>
-          ))}
-        </nav>
-      </div>
+      {renderEditionTabs()}
       
       {/* Data Table */}
       <div className="w-full overflow-hidden">

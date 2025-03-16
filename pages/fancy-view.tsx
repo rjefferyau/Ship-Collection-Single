@@ -1,10 +1,20 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import dynamic from 'next/dynamic';
 
 import FancyStarshipView from '../components/FancyStarshipView';
 import StarshipDetails from '../components/StarshipDetails';
 import { Starship } from '../types';
 import PdfViewer from '../components/PdfViewer';
+import CollectionFilter from '../components/CollectionFilter';
+
+// Dynamically import large components
+const AddStarshipForm = dynamic(() => import('../components/AddStarshipForm'), {
+  loading: () => <div className="p-4 text-center">Loading form...</div>,
+  ssr: false
+});
 
 const FancyViewPage: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
@@ -15,13 +25,34 @@ const FancyViewPage: React.FC = () => {
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | undefined>(undefined);
   const [selectedPdfTitle, setSelectedPdfTitle] = useState<string | undefined>(undefined);
   const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
+  const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchStarships = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/starships');
+      let url = '/api/starships';
+      
+      // Add filter parameters if either one is selected
+      const queryParams = new URLSearchParams();
+      
+      if (selectedCollectionType) {
+        queryParams.append('collectionType', selectedCollectionType);
+      }
+      
+      if (selectedFranchise) {
+        queryParams.append('franchise', selectedFranchise);
+      }
+      
+      // Only append query string if we have parameters
+      if (queryParams.toString()) {
+        url = `${url}?${queryParams.toString()}`;
+      }
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -48,18 +79,26 @@ const FancyViewPage: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ owned: !starship.owned }),
       });
       
       if (!response.ok) {
         throw new Error('Failed to update ownership status');
       }
       
-      // Refresh the starships list
-      await fetchStarships();
+      // Update the starship in the local state
+      setStarships(prevStarships => 
+        prevStarships.map(ship => 
+          ship._id === id ? { ...ship, owned: !ship.owned } : ship
+        )
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error('Error toggling ownership:', err);
     }
+  };
+
+  const handleFilterChange = (collectionType: string, franchise: string) => {
+    setSelectedCollectionType(collectionType);
+    setSelectedFranchise(franchise);
   };
 
   const handleSelectStarship = (starship: Starship) => {
@@ -72,31 +111,35 @@ const FancyViewPage: React.FC = () => {
 
   const handleEditionChange = (edition: string) => {
     setCurrentEdition(edition);
-    handleRefreshStarships(edition);
   };
 
-  const handleRefreshStarships = async (edition?: string) => {
+  const handleRefreshStarships = async () => {
     await fetchStarships();
-    // Close the modal after refresh
-    setSelectedStarship(null);
-    
-    // If an edition was passed, update the current edition
-    if (edition) {
-      setCurrentEdition(edition);
-    }
+    // Close the add modal after refresh
+    setShowAddModal(false);
   };
 
+  // Fetch starships when filters change
   useEffect(() => {
     fetchStarships();
-  }, []);
+  }, [selectedCollectionType, selectedFranchise]);
 
   return (
-    <>
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Starship Gallery</h1>
-        <p className="text-gray-600">Visual display of your starship collection</p>
+    <div className="container mx-auto px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Gallery View</h1>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
+        >
+          <FontAwesomeIcon icon={faPlus} className="mr-2" />
+          Add New Item
+        </button>
       </div>
-
+      
+      {/* Collection Filter */}
+      <CollectionFilter onFilterChange={handleFilterChange} />
+      
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -107,8 +150,8 @@ const FancyViewPage: React.FC = () => {
           <span className="block sm:inline"> {error}</span>
         </div>
       ) : (
-        <FancyStarshipView
-          starships={starships}
+        <FancyStarshipView 
+          starships={starships} 
           onToggleOwned={handleToggleOwned}
           onSelectStarship={handleSelectStarship}
           onEditionChange={handleEditionChange}
@@ -117,8 +160,53 @@ const FancyViewPage: React.FC = () => {
       )}
 
       {/* Modal for starship details */}
-      <Transition.Root show={!!selectedStarship} as={Fragment}>
-        <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={handleCloseModal}>
+      {selectedStarship && (
+        <Transition.Root show={!!selectedStarship} as={Fragment}>
+          <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={handleCloseModal}>
+            <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+              </Transition.Child>
+
+              {/* This element is to trick the browser into centering the modal contents. */}
+              <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+                &#8203;
+              </span>
+              
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle">
+                  <StarshipDetails 
+                    starship={selectedStarship} 
+                    onToggleOwned={handleToggleOwned}
+                    onRefresh={() => fetchStarships()}
+                    currentEdition={currentEdition}
+                  />
+                </div>
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition.Root>
+      )}
+
+      {/* Modal for adding new starship */}
+      <Transition.Root show={showAddModal} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={setShowAddModal}>
           <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <Transition.Child
               as={Fragment}
@@ -151,29 +239,17 @@ const FancyViewPage: React.FC = () => {
                   <div className="sm:flex sm:items-start">
                     <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                       <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
-                        {selectedStarship?.shipName} - {selectedStarship?.edition} #{selectedStarship?.issue}
+                        Add New Item
                       </Dialog.Title>
                       <div className="mt-2">
-                        {selectedStarship && (
-                          <StarshipDetails
-                            starship={selectedStarship}
-                            onToggleOwned={handleToggleOwned}
-                            onRefresh={handleRefreshStarships}
-                            currentEdition={currentEdition}
-                          />
-                        )}
+                        <AddStarshipForm 
+                          onStarshipAdded={handleRefreshStarships} 
+                          defaultCollectionType={selectedCollectionType}
+                          defaultFranchise={selectedFranchise}
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                  <button
-                    type="button"
-                    className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                    onClick={handleCloseModal}
-                  >
-                    Close
-                  </button>
                 </div>
               </div>
             </Transition.Child>
@@ -183,13 +259,44 @@ const FancyViewPage: React.FC = () => {
 
       {/* PDF Viewer Modal */}
       {showPdfViewer && selectedPdfUrl && (
-        <PdfViewer
-          pdfUrl={selectedPdfUrl}
-          title={selectedPdfTitle}
-          onClose={() => setShowPdfViewer(false)}
-        />
+        <Transition.Root show={showPdfViewer} as={Fragment}>
+          <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={() => setShowPdfViewer(false)}>
+            <div className="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+              </Transition.Child>
+
+              {/* This element is to trick the browser into centering the modal contents. */}
+              <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+                &#8203;
+              </span>
+              
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <div className="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl sm:align-middle">
+                  <PdfViewer pdfUrl={selectedPdfUrl} title={selectedPdfTitle || 'Magazine'} onClose={() => setShowPdfViewer(false)} />
+                </div>
+              </Transition.Child>
+            </div>
+          </Dialog>
+        </Transition.Root>
       )}
-    </>
+    </div>
   );
 };
 

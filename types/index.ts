@@ -2,8 +2,11 @@ export interface Starship {
   _id: string;
   issue: string;
   edition: string;
+  editionInternalName?: string;
   shipName: string;
   faction: string;
+  collectionType: string;
+  franchise: string;
   releaseDate?: Date;
   imageUrl?: string;
   magazinePdfUrl?: string;
@@ -27,6 +30,7 @@ export interface Faction {
 export interface Edition {
   _id: string;
   name: string;
+  internalName?: string;
   description?: string;
 }
 
@@ -39,5 +43,7 @@ export interface Filters {
   search: string;
   faction: string[];
   edition: string[];
+  collectionType: string[];
+  franchise: string[];
   owned: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order';
 } 

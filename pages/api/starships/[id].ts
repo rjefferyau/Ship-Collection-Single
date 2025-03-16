@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '../../../lib/mongodb';
 import Starship from '../../../models/Starship';
+import Edition from '../../../models/Edition';
 
 export default async function handler(
   req: NextApiRequest,
@@ -30,6 +31,17 @@ export default async function handler(
         // Extract currentEdition from request body if present
         const { currentEdition, ...updateData } = req.body;
         
+        // If edition is being updated but editionInternalName is not provided, try to find the internal name
+        if (updateData.edition && !updateData.editionInternalName) {
+          const edition = await Edition.findOne({ name: updateData.edition });
+          if (edition && edition.internalName) {
+            updateData.editionInternalName = edition.internalName;
+          } else {
+            // If no internal name is found, use the edition name as a fallback
+            updateData.editionInternalName = updateData.edition;
+          }
+        }
+        
         const starship = await Starship.findByIdAndUpdate(id, updateData, {
           new: true,
           runValidators: true,
@@ -54,6 +66,7 @@ export default async function handler(
         const allowedFields = [
           'issue',
           'edition',
+          'editionInternalName',
           'shipName',
           'faction',
           'releaseDate',
@@ -68,7 +81,13 @@ export default async function handler(
           'condition',
           'conditionNotes',
           'conditionPhotos',
-          'lastInspectionDate'
+          'lastInspectionDate',
+          'franchise',
+          'collectionType',
+          'onOrder',
+          'pricePaid',
+          'orderDate',
+          'marketValue'
         ];
         
         // Filter out any fields that aren't in the allowed list
@@ -78,6 +97,17 @@ export default async function handler(
             obj[key] = req.body[key];
             return obj;
           }, {});
+        
+        // If edition is being updated but editionInternalName is not provided, try to find the internal name
+        if (updateData.edition && !updateData.editionInternalName) {
+          const edition = await Edition.findOne({ name: updateData.edition });
+          if (edition && edition.internalName) {
+            updateData.editionInternalName = edition.internalName;
+          } else {
+            // If no internal name is found, use the edition name as a fallback
+            updateData.editionInternalName = updateData.edition;
+          }
+        }
         
         const starship = await Starship.findByIdAndUpdate(id, updateData, {
           new: true,

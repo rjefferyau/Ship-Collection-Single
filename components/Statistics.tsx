@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShip, faCheck, faPercentage, faList, faSort, faChevronRight, faFilter, faSearch, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { faCube, faCheck, faPercentage, faList, faSort, faChevronRight, faFilter, faSearch, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import DataTable from './DataTable';
 
-interface Starship {
+interface Item {
   _id: string;
   issue: string;
   edition: string;
@@ -15,8 +15,8 @@ interface Starship {
 }
 
 interface StatisticsProps {
-  totalStarships: number;
-  ownedStarships: number;
+  totalItems: number;
+  ownedItems: number;
   factionBreakdown: { [key: string]: { total: number; owned: number } };
   editionBreakdown: { [key: string]: { total: number; owned: number } };
   collectionTypeBreakdown: { [key: string]: { total: number; owned: number } };
@@ -29,8 +29,8 @@ interface StatisticsProps {
 type SortOption = 'total-desc' | 'total-asc' | 'owned-desc' | 'owned-asc' | 'percentage-desc' | 'percentage-asc' | 'name-asc' | 'name-desc';
 
 const Statistics: React.FC<StatisticsProps> = ({
-  totalStarships,
-  ownedStarships,
+  totalItems,
+  ownedItems,
   factionBreakdown,
   editionBreakdown,
   collectionTypeBreakdown,
@@ -53,15 +53,15 @@ const Statistics: React.FC<StatisticsProps> = ({
   const [showEmptyFranchises, setShowEmptyFranchises] = useState(true);
   const [showAllFactionsModal, setShowAllFactionsModal] = useState(false);
   
-  // New state for missing ships modal
-  const [missingShips, setMissingShips] = useState<Starship[]>([]);
-  const [showMissingShipsModal, setShowMissingShipsModal] = useState(false);
+  // New state for missing items
+  const [missingItems, setMissingItems] = useState<Item[]>([]);
+  const [showMissingItemsModal, setShowMissingItemsModal] = useState(false);
   const [selectedTitle, setSelectedTitle] = useState('');
-  const [loadingMissingShips, setLoadingMissingShips] = useState(false);
-  const [missingShipsError, setMissingShipsError] = useState<string | null>(null);
+  const [missingItemsLoading, setMissingItemsLoading] = useState(false);
+  const [missingItemsError, setMissingItemsError] = useState<string | null>(null);
 
-  const ownedPercentage = totalStarships > 0 
-    ? Math.round((ownedStarships / totalStarships) * 100) 
+  const ownedPercentage = totalItems > 0 
+    ? Math.round((ownedItems / totalItems) * 100) 
     : 0;
 
   const getSortFunction = (sortOption: SortOption) => {
@@ -141,180 +141,209 @@ const Statistics: React.FC<StatisticsProps> = ({
     }
   };
 
-  // Function to fetch missing ships for a specific edition or faction
-  const fetchMissingShips = async (type: 'edition' | 'faction', name: string) => {
-    setLoadingMissingShips(true);
-    setMissingShipsError(null);
-    setSelectedTitle(name);
+  // Function to fetch missing items for a specific edition or faction
+  const fetchMissingItems = async (type: 'edition' | 'faction', name: string) => {
+    setMissingItemsLoading(true);
+    setMissingItemsError(null);
     
     try {
       const response = await fetch('/api/starships');
       
       if (!response.ok) {
-        throw new Error('Failed to fetch starships');
+        throw new Error('Failed to fetch items');
       }
       
       const data = await response.json();
-      const starships = data.data || [];
+      const items = data.data || [];
       
-      // Filter for missing ships (not owned) of the selected edition or faction
-      const filtered = starships.filter((ship: Starship) => {
+      // Filter for missing items (not owned) of the selected edition or faction
+      const filtered = items.filter((item: Item) => {
         if (type === 'edition') {
-          return ship.edition === name && !ship.owned;
+          return item.edition === name && !item.owned;
         } else {
-          return ship.faction === name && !ship.owned;
+          return item.faction === name && !item.owned;
         }
       });
       
-      setMissingShips(filtered);
-      setShowMissingShipsModal(true);
+      setMissingItems(filtered);
+      setSelectedTitle(name);
+      setShowMissingItemsModal(true);
     } catch (err) {
-      setMissingShipsError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setMissingItemsError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
-      setLoadingMissingShips(false);
+      setMissingItemsLoading(false);
     }
   };
 
   // Handle click on edition title
   const handleEditionClick = (edition: string) => {
-    fetchMissingShips('edition', edition);
+    fetchMissingItems('edition', edition);
   };
 
   // Handle click on faction title
   const handleFactionClick = (faction: string) => {
-    fetchMissingShips('faction', faction);
+    fetchMissingItems('faction', faction);
+  };
+
+  // Update the summary section
+  const renderSummary = () => {
+    const ownedPercentage = totalItems > 0 ? (ownedItems / totalItems) * 100 : 0;
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+              <FontAwesomeIcon icon={faList} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Items</p>
+              <p className="text-2xl font-semibold text-gray-800">{totalItems}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+              <FontAwesomeIcon icon={faCheck} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Owned Items</p>
+              <p className="text-2xl font-semibold text-gray-800">{ownedItems}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+              <FontAwesomeIcon icon={faPercentage} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Collection Completion</p>
+              <p className="text-2xl font-semibold text-gray-800">{ownedPercentage.toFixed(1)}%</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className={`h-2.5 rounded-full ${getProgressVariant(ownedPercentage)}`}
+                style={{ width: `${ownedPercentage}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Update the renderEditionBreakdown function
+  const renderEditionBreakdown = () => {
+    return (
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">Edition Breakdown</h3>
+          <div className="flex items-center">
+            <div className="mr-4">
+              <label className="inline-flex items-center text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  className="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out"
+                  checked={showEmptyEditions}
+                  onChange={(e) => setShowEmptyEditions(e.target.checked)}
+                />
+                <span className="ml-2">Show editions with no items</span>
+              </label>
+            </div>
+            <div className="flex items-center">
+              <select
+                id="edition-sort-dropdown"
+                value={editionSortOption}
+                onChange={(e) => setEditionSortOption(e.target.value as SortOption)}
+                className="text-sm border border-gray-300 rounded-md px-2 py-1"
+              >
+                <option value="name-asc">Name (A to Z)</option>
+                <option value="name-desc">Name (Z to A)</option>
+                <option value="total-desc">Total (High to Low)</option>
+                <option value="total-asc">Total (Low to High)</option>
+                <option value="owned-desc">Owned (High to Low)</option>
+                <option value="owned-asc">Owned (Low to High)</option>
+                <option value="percentage-desc">Completion % (High to Low)</option>
+                <option value="percentage-asc">Completion % (Low to High)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Filter editions..."
+              value={editionFilter}
+              onChange={(e) => setEditionFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedEditions.map(([edition, data]) => {
+              const percentage = data.total > 0 
+                ? Math.round((data.owned / data.total) * 100) 
+                : 0;
+                
+              return (
+                <div key={edition} className="mb-4">
+                  <div className="h-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div className="p-4">
+                      <h6 className="flex justify-between items-center mb-2">
+                        <span 
+                          className="text-truncate cursor-pointer" 
+                          onClick={() => handleEditionClick(edition)}
+                          title={`View missing items in ${edition}`}
+                        >
+                          {edition}
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                          {percentage}%
+                        </span>
+                      </h6>
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                        <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <small className="text-gray-500">
+                          <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                        </small>
+                        <small className="text-gray-500">
+                          {data.total - data.owned} missing
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {sortedEditions.length === 0 && (
+              <div className="col-span-full text-center py-4">
+                <p className="text-gray-500">No editions match your filter criteria.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
     <div>
       {(viewMode === 'all' || viewMode === 'summary') && (
         <>
-          <h3 className="mb-3">Collection Statistics</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="col-span-1">
-              <div className="h-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm text-center">
-                <FontAwesomeIcon icon={faList} size="2x" className="mb-2 text-blue-600" />
-                <h5>Total Starships</h5>
-                <div className="text-4xl font-bold">{totalStarships}</div>
-              </div>
-            </div>
-            
-            <div className="col-span-1">
-              <div className="h-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm text-center">
-                <FontAwesomeIcon icon={faCheck} size="2x" className="mb-2 text-green-600" />
-                <h5>Owned Starships</h5>
-                <div className="text-4xl font-bold">{ownedStarships}</div>
-              </div>
-            </div>
-            
-            <div className="col-span-1">
-              <div className="h-full p-4 bg-white border border-gray-200 rounded-lg shadow-sm text-center">
-                <FontAwesomeIcon icon={faPercentage} size="2x" className="mb-2 text-cyan-600" />
-                <h5>Collection Completion</h5>
-                <div className="text-4xl font-bold text-center mb-2">{ownedPercentage}%</div>
-                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div className={`h-2 ${getProgressVariant(ownedPercentage)}`} style={{ width: `${ownedPercentage}%` }}></div>
-                </div>
-                <div className="text-center mt-2">
-                  <strong>{ownedStarships}</strong> of <strong>{totalStarships}</strong> starships owned
-                </div>
-              </div>
-            </div>
-          </div>
+          {renderSummary()}
         </>
       )}
       
       {(viewMode === 'all' || viewMode === 'editions') && Object.keys(editionBreakdown).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
-          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <h5 className="mb-0 font-medium">Edition Breakdown</h5>
-            <div className="flex items-center">
-              <div className="flex items-center mr-4">
-                <input
-                  type="checkbox"
-                  id="show-empty-editions"
-                  checked={showEmptyEditions}
-                  onChange={(e) => setShowEmptyEditions(e.target.checked)}
-                  className="mr-2 h-4 w-4 text-blue-600 rounded"
-                />
-                <label htmlFor="show-empty-editions" className="text-sm">Show Empty</label>
-              </div>
-              <div className="flex items-center">
-                <select
-                  id="edition-sort-dropdown"
-                  value={editionSortOption}
-                  onChange={(e) => setEditionSortOption(e.target.value as SortOption)}
-                  className="text-sm border border-gray-300 rounded-md px-2 py-1"
-                >
-                  <option value="name-asc">Name (A to Z)</option>
-                  <option value="name-desc">Name (Z to A)</option>
-                  <option value="total-desc">Total (High to Low)</option>
-                  <option value="total-asc">Total (Low to High)</option>
-                  <option value="owned-desc">Owned (High to Low)</option>
-                  <option value="owned-asc">Owned (Low to High)</option>
-                  <option value="percentage-desc">Completion % (High to Low)</option>
-                  <option value="percentage-asc">Completion % (Low to High)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="mb-3">
-              <input
-                type="text"
-                placeholder="Filter editions..."
-                value={editionFilter}
-                onChange={(e) => setEditionFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sortedEditions.map(([edition, data]) => {
-                const percentage = data.total > 0 
-                  ? Math.round((data.owned / data.total) * 100) 
-                  : 0;
-                  
-                return (
-                  <div key={edition} className="mb-4">
-                    <div className="h-full bg-white border border-gray-200 rounded-lg shadow-sm">
-                      <div className="p-4">
-                        <h6 className="flex justify-between items-center mb-2">
-                          <span 
-                            className="text-truncate cursor-pointer" 
-                            onClick={() => handleEditionClick(edition)}
-                            title={`View missing ships in ${edition}`}
-                          >
-                            {edition}
-                          </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {percentage}%
-                          </span>
-                        </h6>
-                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                          <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <small className="text-gray-500">
-                            <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
-                          </small>
-                          <small className="text-gray-500">
-                            {data.total - data.owned} missing
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              {sortedEditions.length === 0 && (
-                <div className="col-span-full text-center py-4">
-                  <p className="text-gray-500">No editions match your filter criteria.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        renderEditionBreakdown()
       )}
       
       {(viewMode === 'all' || viewMode === 'factions') && Object.keys(factionBreakdown).length > 0 && (
@@ -375,7 +404,7 @@ const Statistics: React.FC<StatisticsProps> = ({
                           <span 
                             className="text-truncate cursor-pointer" 
                             onClick={() => handleFactionClick(faction)}
-                            title={`View missing ships in ${faction}`}
+                            title={`View missing items in ${faction}`}
                           >
                             {faction}
                           </span>
@@ -609,7 +638,7 @@ const Statistics: React.FC<StatisticsProps> = ({
                                     <span 
                                       className="text-truncate cursor-pointer" 
                                       onClick={() => handleFactionClick(faction)}
-                                      title={`View missing ships in ${faction}`}
+                                      title={`View missing items in ${faction}`}
                                     >
                                       {faction}
                                     </span>
@@ -657,53 +686,53 @@ const Statistics: React.FC<StatisticsProps> = ({
         </div>
       )}
 
-      {/* Missing Ships Modal */}
-      {showMissingShipsModal && (
+      {/* Missing Items Modal */}
+      {showMissingItemsModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowMissingShipsModal(false)}></div>
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowMissingItemsModal(false)}></div>
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Missing Ships - {selectedTitle}
+                      Missing Items - {selectedTitle}
                     </h3>
                     <div className="mt-4">
-                      {loadingMissingShips ? (
+                      {missingItemsLoading ? (
                         <div className="flex justify-center items-center h-64">
                           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                          <span className="ml-3 text-gray-600">Loading missing ships...</span>
+                          <span className="ml-3 text-gray-600">Loading missing items...</span>
                         </div>
-                      ) : missingShipsError ? (
+                      ) : missingItemsError ? (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                           <strong className="font-bold">Error!</strong>
-                          <span className="block sm:inline"> {missingShipsError}</span>
+                          <span className="block sm:inline"> {missingItemsError}</span>
                         </div>
-                      ) : missingShips.length === 0 ? (
+                      ) : missingItems.length === 0 ? (
                         <div className="text-center py-8">
                           <FontAwesomeIcon icon={faExclamationTriangle} size="2x" className="text-yellow-500 mb-2" />
-                          <p className="text-gray-600">No missing ships found for this selection.</p>
+                          <p className="text-gray-600">No missing items found for this selection.</p>
                         </div>
                       ) : (
-                        <div className="overflow-x-auto">
+                        <div className="mt-4 overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ship Name</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edition</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faction</th>
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                              {missingShips.map((ship) => (
-                                <tr key={ship._id}>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ship.shipName}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ship.issue}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ship.edition}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ship.faction}</td>
+                              {missingItems.map((item) => (
+                                <tr key={item._id}>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.shipName}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.issue}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.edition}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.faction}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -718,7 +747,7 @@ const Statistics: React.FC<StatisticsProps> = ({
                 <button 
                   type="button" 
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={() => setShowMissingShipsModal(false)}
+                  onClick={() => setShowMissingItemsModal(false)}
                 >
                   Close
                 </button>

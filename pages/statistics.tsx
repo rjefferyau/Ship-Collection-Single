@@ -8,8 +8,8 @@ const Statistics = dynamic(() => import('../components/Statistics'), {
 });
 
 interface StatisticsData {
-  totalStarships: number;
-  ownedStarships: number;
+  totalItems: number;
+  ownedItems: number;
   factionBreakdown: { [key: string]: { total: number; owned: number } };
   editionBreakdown: { [key: string]: { total: number; owned: number } };
   collectionTypeBreakdown: { [key: string]: { total: number; owned: number } };
@@ -18,8 +18,8 @@ interface StatisticsData {
 
 const StatisticsPage: React.FC = () => {
   const [statistics, setStatistics] = useState<StatisticsData>({
-    totalStarships: 0,
-    ownedStarships: 0,
+    totalItems: 0,
+    ownedItems: 0,
     factionBreakdown: {},
     editionBreakdown: {},
     collectionTypeBreakdown: {},
@@ -47,21 +47,21 @@ const StatisticsPage: React.FC = () => {
       const response = await fetch('/api/starships');
       
       if (!response.ok) {
-        throw new Error('Failed to fetch starships');
+        throw new Error('Failed to fetch items');
       }
       
       const data = await response.json();
-      const starships = data.data || [];
+      const items = data.data || [];
       
       // Extract unique franchises
       const franchises = Array.from(new Set(
-        starships.map((ship: any) => ship.franchise || 'Unknown')
+        items.map((item: any) => item.franchise || 'Unknown')
       )).sort() as string[];
       setAllFranchises(franchises);
       
       // Extract unique collection types
       const collectionTypes = Array.from(new Set(
-        starships.map((ship: any) => ship.collectionType || 'Unknown')
+        items.map((item: any) => item.collectionType || 'Unknown')
       )).sort() as string[];
       setAllCollectionTypes(collectionTypes);
       
@@ -94,71 +94,71 @@ const StatisticsPage: React.FC = () => {
       const response = await fetch(apiUrl);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch starships');
+        throw new Error('Failed to fetch items');
       }
       
       const data = await response.json();
-      const starships = data.data || [];
+      const items = data.data || [];
       
       // Calculate statistics
-      const totalStarships = starships.length;
-      const ownedStarships = starships.filter((s: any) => s.owned).length;
+      const totalItems = items.length;
+      const ownedItems = items.filter((item: any) => item.owned).length;
       
       // Calculate faction breakdown
       const factionBreakdown: { [key: string]: { total: number; owned: number } } = {};
-      starships.forEach((starship: any) => {
-        const faction = starship.faction;
+      items.forEach((item: any) => {
+        const faction = item.faction;
         if (!factionBreakdown[faction]) {
           factionBreakdown[faction] = { total: 0, owned: 0 };
         }
         factionBreakdown[faction].total++;
-        if (starship.owned) {
+        if (item.owned) {
           factionBreakdown[faction].owned++;
         }
       });
       
       // Calculate edition breakdown
       const editionBreakdown: { [key: string]: { total: number; owned: number } } = {};
-      starships.forEach((starship: any) => {
-        const edition = starship.edition;
+      items.forEach((item: any) => {
+        const edition = item.edition;
         if (!editionBreakdown[edition]) {
           editionBreakdown[edition] = { total: 0, owned: 0 };
         }
         editionBreakdown[edition].total++;
-        if (starship.owned) {
+        if (item.owned) {
           editionBreakdown[edition].owned++;
         }
       });
       
       // Calculate collection type breakdown
       const collectionTypeBreakdown: { [key: string]: { total: number; owned: number } } = {};
-      starships.forEach((starship: any) => {
-        const collectionType = starship.collectionType || 'Unknown';
+      items.forEach((item: any) => {
+        const collectionType = item.collectionType || 'Unknown';
         if (!collectionTypeBreakdown[collectionType]) {
           collectionTypeBreakdown[collectionType] = { total: 0, owned: 0 };
         }
         collectionTypeBreakdown[collectionType].total++;
-        if (starship.owned) {
+        if (item.owned) {
           collectionTypeBreakdown[collectionType].owned++;
         }
       });
       
       // Calculate franchise breakdown
       const franchiseBreakdown: { [key: string]: { total: number; owned: number } } = {};
-      starships.forEach((starship: any) => {
-        const franchise = starship.franchise || 'Unknown';
+      items.forEach((item: any) => {
+        const franchise = item.franchise || 'Unknown';
         if (!franchiseBreakdown[franchise]) {
           franchiseBreakdown[franchise] = { total: 0, owned: 0 };
         }
         franchiseBreakdown[franchise].total++;
-        if (starship.owned) {
+        if (item.owned) {
           franchiseBreakdown[franchise].owned++;
         }
       });
       
       setStatistics({
-        totalStarships,
-        ownedStarships,
+        totalItems,
+        ownedItems,
         factionBreakdown,
         editionBreakdown,
         collectionTypeBreakdown,
@@ -232,8 +232,8 @@ const StatisticsPage: React.FC = () => {
           </div>
         ) : (
           <Statistics
-            totalStarships={statistics.totalStarships}
-            ownedStarships={statistics.ownedStarships}
+            totalItems={statistics.totalItems}
+            ownedItems={statistics.ownedItems}
             factionBreakdown={statistics.factionBreakdown}
             editionBreakdown={statistics.editionBreakdown}
             collectionTypeBreakdown={statistics.collectionTypeBreakdown}

@@ -291,7 +291,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Collection Filter */}
-      <CollectionFilter onFilterChange={handleFilterChange} />
+      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
 
       {loading ? (
         <div className="flex justify-center items-center h-64">

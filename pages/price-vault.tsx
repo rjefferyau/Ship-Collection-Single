@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PriceVault from '../components/PriceVault';
 import InsuranceReport from '../components/InsuranceReport';
-import { Starship as ApiStarship } from '../pages/api/starships';
+import { Starship } from '../types';
 
 // Define a local interface that matches what PriceVault expects
 interface PriceVaultStarship {
@@ -16,12 +16,14 @@ interface PriceVaultStarship {
   retailPrice?: number;
   purchasePrice?: number;
   marketValue?: number;
+  franchise?: string;
+  collectionType?: string;
 }
 
 const PriceVaultPage: React.FC = () => {
   // Maintain two separate state variables for the different component types
   const [priceVaultStarships, setPriceVaultStarships] = useState<PriceVaultStarship[]>([]);
-  const [apiStarships, setApiStarships] = useState<ApiStarship[]>([]);
+  const [apiStarships, setApiStarships] = useState<Starship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,18 +36,73 @@ const PriceVaultPage: React.FC = () => {
     email: '',
     phone: ''
   });
+  // Add filtering state
+  const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
+  const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+  const [allFranchises, setAllFranchises] = useState<string[]>([]);
+  const [allCollectionTypes, setAllCollectionTypes] = useState<string[]>([]);
 
   useEffect(() => {
     fetchStarships();
     fetchOwnerInfo();
+  }, [selectedCollectionType, selectedFranchise]);
+
+  // Fetch all available franchises and collection types once on component mount
+  useEffect(() => {
+    fetchAllOptions();
   }, []);
+
+  // Function to fetch all available franchises and collection types
+  const fetchAllOptions = async () => {
+    try {
+      const response = await fetch('/api/starships');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch starships');
+      }
+      
+      const data = await response.json();
+      const starships = data.data || [];
+      
+      // Extract unique franchises
+      const franchises = Array.from(new Set(
+        starships.map((ship: any) => ship.franchise || 'Unknown')
+      )).sort() as string[];
+      setAllFranchises(franchises);
+      
+      // Extract unique collection types
+      const collectionTypes = Array.from(new Set(
+        starships.map((ship: any) => ship.collectionType || 'Unknown')
+      )).sort() as string[];
+      setAllCollectionTypes(collectionTypes);
+      
+    } catch (err) {
+      console.error('Error fetching options:', err);
+    }
+  };
 
   const fetchStarships = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/starships');
+      // Build the API URL with filters
+      let apiUrl = '/api/starships';
+      const queryParams = [];
+      
+      if (selectedCollectionType) {
+        queryParams.push(`collectionType=${encodeURIComponent(selectedCollectionType)}`);
+      }
+      
+      if (selectedFranchise) {
+        queryParams.push(`franchise=${encodeURIComponent(selectedFranchise)}`);
+      }
+      
+      if (queryParams.length > 0) {
+        apiUrl += `?${queryParams.join('&')}`;
+      }
+      
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -56,7 +113,7 @@ const PriceVaultPage: React.FC = () => {
       setApiStarships(data.data || []);
       
       // Convert API starships to the format expected by PriceVault
-      const convertedStarships: PriceVaultStarship[] = (data.data || []).map((ship: ApiStarship) => ({
+      const convertedStarships: PriceVaultStarship[] = (data.data || []).map((ship: Starship) => ({
         _id: ship._id,
         issue: ship.issue,
         edition: ship.edition,
@@ -67,7 +124,9 @@ const PriceVaultPage: React.FC = () => {
         owned: ship.owned,
         retailPrice: ship.retailPrice,
         purchasePrice: ship.purchasePrice,
-        marketValue: ship.marketValue
+        marketValue: ship.marketValue,
+        franchise: ship.franchise,
+        collectionType: ship.collectionType
       }));
       setPriceVaultStarships(convertedStarships);
     } catch (err) {
@@ -125,8 +184,68 @@ const PriceVaultPage: React.FC = () => {
     }
   };
 
+  // Function to handle collection type selection
+  const handleCollectionTypeChange = (collectionType: string) => {
+    setSelectedCollectionType(collectionType === selectedCollectionType ? '' : collectionType);
+  };
+
+  // Function to handle franchise selection
+  const handleFranchiseChange = (franchise: string) => {
+    setSelectedFranchise(franchise === selectedFranchise ? '' : franchise);
+  };
+
   return (
-    <>
+    <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
+        <p className="text-gray-600">Track and manage the value of your collection</p>
+      </div>
+
+      {/* Filter controls */}
+      <div className="mb-6 flex flex-wrap gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Collection Type</label>
+          <select
+            value={selectedCollectionType}
+            onChange={(e) => handleCollectionTypeChange(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">All Collection Types</option>
+            {allCollectionTypes.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Franchise</label>
+          <select
+            value={selectedFranchise}
+            onChange={(e) => handleFranchiseChange(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">All Franchises</option>
+            {allFranchises.map((franchise) => (
+              <option key={franchise} value={franchise}>{franchise}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Success and error messages */}
+      {success && (
+        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{success}</span>
+        </div>
+      )}
+      
+      {error && (
+        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error!</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
@@ -157,20 +276,6 @@ const PriceVaultPage: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline"> {error}</span>
-        </div>
-      )}
-      
-      {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">Success!</strong>
-          <span className="block sm:inline"> {success}</span>
-        </div>
-      )}
 
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="border-b border-gray-200">
@@ -226,7 +331,7 @@ const PriceVaultPage: React.FC = () => {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -12,6 +12,8 @@ interface StatisticsData {
   ownedStarships: number;
   factionBreakdown: { [key: string]: { total: number; owned: number } };
   editionBreakdown: { [key: string]: { total: number; owned: number } };
+  collectionTypeBreakdown: { [key: string]: { total: number; owned: number } };
+  franchiseBreakdown: { [key: string]: { total: number; owned: number } };
 }
 
 const StatisticsPage: React.FC = () => {
@@ -19,21 +21,77 @@ const StatisticsPage: React.FC = () => {
     totalStarships: 0,
     ownedStarships: 0,
     factionBreakdown: {},
-    editionBreakdown: {}
+    editionBreakdown: {},
+    collectionTypeBreakdown: {},
+    franchiseBreakdown: {}
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
+  const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+  const [allFranchises, setAllFranchises] = useState<string[]>([]);
+  const [allCollectionTypes, setAllCollectionTypes] = useState<string[]>([]);
 
   useEffect(() => {
     fetchStatistics();
+  }, [selectedCollectionType, selectedFranchise]);
+
+  // Fetch all available franchises and collection types once on component mount
+  useEffect(() => {
+    fetchAllOptions();
   }, []);
+
+  // Function to fetch all available franchises and collection types
+  const fetchAllOptions = async () => {
+    try {
+      const response = await fetch('/api/starships');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch starships');
+      }
+      
+      const data = await response.json();
+      const starships = data.data || [];
+      
+      // Extract unique franchises
+      const franchises = Array.from(new Set(
+        starships.map((ship: any) => ship.franchise || 'Unknown')
+      )).sort() as string[];
+      setAllFranchises(franchises);
+      
+      // Extract unique collection types
+      const collectionTypes = Array.from(new Set(
+        starships.map((ship: any) => ship.collectionType || 'Unknown')
+      )).sort() as string[];
+      setAllCollectionTypes(collectionTypes);
+      
+    } catch (err) {
+      console.error('Error fetching options:', err);
+    }
+  };
 
   const fetchStatistics = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch('/api/starships');
+      // Build the API URL with filters
+      let apiUrl = '/api/starships';
+      const queryParams = [];
+      
+      if (selectedCollectionType) {
+        queryParams.push(`collectionType=${encodeURIComponent(selectedCollectionType)}`);
+      }
+      
+      if (selectedFranchise) {
+        queryParams.push(`franchise=${encodeURIComponent(selectedFranchise)}`);
+      }
+      
+      if (queryParams.length > 0) {
+        apiUrl += `?${queryParams.join('&')}`;
+      }
+      
+      const response = await fetch(apiUrl);
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -72,11 +130,39 @@ const StatisticsPage: React.FC = () => {
         }
       });
       
+      // Calculate collection type breakdown
+      const collectionTypeBreakdown: { [key: string]: { total: number; owned: number } } = {};
+      starships.forEach((starship: any) => {
+        const collectionType = starship.collectionType || 'Unknown';
+        if (!collectionTypeBreakdown[collectionType]) {
+          collectionTypeBreakdown[collectionType] = { total: 0, owned: 0 };
+        }
+        collectionTypeBreakdown[collectionType].total++;
+        if (starship.owned) {
+          collectionTypeBreakdown[collectionType].owned++;
+        }
+      });
+      
+      // Calculate franchise breakdown
+      const franchiseBreakdown: { [key: string]: { total: number; owned: number } } = {};
+      starships.forEach((starship: any) => {
+        const franchise = starship.franchise || 'Unknown';
+        if (!franchiseBreakdown[franchise]) {
+          franchiseBreakdown[franchise] = { total: 0, owned: 0 };
+        }
+        franchiseBreakdown[franchise].total++;
+        if (starship.owned) {
+          franchiseBreakdown[franchise].owned++;
+        }
+      });
+      
       setStatistics({
         totalStarships,
         ownedStarships,
         factionBreakdown,
-        editionBreakdown
+        editionBreakdown,
+        collectionTypeBreakdown,
+        franchiseBreakdown
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -85,11 +171,52 @@ const StatisticsPage: React.FC = () => {
     }
   };
 
+  // Function to handle collection type selection
+  const handleCollectionTypeChange = (collectionType: string) => {
+    setSelectedCollectionType(collectionType === selectedCollectionType ? '' : collectionType);
+  };
+
+  // Function to handle franchise selection
+  const handleFranchiseChange = (franchise: string) => {
+    setSelectedFranchise(franchise === selectedFranchise ? '' : franchise);
+  };
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Collection Statistics</h1>
         <p className="text-gray-600">Insights and analytics about your starship collection</p>
+      </div>
+
+      {/* Filter controls */}
+      <div className="mb-6 flex flex-wrap gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Collection Type</label>
+          <select
+            value={selectedCollectionType}
+            onChange={(e) => handleCollectionTypeChange(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">All Collection Types</option>
+            {allCollectionTypes.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Franchise</label>
+          <select
+            value={selectedFranchise}
+            onChange={(e) => handleFranchiseChange(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          >
+            <option value="">All Franchises</option>
+            {allFranchises.map((franchise) => (
+              <option key={franchise} value={franchise}>{franchise}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm p-6">
@@ -109,7 +236,11 @@ const StatisticsPage: React.FC = () => {
             ownedStarships={statistics.ownedStarships}
             factionBreakdown={statistics.factionBreakdown}
             editionBreakdown={statistics.editionBreakdown}
+            collectionTypeBreakdown={statistics.collectionTypeBreakdown}
+            franchiseBreakdown={statistics.franchiseBreakdown}
             viewMode="all"
+            selectedCollectionType={selectedCollectionType}
+            selectedFranchise={selectedFranchise}
           />
         )}
       </div>

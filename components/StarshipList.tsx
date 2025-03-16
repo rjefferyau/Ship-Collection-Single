@@ -275,6 +275,43 @@ const StarshipList: React.FC<StarshipListProps> = ({
         if (bValue === undefined) return -1;
         
         if (typeof aValue === 'string' && typeof bValue === 'string') {
+          // Special handling for issue field to ensure numeric sorting
+          if (sortConfig.key === 'issue') {
+            // Extract numeric part from issue
+            const aMatch = aValue.match(/(\d+)$/);
+            const bMatch = bValue.match(/(\d+)$/);
+            
+            const aNum = aMatch ? parseInt(aMatch[1], 10) : NaN;
+            const bNum = bMatch ? parseInt(bMatch[1], 10) : NaN;
+            
+            // If both have numeric parts, compare them numerically
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              // If they have the same prefix (or no prefix), sort by number
+              const aPrefix = aValue.replace(/\d+$/, '');
+              const bPrefix = bValue.replace(/\d+$/, '');
+              
+              if (aPrefix === bPrefix) {
+                return sortConfig.direction === 'asc' 
+                  ? aNum - bNum 
+                  : bNum - aNum;
+              }
+              
+              // If prefixes are different, sort by prefix first
+              return sortConfig.direction === 'asc'
+                ? aPrefix.localeCompare(bPrefix)
+                : bPrefix.localeCompare(aPrefix);
+            }
+            
+            // If only one has a numeric part, prioritize numbers before strings
+            if (!isNaN(aNum) && isNaN(bNum)) {
+              return sortConfig.direction === 'asc' ? -1 : 1;
+            }
+            if (isNaN(aNum) && !isNaN(bNum)) {
+              return sortConfig.direction === 'asc' ? 1 : -1;
+            }
+          }
+          
+          // Default string comparison for other fields
           return sortConfig.direction === 'asc' 
             ? aValue.localeCompare(bValue) 
             : bValue.localeCompare(aValue);
@@ -447,18 +484,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
       ),
     },
     {
-      key: 'franchise',
-      header: 'Franchise',
-      sortable: true,
-    },
-    {
       key: 'faction',
       header: 'Faction',
-      sortable: true,
-    },
-    {
-      key: 'collectionType',
-      header: 'Type',
       sortable: true,
     },
     {

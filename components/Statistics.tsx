@@ -19,7 +19,11 @@ interface StatisticsProps {
   ownedStarships: number;
   factionBreakdown: { [key: string]: { total: number; owned: number } };
   editionBreakdown: { [key: string]: { total: number; owned: number } };
-  viewMode?: 'all' | 'editions' | 'factions' | 'summary';
+  collectionTypeBreakdown: { [key: string]: { total: number; owned: number } };
+  franchiseBreakdown: { [key: string]: { total: number; owned: number } };
+  viewMode?: 'all' | 'editions' | 'factions' | 'summary' | 'collectionTypes' | 'franchises';
+  selectedCollectionType?: string;
+  selectedFranchise?: string;
 }
 
 type SortOption = 'total-desc' | 'total-asc' | 'owned-desc' | 'owned-asc' | 'percentage-desc' | 'percentage-asc' | 'name-asc' | 'name-desc';
@@ -29,14 +33,24 @@ const Statistics: React.FC<StatisticsProps> = ({
   ownedStarships,
   factionBreakdown,
   editionBreakdown,
-  viewMode = 'all'
+  collectionTypeBreakdown,
+  franchiseBreakdown,
+  viewMode = 'all',
+  selectedCollectionType = '',
+  selectedFranchise = ''
 }) => {
   const [editionSortOption, setEditionSortOption] = useState<SortOption>('total-desc');
   const [factionSortOption, setFactionSortOption] = useState<SortOption>('owned-desc');
+  const [collectionTypeSortOption, setCollectionTypeSortOption] = useState<SortOption>('total-desc');
+  const [franchiseSortOption, setFranchiseSortOption] = useState<SortOption>('total-desc');
   const [editionFilter, setEditionFilter] = useState('');
   const [factionFilter, setFactionFilter] = useState('');
+  const [collectionTypeFilter, setCollectionTypeFilter] = useState('');
+  const [franchiseFilter, setFranchiseFilter] = useState('');
   const [showEmptyEditions, setShowEmptyEditions] = useState(true);
   const [showEmptyFactions, setShowEmptyFactions] = useState(true);
+  const [showEmptyCollectionTypes, setShowEmptyCollectionTypes] = useState(true);
+  const [showEmptyFranchises, setShowEmptyFranchises] = useState(true);
   const [showAllFactionsModal, setShowAllFactionsModal] = useState(false);
   
   // New state for missing ships modal
@@ -97,9 +111,21 @@ const Statistics: React.FC<StatisticsProps> = ({
     .filter(([faction]) => faction.toLowerCase().includes(factionFilter.toLowerCase()))
     .filter(([, data]) => showEmptyFactions || data.total > 0);
 
+  const filteredCollectionTypes = Object.entries(collectionTypeBreakdown)
+    .filter(([type]) => type.toLowerCase().includes(collectionTypeFilter.toLowerCase()))
+    .filter(([, data]) => showEmptyCollectionTypes || data.total > 0);
+
+  const filteredFranchises = Object.entries(franchiseBreakdown)
+    .filter(([franchise]) => franchise.toLowerCase().includes(franchiseFilter.toLowerCase()))
+    .filter(([, data]) => showEmptyFranchises || data.total > 0);
+
   const sortedEditions = filteredEditions.sort(getSortFunction(editionSortOption));
   const sortedFactions = filteredFactions.sort(getSortFunction(factionSortOption));
+  const sortedCollectionTypes = filteredCollectionTypes.sort(getSortFunction(collectionTypeSortOption));
+  const sortedFranchises = filteredFranchises.sort(getSortFunction(franchiseSortOption));
   const topFactions = sortedFactions.slice(0, 6); // Only show top 6 factions on dashboard
+  const topCollectionTypes = sortedCollectionTypes.slice(0, 6); // Only show top 6 collection types on dashboard
+  const topFranchises = sortedFranchises.slice(0, 6); // Only show top 6 franchises on dashboard
 
   const getSortLabel = (sortOption: SortOption) => {
     switch (sortOption) {
@@ -292,7 +318,7 @@ const Statistics: React.FC<StatisticsProps> = ({
       )}
       
       {(viewMode === 'all' || viewMode === 'factions') && Object.keys(factionBreakdown).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
           <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
             <h5 className="mb-0 font-medium">Faction Breakdown</h5>
             <div className="flex items-center">
@@ -326,8 +352,17 @@ const Statistics: React.FC<StatisticsProps> = ({
             </div>
           </div>
           <div className="p-4">
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Filter factions..."
+                value={factionFilter}
+                onChange={(e) => setFactionFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {topFactions.map(([faction, data]) => {
+              {sortedFactions.map(([faction, data]) => {
                 const percentage = data.total > 0 
                   ? Math.round((data.owned / data.total) * 100) 
                   : 0;
@@ -364,28 +399,179 @@ const Statistics: React.FC<StatisticsProps> = ({
                   </div>
                 );
               })}
-              
-              {topFactions.length === 0 && (
-                <div className="col-span-full text-center py-4">
-                  <p className="text-gray-500">No factions match your filter criteria.</p>
-                </div>
-              )}
             </div>
-            
-            {sortedFactions.length > 6 && (
-              <div className="text-center mt-4">
-                <button 
-                  className="px-4 py-2 bg-white border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition-colors" 
-                  onClick={() => setShowAllFactionsModal(true)}
-                >
-                  View All Factions <FontAwesomeIcon icon={faChevronRight} className="ml-1" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
       
+      {/* Collection Type Breakdown */}
+      {(viewMode === 'all' || viewMode === 'collectionTypes') && Object.keys(collectionTypeBreakdown).length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+            <h5 className="mb-0 font-medium">Collection Type Breakdown</h5>
+            <div className="flex items-center">
+              <div className="flex items-center mr-4">
+                <input
+                  type="checkbox"
+                  id="show-empty-collection-types"
+                  checked={showEmptyCollectionTypes}
+                  onChange={(e) => setShowEmptyCollectionTypes(e.target.checked)}
+                  className="mr-2 h-4 w-4 text-blue-600 rounded"
+                />
+                <label htmlFor="show-empty-collection-types" className="text-sm">Show Empty</label>
+              </div>
+              <div className="flex items-center">
+                <select
+                  id="collection-type-sort-dropdown"
+                  value={collectionTypeSortOption}
+                  onChange={(e) => setCollectionTypeSortOption(e.target.value as SortOption)}
+                  className="text-sm border border-gray-300 rounded-md px-2 py-1"
+                >
+                  <option value="name-asc">Name (A to Z)</option>
+                  <option value="name-desc">Name (Z to A)</option>
+                  <option value="total-desc">Total (High to Low)</option>
+                  <option value="total-asc">Total (Low to High)</option>
+                  <option value="owned-desc">Owned (High to Low)</option>
+                  <option value="owned-asc">Owned (Low to High)</option>
+                  <option value="percentage-desc">Completion % (High to Low)</option>
+                  <option value="percentage-asc">Completion % (Low to High)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Filter collection types..."
+                value={collectionTypeFilter}
+                onChange={(e) => setCollectionTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sortedCollectionTypes.map(([collectionType, data]) => {
+                const percentage = data.total > 0 
+                  ? Math.round((data.owned / data.total) * 100) 
+                  : 0;
+                  
+                return (
+                  <div key={collectionType} className="mb-4">
+                    <div className="h-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <div className="p-4">
+                        <h6 className="flex justify-between items-center mb-2">
+                          <span className="text-truncate">
+                            {collectionType}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {percentage}%
+                          </span>
+                        </h6>
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                          <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <small className="text-gray-500">
+                            <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                          </small>
+                          <small className="text-gray-500">
+                            {data.total - data.owned} missing
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Franchise Breakdown */}
+      {(viewMode === 'all' || viewMode === 'franchises') && Object.keys(franchiseBreakdown).length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm mb-4">
+          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+            <h5 className="mb-0 font-medium">Franchise Breakdown</h5>
+            <div className="flex items-center">
+              <div className="flex items-center mr-4">
+                <input
+                  type="checkbox"
+                  id="show-empty-franchises"
+                  checked={showEmptyFranchises}
+                  onChange={(e) => setShowEmptyFranchises(e.target.checked)}
+                  className="mr-2 h-4 w-4 text-blue-600 rounded"
+                />
+                <label htmlFor="show-empty-franchises" className="text-sm">Show Empty</label>
+              </div>
+              <div className="flex items-center">
+                <select
+                  id="franchise-sort-dropdown"
+                  value={franchiseSortOption}
+                  onChange={(e) => setFranchiseSortOption(e.target.value as SortOption)}
+                  className="text-sm border border-gray-300 rounded-md px-2 py-1"
+                >
+                  <option value="name-asc">Name (A to Z)</option>
+                  <option value="name-desc">Name (Z to A)</option>
+                  <option value="total-desc">Total (High to Low)</option>
+                  <option value="total-asc">Total (Low to High)</option>
+                  <option value="owned-desc">Owned (High to Low)</option>
+                  <option value="owned-asc">Owned (Low to High)</option>
+                  <option value="percentage-desc">Completion % (High to Low)</option>
+                  <option value="percentage-asc">Completion % (Low to High)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="mb-3">
+              <input
+                type="text"
+                placeholder="Filter franchises..."
+                value={franchiseFilter}
+                onChange={(e) => setFranchiseFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sortedFranchises.map(([franchise, data]) => {
+                const percentage = data.total > 0 
+                  ? Math.round((data.owned / data.total) * 100) 
+                  : 0;
+                  
+                return (
+                  <div key={franchise} className="mb-4">
+                    <div className="h-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                      <div className="p-4">
+                        <h6 className="flex justify-between items-center mb-2">
+                          <span className="text-truncate">
+                            {franchise}
+                          </span>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {percentage}%
+                          </span>
+                        </h6>
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                          <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <small className="text-gray-500">
+                            <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                          </small>
+                          <small className="text-gray-500">
+                            {data.total - data.owned} missing
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* All Factions Modal */}
       {showAllFactionsModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">

@@ -205,28 +205,12 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     Import/Export
                   </Link>
                   <Link 
-                    href="/collection-types" 
+                    href="/collection-type-setup" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                     role="menuitem"
                     onClick={() => setIsSettingsMenuOpen(false)}
                   >
-                    Collection Types
-                  </Link>
-                  <Link 
-                    href="/franchises" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
-                    role="menuitem"
-                    onClick={() => setIsSettingsMenuOpen(false)}
-                  >
-                    Franchises
-                  </Link>
-                  <Link 
-                    href="/factions" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
-                    role="menuitem"
-                    onClick={() => setIsSettingsMenuOpen(false)}
-                  >
-                    Factions
+                    Collection Type Setup
                   </Link>
                 </div>
               )}

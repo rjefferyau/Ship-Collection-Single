@@ -209,7 +209,10 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     return d.toLocaleDateString();
   };
 
-  const handleImageClick = (imageUrl: string | undefined, shipName: string) => {
+  const handleImageClick = (e: React.MouseEvent, imageUrl: string | undefined, shipName: string) => {
+    // Stop event propagation to prevent triggering parent click handlers
+    e.stopPropagation();
+    
     if (imageUrl) {
       setSelectedImage(imageUrl);
       setSelectedShipName(shipName);
@@ -217,7 +220,10 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     }
   };
 
-  const handlePdfClick = (pdfUrl: string | undefined, shipName: string) => {
+  const handlePdfClick = (e: React.MouseEvent, pdfUrl: string | undefined, shipName: string) => {
+    // Stop event propagation to prevent triggering parent click handlers
+    e.stopPropagation();
+    
     if (pdfUrl) {
       setSelectedPdfUrl(pdfUrl);
       setSelectedPdfTitle(shipName);
@@ -466,7 +472,10 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   {starship.imageUrl ? (
                     <div 
                       className="h-48 flex items-center justify-center p-4 cursor-pointer"
-                      onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent the event from bubbling up
+                        handleImageClick(e, starship.imageUrl, starship.shipName);
+                      }}
                     >
                       <img 
                         src={starship.imageUrl} 
@@ -512,34 +521,26 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                 <div className="px-4 py-3 bg-gray-50 flex justify-between">
                   <button 
                     className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    onClick={() => onSelectStarship(starship)}
-                    title="View Details"
+                    onClick={(e) => handlePdfClick(e, starship.magazinePdfUrl, starship.shipName)}
+                    title="View Magazine PDF"
                   >
-                    <FontAwesomeIcon icon={faMagnifyingGlass} />
+                    <FontAwesomeIcon icon={faFilePdf} />
                   </button>
                   
                   <div className="flex space-x-2">
                     {starship.magazinePdfUrl && (
                       <button 
-                        className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        onClick={() => handlePdfClick(starship.magazinePdfUrl, starship.shipName)}
-                        title="View Magazine PDF"
+                        className={`inline-flex items-center px-2.5 py-1.5 border text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                          starship.owned 
+                            ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500' 
+                            : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
+                        }`}
+                        onClick={(e) => handlePdfClick(e, starship.magazinePdfUrl, starship.shipName)}
+                        title={starship.owned ? "Remove from Collection" : "Add to Collection"}
                       >
-                        <FontAwesomeIcon icon={faFilePdf} />
+                        <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
                       </button>
                     )}
-                    
-                    <button 
-                      className={`inline-flex items-center px-2.5 py-1.5 border text-xs font-medium rounded focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                        starship.owned 
-                          ? 'border-red-300 text-red-700 bg-white hover:bg-red-50 focus:ring-red-500' 
-                          : 'border-green-300 text-green-700 bg-white hover:bg-green-50 focus:ring-green-500'
-                      }`}
-                      onClick={() => onToggleOwned(starship._id)}
-                      title={starship.owned ? "Remove from Collection" : "Add to Collection"}
-                    >
-                      <FontAwesomeIcon icon={starship.owned ? faTrash : faPlus} />
-                    </button>
                   </div>
                 </div>
               </div>

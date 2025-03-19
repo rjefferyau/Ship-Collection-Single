@@ -407,7 +407,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
   };
 
   // Add handler for image click
-  const handleImageClick = (imageUrl: string | undefined, shipName: string) => {
+  const handleImageClick = (e: React.MouseEvent, imageUrl: string | undefined, shipName: string) => {
+    // Stop event propagation to prevent triggering parent click handlers
+    e.stopPropagation();
+    
     if (imageUrl) {
       setSelectedImage(imageUrl);
       setSelectedShipName(shipName);
@@ -416,7 +419,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
   };
 
   // Add a handler for PDF click
-  const handlePdfClick = (pdfUrl: string | undefined, shipName: string) => {
+  const handlePdfClick = (e: React.MouseEvent, pdfUrl: string | undefined, shipName: string) => {
+    // Stop event propagation
+    e.stopPropagation();
+    
     if (pdfUrl) {
       setSelectedPdfUrl(pdfUrl);
       setSelectedPdfTitle(`${shipName} - Magazine`);
@@ -465,7 +471,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
                 src={starship.imageUrl} 
                 alt={starship.shipName}
                 className="max-w-full max-h-full object-contain cursor-pointer transition-transform duration-200 hover:scale-110"
-                onClick={() => handleImageClick(starship.imageUrl, starship.shipName)}
+                onClick={(e) => handleImageClick(e, starship.imageUrl, starship.shipName)}
                 title="Click to view larger image"
               />
             </div>
@@ -597,10 +603,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
           
           {starship.imageUrl && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleImageClick(starship.imageUrl, starship.shipName);
-              }}
+              onClick={(e) => handleImageClick(e, starship.imageUrl, starship.shipName)}
               className="p-1 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50"
               title="View Image"
             >
@@ -612,10 +615,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
           
           {starship.magazinePdfUrl && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePdfClick(starship.magazinePdfUrl, starship.shipName);
-              }}
+              onClick={(e) => handlePdfClick(e, starship.magazinePdfUrl, starship.shipName)}
               className="p-1 text-red-600 hover:text-red-900 rounded-full hover:bg-red-50"
               title="View PDF"
             >
@@ -968,4 +968,4 @@ const StarshipList: React.FC<StarshipListProps> = ({
   );
 };
 
-export default StarshipList; 
+export default StarshipList;

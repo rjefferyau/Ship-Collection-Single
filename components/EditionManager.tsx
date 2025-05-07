@@ -232,18 +232,40 @@ const EditionManager: React.FC = () => {
       return;
     }
     
-    setCurrentEdition(edition);
-    setEditMode(true);
-    setName(edition.name);
-    setInternalName(edition.internalName || '');
-    setDescription(edition.description || '');
-    setRetailPrice(edition.retailPrice?.toString() || '');
-    setFranchise(edition.franchise || '');
-    setIsDefault(edition.isDefault || false);
-    setAutoGenerateInternalName(false);
-    
-    // Clear any previous errors
-    setError('');
+    // First, verify this edition still exists in the database
+    fetch(`/api/editions/${edition._id}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Edition not found in database. It may have been deleted or restored from a backup.');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Proceed with edit using the fresh data from the database
+          const freshEdition = data.data;
+          setCurrentEdition(freshEdition);
+          setEditMode(true);
+          setName(freshEdition.name);
+          setInternalName(freshEdition.internalName || '');
+          setDescription(freshEdition.description || '');
+          setRetailPrice(freshEdition.retailPrice?.toString() || '');
+          setFranchise(freshEdition.franchise || '');
+          setIsDefault(freshEdition.isDefault || false);
+          setAutoGenerateInternalName(false);
+          
+          // Clear any previous errors
+          setError('');
+        } else {
+          setError(data.error || 'Failed to fetch edition details');
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching edition:', err);
+        setError(`${err.message || 'Error fetching edition'} Try refreshing the page to get the latest data.`);
+        // Refresh the editions list to ensure UI is in sync with database
+        fetchEditions();
+      });
   };
 
   const confirmDelete = (edition: Edition) => {
@@ -460,7 +482,15 @@ const EditionManager: React.FC = () => {
       // First fetch the edition to make sure it exists
       const checkResponse = await fetch(`/api/editions/${edition._id}`);
       if (!checkResponse.ok) {
-        setError('Could not find edition. It may have been deleted.');
+        setError('Could not find edition. It may have been deleted or restored from a backup. Try refreshing the page.');
+        // Refresh the editions list
+        fetchEditions();
+        return;
+      }
+      
+      const checkData = await checkResponse.json();
+      if (!checkData.success) {
+        setError(checkData.error || 'Could not verify edition exists');
         return;
       }
       

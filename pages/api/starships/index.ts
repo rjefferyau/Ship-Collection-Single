@@ -81,10 +81,43 @@ export default async function handler(
           }
         }
         
+        // Use the editionDisplayName as the edition field if provided
+        if (req.body.editionDisplayName) {
+          req.body.edition = req.body.editionDisplayName;
+        }
+        
         const starship = await Starship.create(req.body);
         res.status(201).json({ success: true, data: starship });
-      } catch (error) {
-        res.status(400).json({ success: false, error });
+      } catch (error: any) {
+        console.error('Error creating starship:', error);
+        
+        // Handle MongoDB duplicate key error (code 11000)
+        if (error.name === 'MongoError' || error.name === 'MongoServerError') {
+          if (error.code === 11000) {
+            return res.status(400).json({ 
+              success: false, 
+              message: 'An item with this issue and edition already exists',
+              error: error 
+            });
+          }
+        }
+        
+        // Handle Mongoose validation errors
+        if (error.name === 'ValidationError') {
+          const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Validation failed: ' + validationErrors.join(', '),
+            error: error
+          });
+        }
+        
+        // Default error
+        res.status(400).json({ 
+          success: false, 
+          message: 'Failed to add item: ' + (error.message || 'Unknown error'),
+          error: error 
+        });
       }
       break;
     default:

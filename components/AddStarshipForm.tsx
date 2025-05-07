@@ -43,6 +43,7 @@ interface Manufacturer {
 interface StarshipFormData {
   issue: string;
   edition: string;
+  editionDisplayName?: string;
   shipName: string;
   faction: string;
   collectionType: string;
@@ -71,6 +72,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
   const initialFormData: StarshipFormData = {
     issue: '',
     edition: '',
+    editionDisplayName: '',
     shipName: '',
     faction: '',
     collectionType: defaultCollectionType || '',
@@ -332,14 +334,34 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
         [name]: target.checked
       });
     } else {
+      // Default update for most fields
       setFormData({
         ...formData,
         [name]: value
       });
 
-      // If edition changed, fetch its default RRP
+      // Special handling for edition to store both internal name and display name
       if (name === 'edition' && value) {
-        fetchEditionDetails(value);
+        // Find the selected edition to get its display name
+        const selectedEdition = availableEditions.find(e => e.internalName === value);
+        if (selectedEdition) {
+          setFormData(prev => ({
+            ...prev,
+            edition: value,
+            editionDisplayName: selectedEdition.name
+          }));
+          
+          // If the edition has a retail price, set it
+          if (selectedEdition.retailPrice) {
+            setFormData(prev => ({
+              ...prev,
+              retailPrice: selectedEdition.retailPrice
+            }));
+          } else {
+            // Otherwise, fetch details from the server
+            fetchEditionDetails(value);
+          }
+        }
       }
     }
   };
@@ -349,16 +371,37 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
     
     // Validate required fields based on collection type
     const requiredFields = ['collectionType', 'franchise'];
+    const missingFields = [];
     
-    // For Diecast Model, require issue, edition, shipName, and faction
-    if (formData.collectionType === 'Diecast Model') {
-      requiredFields.push('issue', 'edition', 'shipName', 'faction');
+    // For Die Cast Models, require issue, edition, shipName, and faction
+    if (formData.collectionType === 'Die Cast Models') {
+      // Individual check for each required field to provide specific error messages
+      if (!formData.issue || formData.issue.trim() === '') {
+        missingFields.push('Issue number');
+      }
+      if (!formData.edition || formData.edition.trim() === '') {
+        missingFields.push('Edition');
+      }
+      if (!formData.shipName || formData.shipName.trim() === '') {
+        missingFields.push('Item Name');
+      }
+      if (!formData.faction || formData.faction.trim() === '') {
+        missingFields.push('Race/Faction');
+      }
     } else {
       // For other collection types, at least require a name
-      requiredFields.push('shipName');
+      if (!formData.shipName || formData.shipName.trim() === '') {
+        missingFields.push('Item Name');
+      }
     }
     
-    const missingFields = requiredFields.filter(field => !formData[field as keyof StarshipFormData]);
+    // Check collection type and franchise are selected
+    if (!formData.collectionType || formData.collectionType.trim() === '') {
+      missingFields.push('Collection Type');
+    }
+    if (!formData.franchise || formData.franchise.trim() === '') {
+      missingFields.push('Franchise');
+    }
     
     if (missingFields.length > 0) {
       setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
@@ -376,12 +419,23 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
       // Handle the release date
       if (formData.releaseDate && formData.releaseDate.trim() !== '') {
         try {
-          // Try to parse the date
-          const date = new Date(formData.releaseDate);
-          if (!isNaN(date.getTime())) {
-            formattedData.releaseDate = date.toISOString();
-          } else {
+          // Check if the date is in DD/MM/YYYY format
+          const dateParts = formData.releaseDate.split('/');
+          if (dateParts.length === 3) {
+            // Convert from DD/MM/YYYY to YYYY-MM-DD
+            const day = dateParts[0];
+            const month = dateParts[1];
+            const year = dateParts[2];
+            formattedData.releaseDate = `${year}-${month}-${day}`;
+          }
+          
+          // Try to parse the date to make sure it's valid
+          const date = new Date(formattedData.releaseDate as string);
+          if (isNaN(date.getTime())) {
             formattedData.releaseDate = undefined;
+          } else {
+            // Use ISO format for MongoDB
+            formattedData.releaseDate = date.toISOString();
           }
         } catch (e) {
           formattedData.releaseDate = undefined;
@@ -400,7 +454,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add item');
+        throw new Error(errorData.message || errorData.error?.message || 'Failed to add item');
       }
 
       setSuccess('Item added successfully!');
@@ -414,7 +468,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
   };
 
   // Determine which fields to show based on collection type
-  const showStarshipFields = formData.collectionType === 'Diecast Model';
+  const showStarshipFields = formData.collectionType === 'Die Cast Models';
 
   return (
     <div className="space-y-6">
@@ -552,8 +606,12 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                       value={formData.issue}
                       onChange={handleChange}
                       required={showStarshipFields}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${!formData.issue && showStarshipFields ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+                      placeholder="Enter issue number"
                     />
+                    {!formData.issue && showStarshipFields && (
+                      <p className="mt-1 text-sm text-red-600">Issue number is required</p>
+                    )}
                   </div>
                   
                   {/* Edition */}
@@ -569,7 +627,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                         onChange={handleChange}
                         required={showStarshipFields}
                         disabled={loadingEditions || !formData.franchise}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                        className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2 ${!formData.edition && showStarshipFields ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                       >
                         <option value="">Select an edition</option>
                         {availableEditions.map(edition => (
@@ -587,6 +645,9 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                         <FontAwesomeIcon icon={faPlus} />
                       </button>
                     </div>
+                    {!formData.edition && showStarshipFields && (
+                      <p className="mt-1 text-sm text-red-600">Edition is required</p>
+                    )}
                     {loadingEditions && (
                       <div className="mt-1 text-sm text-gray-500">
                         <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading editions...
@@ -608,7 +669,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                       onChange={handleChange}
                       required={showStarshipFields}
                       disabled={loadingFactions || !formData.franchise}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                      className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2 ${!formData.faction && showStarshipFields ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
                     >
                       <option value="">Select a faction</option>
                       {availableFactions.map(faction => (
@@ -626,6 +687,9 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                       <FontAwesomeIcon icon={faPlus} />
                     </button>
                   </div>
+                  {!formData.faction && showStarshipFields && (
+                    <p className="mt-1 text-sm text-red-600">Faction is required</p>
+                  )}
                   {loadingFactions && (
                     <div className="mt-1 text-sm text-gray-500">
                       <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-1" /> Loading factions...

@@ -13,7 +13,14 @@
     "type-check": "tsc --noEmit",
     "clear-cache": "rimraf .next dev-build && npm cache clean --force",
     "dev:auto": "node server.js",
-    "analyze": "cross-env ANALYZE=true next build"
+    "analyze": "cross-env ANALYZE=true next build",
+    "fix-editions": "node scripts/fix-editions.js",
+    "simple-fix": "node scripts/simple-fix.js",
+    "list-editions": "node scripts/list-editions.js",
+    "repair-editions": "node scripts/repair-editions.js",
+    "direct-repair": "node scripts/direct-repair.js",
+    "fix-ship-editions": "node scripts/fix-ship-editions.js",
+    "fix-bsg-ship": "node scripts/fix-bsg-ship.js"
   },
   "dependencies": {
     "@awesome.me/kit-d0637c0c40": "^1.0.4",

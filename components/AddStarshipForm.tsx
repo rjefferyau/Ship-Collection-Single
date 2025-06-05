@@ -414,7 +414,7 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
 
     try {
       // Format the date for MongoDB
-      let formattedData: Partial<StarshipFormData> = { ...formData };
+      const formattedData: Partial<StarshipFormData> = { ...formData };
       
       // Handle the release date
       if (formData.releaseDate && formData.releaseDate.trim() !== '') {

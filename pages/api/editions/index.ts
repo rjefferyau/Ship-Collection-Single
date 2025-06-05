@@ -22,7 +22,7 @@ export default async function handler(
         // Check if we're requesting only the default edition
         const { default: isDefault, franchise } = req.query;
         
-        let query: any = {};
+        const query: any = {};
         
         // Add default filter if requested
         if (isDefault === 'true') {

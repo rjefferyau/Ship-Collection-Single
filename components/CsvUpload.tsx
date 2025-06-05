@@ -1,83 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUpload, faFileAlt, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faFileAlt, faDownload, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 interface CsvUploadProps {
-  onUploadComplete: () => void;
+  onUploadComplete?: () => void;
+  selectedEdition?: string;
+  selectedFranchise?: string;
 }
 
-const CsvUpload: React.FC<CsvUploadProps> = ({ onUploadComplete }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
+const CsvUpload: React.FC<CsvUploadProps> = ({ onUploadComplete, selectedEdition, selectedFranchise }) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [uploadStats, setUploadStats] = useState<{
-    imported: number;
-    errors: number;
-  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      // Check if it's a CSV file
-      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-        setError('Please select a valid CSV file');
-        setFile(null);
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type !== 'text/csv') {
+        setError('Please select a CSV file');
+        setSelectedFile(null);
         return;
       }
-      
-      setFile(selectedFile);
+      setSelectedFile(file);
       setError(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpload = async (event: React.FormEvent) => {
+    event.preventDefault();
     
-    if (!file) {
-      setError('Please select a CSV file');
+    if (!selectedFile) {
+      setError('Please select a file to upload');
       return;
     }
-    
-    setUploading(true);
-    setError(null);
-    setSuccess(false);
-    
+
+    if (!selectedEdition) {
+      setError('Please select an edition first');
+      return;
+    }
+
+    if (!selectedFranchise) {
+      setError('Please select a franchise first');
+      return;
+    }
+
     try {
+      setIsUploading(true);
+      setError(null);
+      setUploadStatus('Uploading and processing CSV...');
+
       const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('/api/import/csv', {
+      formData.append('file', selectedFile);
+      formData.append('editionId', selectedEdition);
+      formData.append('franchise', selectedFranchise);
+
+      const response = await fetch('/api/import', {
         method: 'POST',
         body: formData,
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to upload CSV file');
-      }
-      
+
       const data = await response.json();
-      
-      setSuccess(true);
-      setUploadStats({
-        imported: data.imported || 0,
-        errors: data.errors || 0,
-      });
-      
-      // Reset file input
-      setFile(null);
-      const fileInput = document.getElementById('csvFile') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
+
+      if (data.success) {
+        setUploadStatus(`Successfully imported ${data.imported} ships`);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        if (onUploadComplete) {
+          onUploadComplete();
+        }
+      } else {
+        setError(data.error || 'Failed to import CSV');
       }
-      
-      // Notify parent component
-      onUploadComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError('Error uploading or processing the CSV file');
     } finally {
-      setUploading(false);
+      setIsUploading(false);
     }
   };
 
@@ -95,106 +96,74 @@ const CsvUpload: React.FC<CsvUploadProps> = ({ onUploadComplete }) => {
   };
 
   return (
-    <div className="mb-4">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900 flex items-center">
-            <FontAwesomeIcon icon={faFileAlt} className="mr-2 text-gray-600" />
-            Import Starships from CSV
-          </h3>
-        </div>
-        <div className="p-4">
-          {error && (
-            <div className="mb-4 bg-red-50 border-l-4 border-red-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+    <div className="mt-4">
+      <form onSubmit={handleUpload} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Upload CSV File
+          </label>
+          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="space-y-1 text-center">
+              <FontAwesomeIcon icon={faUpload} className="mx-auto h-12 w-12 text-gray-400" />
+              <div className="flex text-sm text-gray-600">
+                <label
+                  htmlFor="file-upload"
+                  className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+                >
+                  <span>Upload a file</span>
+                  <input
+                    id="file-upload"
+                    name="file-upload"
+                    type="file"
+                    accept=".csv"
+                    className="sr-only"
+                    onChange={handleFileSelect}
+                    ref={fileInputRef}
+                    disabled={isUploading}
+                  />
+                </label>
+                <p className="pl-1">or drag and drop</p>
               </div>
-            </div>
-          )}
-          
-          {success && (
-            <div className="mb-4 bg-green-50 border-l-4 border-green-400 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-700">CSV file uploaded and processed successfully!</p>
-                  {uploadStats && (
-                    <p className="text-sm text-green-700 mt-1">
-                      <strong>Results:</strong> Imported {uploadStats.imported} starships ({uploadStats.errors} errors)
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="csvFile" className="block text-sm font-medium text-gray-700 mb-1">
-                Select CSV File
-              </label>
-              <input
-                id="csvFile"
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                disabled={uploading}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                The CSV file should have headers: Issue, Edition, Ship Name, Race/Faction, Release Date, Image, owned
+              <p className="text-xs text-gray-500">
+                CSV files only
               </p>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handleDownloadTemplate}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <FontAwesomeIcon icon={faDownload} className="mr-2" />
-                Download Template
-              </button>
-              
-              <button
-                type="submit"
-                disabled={uploading || !file}
-                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                  uploading || !file
-                    ? 'bg-blue-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                }`}
-              >
-                {uploading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faUpload} className="mr-2" />
-                    Upload CSV
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        {selectedFile && (
+          <div className="text-sm text-gray-600">
+            Selected file: {selectedFile.name}
+          </div>
+        )}
+
+        {error && (
+          <div className="text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {uploadStatus && (
+          <div className="text-sm text-green-600">
+            {uploadStatus}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={!selectedFile || !selectedEdition || !selectedFranchise || isUploading}
+          className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+        >
+          {isUploading ? (
+            <>
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-2" />
+              Uploading...
+            </>
+          ) : (
+            'Upload CSV'
+          )}
+        </button>
+      </form>
     </div>
   );
 };

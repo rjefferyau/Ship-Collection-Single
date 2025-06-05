@@ -1,0 +1,36 @@
+{
+  "edition": {
+    "name": "Star Trek: The Next Generation - Season 2",
+    "internalName": "star-trek-tng-s2",
+    "franchise": "Star Trek",
+    "description": "Star Trek: The Next Generation Season 2 Collection",
+    "retailPrice": 19.99,
+    "isDefault": false
+  },
+  "ships": [
+    {
+      "issue": "1",
+      "edition": "Star Trek: The Next Generation - Season 2",
+      "shipName": "USS Enterprise-D",
+      "faction": "Federation",
+      "releaseDate": "2024-03-15",
+      "owned": false,
+      "wishlist": true,
+      "wishlistPriority": 1,
+      "retailPrice": 19.99,
+      "description": "Galaxy-class starship, NCC-1701-D"
+    },
+    {
+      "issue": "2",
+      "edition": "Star Trek: The Next Generation - Season 2",
+      "shipName": "USS Yamato",
+      "faction": "Federation",
+      "releaseDate": "2024-03-15",
+      "owned": false,
+      "wishlist": true,
+      "wishlistPriority": 2,
+      "retailPrice": 19.99,
+      "description": "Galaxy-class starship, NCC-71807"
+    }
+  ]
+} 

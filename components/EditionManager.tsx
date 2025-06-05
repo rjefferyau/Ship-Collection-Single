@@ -10,6 +10,7 @@ interface Edition {
   retailPrice?: number;
   franchise: string;
   isDefault?: boolean;
+  collectionType: string;
 }
 
 interface Franchise {
@@ -24,7 +25,7 @@ interface CollectionType {
   description?: string;
 }
 
-const EditionManager: React.FC = () => {
+const EditionManager: React.FC = (): JSX.Element => {
   const [editions, setEditions] = useState<Edition[]>([]);
   const [filteredEditions, setFilteredEditions] = useState<Edition[]>([]);
   const [selectedFranchiseFilter, setSelectedFranchiseFilter] = useState<string>('');
@@ -59,10 +60,19 @@ const EditionManager: React.FC = () => {
   const [franchise, setFranchise] = useState('');
   const [autoGenerateInternalName, setAutoGenerateInternalName] = useState(true);
   const [isDefault, setIsDefault] = useState(false);
+  const [collectionType, setCollectionType] = useState('');
 
   // Delete confirmation
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editionToDelete, setEditionToDelete] = useState<Edition | null>(null);
+
+  // Export state
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+
+  // Import state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFranchise, setSelectedFranchise] = useState('');
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     fetchEditions();
@@ -73,10 +83,15 @@ const EditionManager: React.FC = () => {
   // Apply franchise filter when editions or selected franchise changes
   useEffect(() => {
     if (selectedFranchiseFilter) {
-      setFilteredEditions(editions.filter(edition => 
+      const filtered = editions.filter(edition => 
         edition.franchise === selectedFranchiseFilter
-      ));
+      );
+      console.log('All editions:', editions);
+      console.log('Selected franchise filter:', selectedFranchiseFilter);
+      console.log('Filtered editions:', filtered);
+      setFilteredEditions(filtered);
     } else {
+      console.log('All editions (no filter):', editions);
       setFilteredEditions(editions);
     }
   }, [editions, selectedFranchiseFilter]);
@@ -195,7 +210,8 @@ const EditionManager: React.FC = () => {
           description,
           retailPrice: retailPrice ? parseFloat(retailPrice) : null,
           franchise,
-          isDefault
+          isDefault,
+          collectionType
         }),
       });
 
@@ -207,6 +223,13 @@ const EditionManager: React.FC = () => {
           : 'Edition added successfully!');
         resetForm();
         fetchEditions();
+        if (collectionType) {
+          await fetch(`/api/starships/update-collection-type`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ editionInternalName: data.data.internalName || internalName, collectionType }),
+          });
+        }
       } else {
         // Handle MongoDB duplicate key error
         if (data.error && typeof data.error === 'object') {
@@ -253,6 +276,7 @@ const EditionManager: React.FC = () => {
           setFranchise(freshEdition.franchise || '');
           setIsDefault(freshEdition.isDefault || false);
           setAutoGenerateInternalName(false);
+          setCollectionType(freshEdition.collectionType || '');
           
           // Clear any previous errors
           setError('');
@@ -313,6 +337,7 @@ const EditionManager: React.FC = () => {
     setIsDefault(false);
     setAutoGenerateInternalName(true);
     setUpdateStarshipPrices(false);
+    setCollectionType('');
   };
 
   const handleImport = async () => {
@@ -402,13 +427,16 @@ const EditionManager: React.FC = () => {
     }
   };
 
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleCsvUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedFile) {
+      setError('Please select a CSV file');
+      return;
+    }
 
-    // Check if it's a CSV file
-    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-      setError('Please upload a CSV file');
+    if (!selectedFranchise) {
+      setError('Please select a franchise');
       return;
     }
 
@@ -419,7 +447,9 @@ const EditionManager: React.FC = () => {
       setSuccess('');
 
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', selectedFile);
+      formData.append('franchise', selectedFranchise);
+      formData.append('isDefault', isDefault.toString());
 
       const response = await fetch('/api/editions/import-csv', {
         method: 'POST',
@@ -432,6 +462,7 @@ const EditionManager: React.FC = () => {
         setCsvUploadStatus(`CSV import complete: Imported ${data.imported} editions, ${data.errors} errors.`);
         setSuccess(`Successfully imported ${data.imported} editions from CSV.`);
         fetchEditions();
+        setShowImportModal(false);
       } else {
         setError(data.error || 'Failed to import editions from CSV');
         setCsvUploadStatus('');
@@ -520,6 +551,41 @@ const EditionManager: React.FC = () => {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      setIsExportingCsv(true);
+      setError('');
+      setSuccess('');
+
+      const response = await fetch('/api/editions/export-csv');
+      
+      if (!response.ok) {
+        throw new Error('Failed to export editions');
+      }
+
+      // Get the blob from the response
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'editions.csv';
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setSuccess('Editions exported successfully');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export editions');
+    } finally {
+      setIsExportingCsv(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Alerts */}
@@ -548,6 +614,60 @@ const EditionManager: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Import/Export Actions */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <FontAwesomeIcon icon={faUpload} className="mr-2" />
+              Import Editions
+            </button>
+            
+            <button
+              onClick={handleExportCsv}
+              disabled={isExportingCsv}
+              className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                isExportingCsv
+                  ? 'bg-indigo-300 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+              }`}
+            >
+              {isExportingCsv ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faDownload} className="mr-2" />
+                  Export Editions
+                </>
+              )}
+            </button>
+          </div>
+
+          <button
+            onClick={downloadSampleCsv}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <FontAwesomeIcon icon={faFileAlt} className="mr-2" />
+            Download Sample CSV
+          </button>
+        </div>
+
+        {csvUploadStatus && (
+          <div className="mt-4 text-sm text-gray-600">
+            {csvUploadStatus}
+          </div>
+        )}
+      </div>
 
       {/* Edition Form */}
       <div className="bg-white shadow-md rounded-lg p-6">
@@ -713,6 +833,30 @@ const EditionManager: React.FC = () => {
             </div>
           )}
           
+          {/* Collection Type */}
+          <div>
+            <label htmlFor="collectionType" className="block text-sm font-medium text-gray-700 mb-1">
+              Collection Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex">
+              <select
+                id="collectionType"
+                value={collectionType}
+                onChange={(e) => setCollectionType(e.target.value)}
+                required
+                disabled={loadingCollectionTypes}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+              >
+                <option value="">Select a collection type</option>
+                {collectionTypes.map((type) => (
+                  <option key={type._id} value={type.name}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
           {/* Form Actions */}
           <div className="flex justify-between pt-4">
             <button
@@ -802,6 +946,9 @@ const EditionManager: React.FC = () => {
                     Retail Price
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Collection Type
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Default
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -836,6 +983,9 @@ const EditionManager: React.FC = () => {
                           <FontAwesomeIcon icon={faDollarSign} />
                         </button>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {edition.collectionType || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {edition.isDefault ? (
@@ -967,6 +1117,84 @@ const EditionManager: React.FC = () => {
                   Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">Import Editions</h3>
+              
+              <form onSubmit={handleCsvUpload}>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Franchise
+                  </label>
+                  <select
+                    value={selectedFranchise}
+                    onChange={(e) => setSelectedFranchise(e.target.value)}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                    required
+                  >
+                    <option value="">Select a franchise</option>
+                    <option value="Star Trek">Star Trek</option>
+                    <option value="Star Wars">Star Wars</option>
+                    <option value="Battlestar Galactica">Battlestar Galactica</option>
+                    {/* Add more franchises as needed */}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={isDefault}
+                      onChange={(e) => setIsDefault(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Set as default edition</span>
+                  </label>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CSV File
+                  </label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".csv"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowImportModal(false)}
+                    className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUploadingCsv}
+                    className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
+                      isUploadingCsv
+                        ? 'bg-blue-300 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+                    }`}
+                  >
+                    {isUploadingCsv ? 'Importing...' : 'Import'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

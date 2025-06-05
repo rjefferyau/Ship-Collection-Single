@@ -316,6 +316,7 @@ const Home: React.FC = () => {
           onCycleStatus={handleCycleStatus}
           onEditionChange={handleEditionChange}
           currentEdition={currentEdition}
+          selectedFranchise={selectedFranchise}
         />
       )}
 

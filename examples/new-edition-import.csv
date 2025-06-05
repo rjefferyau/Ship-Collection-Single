@@ -1,0 +1,3 @@
+issue,edition,shipName,faction,releaseDate,owned,wishlist,wishlistPriority,retailPrice,description
+1,"Star Trek: The Next Generation - Season 2","USS Enterprise-D","Federation","2024-03-15",false,true,1,19.99,"Galaxy-class starship, NCC-1701-D"
+2,"Star Trek: The Next Generation - Season 2","USS Yamato","Federation","2024-03-15",false,true,2,19.99,"Galaxy-class starship, NCC-71807" 

@@ -16,6 +16,8 @@ interface EditionData {
   name: string;
   description?: string;
   retailPrice?: number;
+  franchise: string;
+  isDefault?: boolean;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -39,9 +41,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Get the uploaded file
-    const file = files.file[0];
+    const file = Array.isArray(files.file) ? files.file[0] : files.file;
     if (!file) {
       return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    // Get metadata from form fields
+    const franchise = fields.franchise?.[0];
+    const isDefault = fields.isDefault?.[0] === 'true';
+
+    if (!franchise) {
+      return res.status(400).json({ success: false, error: 'Franchise is required' });
     }
 
     // Read the file content
@@ -68,6 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Create edition object
       const edition: EditionData = {
         name: record.name.trim(),
+        franchise: franchise,
+        isDefault: isDefault
       };
 
       // Add optional fields if they exist
@@ -91,13 +103,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let imported = 0;
 
     for (const edition of editions) {
-      // Check if edition with the same name already exists
-      const existingEdition = await editionsCollection.findOne({ name: edition.name });
+      // Generate internal name
+      const nameSlug = edition.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+      const franchiseSlug = edition.franchise.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+      const internalName = `${nameSlug}-${franchiseSlug}`;
+
+      // Check if edition with the same name and franchise already exists
+      const existingEdition = await editionsCollection.findOne({ 
+        name: edition.name,
+        franchise: edition.franchise
+      });
 
       if (!existingEdition) {
         // Add new edition
         await editionsCollection.insertOne({
           ...edition,
+          internalName,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -109,6 +130,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           { 
             $set: {
               ...edition,
+              internalName,
               updatedAt: new Date(),
             }
           }

@@ -12,6 +12,7 @@ interface StarshipListProps {
   onCycleStatus?: (id: string) => Promise<void>;
   onEditionChange?: (edition: string) => void;
   currentEdition?: string;
+  selectedFranchise?: string;
 }
 
 const StarshipList: React.FC<StarshipListProps> = ({ 
@@ -21,7 +22,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
   onToggleWishlist,
   onCycleStatus,
   onEditionChange,
-  currentEdition = 'Regular'
+  currentEdition = 'Regular',
+  selectedFranchise
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'issue', direction: 'asc' });
   const [filters, setFilters] = useState<Filters>({
@@ -35,6 +37,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [filteredStarships, setFilteredStarships] = useState<Starship[]>(starships || []);
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
+  const [editionDisplayNames, setEditionDisplayNames] = useState<Record<string, string>>({});
   const [availableCollectionTypes, setAvailableCollectionTypes] = useState<string[]>([]);
   const [availableFranchises, setAvailableFranchises] = useState<string[]>([]);
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
@@ -54,6 +57,43 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [collectionTypeMenuOpen, setCollectionTypeMenuOpen] = useState(false);
   const [franchiseMenuOpen, setFranchiseMenuOpen] = useState(false);
 
+  // Fetch available editions from the API, filtered by franchise
+  useEffect(() => {
+    const fetchEditions = async () => {
+      try {
+        let url = '/api/editions';
+        if (selectedFranchise) {
+          url += `?franchise=${encodeURIComponent(selectedFranchise)}`;
+        }
+        
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const editions = data.data.map((edition: any) => edition.internalName).sort();
+            const displayNames: Record<string, string> = {};
+            data.data.forEach((edition: any) => {
+              displayNames[edition.internalName] = edition.name;
+            });
+            setAvailableEditions(editions);
+            setEditionDisplayNames(displayNames);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching editions:', error);
+        // Fallback to deriving from starships if API fails
+        if (starships && starships.length > 0) {
+          const editions = Array.from(new Set(
+            starships.map(ship => ship.editionInternalName || ship.edition)
+          )).filter(Boolean).sort();
+          setAvailableEditions(editions);
+        }
+      }
+    };
+    
+    fetchEditions();
+  }, [selectedFranchise]); // Re-fetch when franchise changes
+
   // Extract unique values for filters
   useEffect(() => {
     if (!starships || starships.length === 0) return;
@@ -61,13 +101,6 @@ const StarshipList: React.FC<StarshipListProps> = ({
     // Extract unique factions
     const factions = Array.from(new Set(starships.map(ship => ship.faction))).sort();
     setAvailableFactions(factions);
-    
-    // Extract unique editions from starships
-    const editions = Array.from(new Set(
-      starships.map(ship => ship.editionInternalName || ship.edition)
-    )).filter(Boolean).sort();
-    
-    setAvailableEditions(editions);
     
     // Extract unique collection types
     const collectionTypes = Array.from(new Set(starships.map(ship => ship.collectionType))).sort();
@@ -639,14 +672,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           {availableEditions.map(edition => {
-            // Find a ship with this edition to get the display name
-            const shipWithEdition = starships.find(ship => 
-              (ship.editionInternalName && ship.editionInternalName === edition) || 
-              (!ship.editionInternalName && ship.edition === edition)
-            );
-            
-            // Use the display name from the ship, or fall back to the internal name
-            const displayName = shipWithEdition ? shipWithEdition.edition : edition;
+            // Use the display name from the API data, or fall back to the internal name
+            const displayName = editionDisplayNames[edition] || edition;
             
             return (
               <button

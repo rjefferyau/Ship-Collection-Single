@@ -22,6 +22,11 @@ const AddStarshipForm = dynamic(() => import('../components/AddStarshipForm'), {
   ssr: false
 });
 
+const ExcelView = dynamic(() => import('../components/ExcelView'), {
+  loading: () => <div className="p-4 text-center">Loading Excel view...</div>,
+  ssr: false
+});
+
 const Home: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +36,7 @@ const Home: React.FC = () => {
   const [currentEdition, setCurrentEdition] = useState<string>('Regular');
   const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
   const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+  const [excelViewWindow, setExcelViewWindow] = useState<Window | null>(null);
 
   // Fetch default edition on component mount
   useEffect(() => {
@@ -279,6 +285,30 @@ const Home: React.FC = () => {
     setCurrentEdition(edition);
   };
 
+  // Function to open Excel view in a new window
+  const openExcelView = () => {
+    // Close any existing Excel view window
+    if (excelViewWindow && !excelViewWindow.closed) {
+      excelViewWindow.close();
+    }
+    
+    // Open the Excel view page in a new window with specific dimensions
+    const newWindow = window.open('/excel-view', 'excelView', 'width=1200,height=800');
+    
+    if (newWindow) {
+      // Store the starships data in the new window for it to use
+      (newWindow as any).starships = starships;
+      
+      // Define a function that the Excel view can call to close itself
+      (newWindow as any).onClose = () => {
+        newWindow.close();
+      };
+      
+      // Update the state with the new window reference
+      setExcelViewWindow(newWindow);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Modern Hero Section */}
@@ -293,8 +323,8 @@ const Home: React.FC = () => {
             </p>
           </div>
           
-          {/* Action Button */}
-          <div className="flex justify-center">
+          {/* Action Buttons */}
+          <div className="flex justify-center space-x-4">
             <button
               onClick={() => setShowAddModal(true)}
               className="group bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-white/20"
@@ -304,6 +334,20 @@ const Home: React.FC = () => {
                   <span className="text-lg font-bold">+</span>
                 </div>
                 <span className="text-lg">Add New Item to Collection</span>
+              </div>
+            </button>
+            
+            <button
+              onClick={openExcelView}
+              className="group bg-green-600/90 backdrop-blur-sm hover:bg-green-600 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-green-500/20"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-200">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="text-lg">Open in Excel</span>
               </div>
             </button>
           </div>

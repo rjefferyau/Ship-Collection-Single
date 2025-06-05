@@ -139,6 +139,10 @@ To access these tools:
 - `/public`: Static assets
 - `/styles`: CSS styles
 
+### Future Migration
+
+A plan for migrating to Supabase for improved multi-tenancy and maintainability is available in [SUPABASE_MIGRATION.md](./SUPABASE_MIGRATION.md).
+
 ### API Endpoints
 
 #### Starships

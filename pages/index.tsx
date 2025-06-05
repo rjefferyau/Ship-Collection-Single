@@ -280,45 +280,86 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">The Collection</h1>
-        <p className="text-gray-600">Browse and manage your complete starship collection</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      {/* Modern Hero Section */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 pt-8 pb-12">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
+              The Collection
+            </h1>
+            <p className="text-xl md:text-2xl text-indigo-100 font-medium max-w-3xl mx-auto">
+              Discover, organize, and manage your complete starship collection with intelligent filtering and modern design
+            </p>
+          </div>
+          
+          {/* Action Button */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="group bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-white/20"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-200">
+                  <span className="text-lg font-bold">+</span>
+                </div>
+                <span className="text-lg">Add New Item to Collection</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
-        >
-          Add New Item
-        </button>
+      {/* Main Content Area */}
+      <div className="container mx-auto px-6 -mt-6 relative z-10">
+        {/* Enhanced Collection Filter */}
+        <CollectionFilter onFilterChange={handleFilterChange} className="mb-8" />
+
+        {/* Content Section */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
+          {loading ? (
+            <div className="flex flex-col justify-center items-center py-24 px-6">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200"></div>
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-indigo-600 absolute top-0 left-0"></div>
+              </div>
+              <div className="mt-6 text-center">
+                <h3 className="text-lg font-semibold text-gray-800">Loading your collection...</h3>
+                <p className="text-gray-600 mt-2">Please wait while we gather your starships</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="mx-6 my-8">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-6 rounded-lg shadow-sm">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center w-8 h-8 bg-red-100 rounded-lg">
+                      <span className="text-red-600 font-bold">!</span>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-semibold text-red-800">Something went wrong</h3>
+                    <p className="text-red-700 mt-1">{error}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6">
+              <StarshipList
+                starships={starships}
+                onToggleOwned={handleToggleOwned}
+                onSelectStarship={handleSelectStarship}
+                onToggleWishlist={handleToggleWishlist}
+                onCycleStatus={handleCycleStatus}
+                onEditionChange={handleEditionChange}
+                currentEdition={currentEdition}
+                selectedFranchise={selectedFranchise}
+              />
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Collection Filter */}
-      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
-
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-        </div>
-      ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline"> {error}</span>
-        </div>
-      ) : (
-        <StarshipList
-          starships={starships}
-          onToggleOwned={handleToggleOwned}
-          onSelectStarship={handleSelectStarship}
-          onToggleWishlist={handleToggleWishlist}
-          onCycleStatus={handleCycleStatus}
-          onEditionChange={handleEditionChange}
-          currentEdition={currentEdition}
-          selectedFranchise={selectedFranchise}
-        />
-      )}
 
       {/* Modal for adding new starship */}
       <ModalContainer

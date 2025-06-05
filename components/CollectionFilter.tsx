@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLayerGroup, faFilm, faFilter, faTimes, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faLayerGroup, faFilm, faFilter, faTimes, faChevronDown, faSearch } from '@fortawesome/free-solid-svg-icons';
 
 interface CollectionFilterProps {
   onFilterChange: (collectionType: string, franchise: string) => void;
@@ -131,161 +131,182 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   const hasActiveFilters = selectedCollectionType || selectedFranchise;
 
   return (
-    <div className={`bg-white rounded-lg ${className}`}>
-      {/* Header with toggle */}
+    <div className={`backdrop-blur-sm bg-white/95 rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden transition-all duration-500 hover:shadow-2xl ${className}`}>
+      {/* Modern Header with gradient */}
       <div 
-        className="bg-indigo-600 px-5 py-4 flex justify-between items-center cursor-pointer rounded-t-lg"
+        className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 px-6 py-5 flex justify-between items-center cursor-pointer transition-all duration-300 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center">
-          <div className="flex items-center">
-            <FontAwesomeIcon icon={faFilter} className="text-white" />
-            <span className="text-lg font-medium text-white ml-3">Filter Collection</span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-center w-10 h-10 bg-white/20 rounded-xl backdrop-blur-sm">
+            <FontAwesomeIcon icon={faSearch} className="text-white text-lg" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Smart Filters</h3>
+            <p className="text-indigo-100 text-sm font-medium">Refine your collection view</p>
           </div>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center space-x-3">
           {hasActiveFilters && (
-            <div className="bg-white bg-opacity-20 text-white text-xs font-semibold px-2.5 py-1 rounded-full mr-3">
-              Filters Active
+            <div className="flex items-center space-x-2">
+              <div className="bg-emerald-400 text-emerald-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+                {(selectedCollectionType ? 1 : 0) + (selectedFranchise ? 1 : 0)} Active
+              </div>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearFilters();
+                }}
+                className="group flex items-center space-x-1.5 bg-white/20 hover:bg-red-500/80 text-white hover:text-white px-3 py-1.5 rounded-lg transition-all duration-200 backdrop-blur-sm text-sm font-medium"
+              >
+                <FontAwesomeIcon icon={faTimes} className="group-hover:rotate-90 transition-transform duration-200" />
+                <span>Clear All</span>
+              </button>
             </div>
           )}
-          {hasActiveFilters && (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                clearFilters();
-              }}
-              className="text-white hover:text-red-100 mr-4 text-sm flex items-center"
-            >
-              <FontAwesomeIcon icon={faTimes} className="mr-1" />
-              Clear
-            </button>
-          )}
-          <FontAwesomeIcon 
-            icon={faChevronDown} 
-            className={`text-white transition-transform duration-300 ${isExpanded ? 'transform rotate-180' : ''}`} 
-          />
+          <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg backdrop-blur-sm">
+            <FontAwesomeIcon 
+              icon={faChevronDown} 
+              className={`text-white transition-all duration-300 ${isExpanded ? 'transform rotate-180' : ''}`} 
+            />
+          </div>
         </div>
       </div>
       
-      {/* Filter content */}
-      {isExpanded && (
-        <div className="p-5 bg-white rounded-b-lg border-t border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Collection Type Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 flex items-center">
-                <FontAwesomeIcon icon={faLayerGroup} className="text-indigo-500 mr-2" />
-                Collection Type
+      {/* Enhanced Filter Content with Animation */}
+      <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+        <div className="p-6 bg-gradient-to-br from-gray-50 to-white">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Modern Collection Type Selection */}
+            <div className="space-y-3 group">
+              <label className="block text-sm font-bold text-gray-800 flex items-center space-x-2">
+                <div className="flex items-center justify-center w-8 h-8 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors duration-200">
+                  <FontAwesomeIcon icon={faLayerGroup} className="text-indigo-600 text-sm" />
+                </div>
+                <span>Collection Type</span>
               </label>
               <div className="relative" ref={collectionTypeDropdownRef}>
                 <button
                   type="button"
-                  className="block w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
+                  className="group w-full bg-white border-2 border-gray-200 hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 rounded-xl px-4 py-3.5 text-left transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={() => setCollectionTypeDropdownOpen(!collectionTypeDropdownOpen)}
                 >
-                  {selectedCollectionType || 'All Collection Types'}
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 text-gray-400" />
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`font-medium ${selectedCollectionType ? 'text-gray-900' : 'text-gray-500'}`}>
+                      {selectedCollectionType || 'Select collection type...'}
+                    </span>
+                    <FontAwesomeIcon 
+                      icon={faChevronDown} 
+                      className={`text-gray-400 transition-transform duration-200 ${collectionTypeDropdownOpen ? 'rotate-180' : ''} group-hover:text-indigo-500`} 
+                    />
+                  </div>
                 </button>
                 
                 {collectionTypeDropdownOpen && (
-                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none sm:text-sm"
-                       style={{ width: collectionTypeDropdownRef.current?.offsetWidth, top: (collectionTypeDropdownRef.current?.getBoundingClientRect().bottom || 0) + 5, left: collectionTypeDropdownRef.current?.getBoundingClientRect().left }}>
+                  <div className="absolute z-50 mt-2 w-full bg-white shadow-2xl border border-gray-200 rounded-xl py-2 max-h-64 overflow-auto backdrop-blur-lg">
                     <div 
-                      className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
+                      className="px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 cursor-pointer transition-all duration-150 border-b border-gray-100"
                       onClick={() => {
                         setSelectedCollectionType('');
                         setCollectionTypeDropdownOpen(false);
                       }}
                     >
-                      All Collection Types
+                      <span className="text-gray-700 font-medium">All Collection Types</span>
                     </div>
                     {collectionTypes.map((type) => (
                       <div 
                         key={type._id}
-                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 ${selectedCollectionType === type.name ? 'bg-indigo-100' : ''}`}
+                        className={`px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 cursor-pointer transition-all duration-150 ${selectedCollectionType === type.name ? 'bg-gradient-to-r from-indigo-100 to-purple-100 border-l-4 border-indigo-500' : ''}`}
                         onClick={() => {
                           setSelectedCollectionType(type.name);
                           setCollectionTypeDropdownOpen(false);
                         }}
                       >
-                        {type.name}
+                        <span className={`font-medium ${selectedCollectionType === type.name ? 'text-indigo-900' : 'text-gray-700'}`}>
+                          {type.name}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
               {selectedCollectionType && (
-                <div className="flex items-center mt-2">
-                  <span className="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-1 rounded-full flex items-center">
-                    {selectedCollectionType}
+                <div className="flex items-center">
+                  <span className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg">
+                    <span>{selectedCollectionType}</span>
                     <button 
                       onClick={() => setSelectedCollectionType('')}
-                      className="ml-1.5 text-indigo-600 hover:text-indigo-800"
+                      className="flex items-center justify-center w-5 h-5 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200"
                     >
-                      <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
+                      <FontAwesomeIcon icon={faTimes} className="text-xs" />
                     </button>
                   </span>
                 </div>
               )}
             </div>
             
-            {/* Franchise Selection */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 flex items-center">
-                <FontAwesomeIcon icon={faFilm} className="text-indigo-500 mr-2" />
-                Franchise
+            {/* Modern Franchise Selection */}
+            <div className="space-y-3 group">
+              <label className="block text-sm font-bold text-gray-800 flex items-center space-x-2">
+                <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors duration-200">
+                  <FontAwesomeIcon icon={faFilm} className="text-blue-600 text-sm" />
+                </div>
+                <span>Franchise</span>
               </label>
               <div className="relative" ref={franchiseDropdownRef}>
                 <button
                   type="button"
-                  className="block w-full rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pl-3 pr-10 py-2.5 text-gray-700 bg-white text-left"
+                  className="group w-full bg-white border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 rounded-xl px-4 py-3.5 text-left transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={() => setFranchiseDropdownOpen(!franchiseDropdownOpen)}
                 >
-                  {selectedFranchise || 'All Franchises'}
-                  <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <FontAwesomeIcon icon={faChevronDown} className="h-4 w-4 text-gray-400" />
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`font-medium ${selectedFranchise ? 'text-gray-900' : 'text-gray-500'}`}>
+                      {selectedFranchise || 'Select franchise...'}
+                    </span>
+                    <FontAwesomeIcon 
+                      icon={faChevronDown} 
+                      className={`text-gray-400 transition-transform duration-200 ${franchiseDropdownOpen ? 'rotate-180' : ''} group-hover:text-blue-500`} 
+                    />
+                  </div>
                 </button>
                 
                 {franchiseDropdownOpen && (
-                  <div className="fixed z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none sm:text-sm"
-                       style={{ width: franchiseDropdownRef.current?.offsetWidth, top: (franchiseDropdownRef.current?.getBoundingClientRect().bottom || 0) + 5, left: franchiseDropdownRef.current?.getBoundingClientRect().left }}>
+                  <div className="absolute z-50 mt-2 w-full bg-white shadow-2xl border border-gray-200 rounded-xl py-2 max-h-64 overflow-auto backdrop-blur-lg">
                     <div 
-                      className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50"
+                      className="px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 cursor-pointer transition-all duration-150 border-b border-gray-100"
                       onClick={() => {
                         setSelectedFranchise('');
                         setFranchiseDropdownOpen(false);
                       }}
                     >
-                      All Franchises
+                      <span className="text-gray-700 font-medium">All Franchises</span>
                     </div>
                     {franchises.map((franchise) => (
                       <div 
                         key={franchise._id}
-                        className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-indigo-50 ${selectedFranchise === franchise.name ? 'bg-indigo-100' : ''}`}
+                        className={`px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 cursor-pointer transition-all duration-150 ${selectedFranchise === franchise.name ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border-l-4 border-blue-500' : ''}`}
                         onClick={() => {
                           setSelectedFranchise(franchise.name);
                           setFranchiseDropdownOpen(false);
                         }}
                       >
-                        {franchise.name}
+                        <span className={`font-medium ${selectedFranchise === franchise.name ? 'text-blue-900' : 'text-gray-700'}`}>
+                          {franchise.name}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
               {selectedFranchise && (
-                <div className="flex items-center mt-2">
-                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full flex items-center">
-                    {selectedFranchise}
+                <div className="flex items-center">
+                  <span className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg">
+                    <span>{selectedFranchise}</span>
                     <button 
                       onClick={() => setSelectedFranchise('')}
-                      className="ml-1.5 text-blue-600 hover:text-blue-800"
+                      className="flex items-center justify-center w-5 h-5 bg-white/20 hover:bg-white/30 rounded-full transition-colors duration-200"
                     >
-                      <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
+                      <FontAwesomeIcon icon={faTimes} className="text-xs" />
                     </button>
                   </span>
                 </div>
@@ -293,7 +314,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

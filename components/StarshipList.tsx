@@ -986,6 +986,306 @@ const StarshipList: React.FC<StarshipListProps> = ({
       {/* PDF Viewer Modal */}
       {showPdfViewer && selectedPdfUrl && (
         <PdfViewer
+          pdfUrl={selectedPdfUrl || ''}
+          title={selectedPdfTitle}
+          onClose={() => setShowPdfViewer(false)}
+        />
+      )}
+    </div>
+  );
+
+
+  return (
+    <div className="space-y-4">
+      {/* Search and Filters */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search Input */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search ships..."
+                value={filters.search}
+                onChange={handleSearchChange}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            
+            {/* Faction Filter */}
+            <div className="relative inline-block text-left">
+              <div>
+                <button
+                  type="button"
+                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  id="faction-menu-button"
+                  aria-expanded="true"
+                  aria-haspopup="true"
+                  onClick={() => setFactionMenuOpen(!factionMenuOpen)}
+                >
+                  Faction
+                  {filters.faction.length > 0 && (
+                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                      {filters.faction.length}
+                    </span>
+                  )}
+                  <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              
+              {factionMenuOpen && (
+                <div
+                  className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="faction-menu-button"
+                  tabIndex={-1}
+                >
+                  <div className="py-1" role="none">
+                    <button
+                      className={`${
+                        filters.faction.length === 0 ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => {
+                        setFilters(prev => ({ ...prev, faction: [] }));
+                        setFactionMenuOpen(false);
+                      }}
+                    >
+                      All Factions
+                    </button>
+                    {availableFactions.map(faction => (
+                      <button
+                        key={faction}
+                        className={`${
+                          filters.faction.includes(faction) ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                        } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                        role="menuitem"
+                        tabIndex={-1}
+                        onClick={() => toggleFactionFilter(faction)}
+                      >
+                        {faction}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Status Filter (formerly Owned Filter) */}
+            <div className="relative inline-block text-left">
+              <div>
+                <button
+                  type="button"
+                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  id="status-menu-button"
+                  aria-expanded="true"
+                  aria-haspopup="true"
+                  onClick={() => setOwnedMenuOpen(!ownedMenuOpen)}
+                >
+                  Status: {filters.owned === 'all' ? 'All' : 
+                   filters.owned === 'owned' ? 'Owned' : 
+                   filters.owned === 'not-owned' ? 'Not Owned' :
+                   filters.owned === 'wishlist' ? 'Wishlist' :
+                   filters.owned === 'on-order' ? 'On Order' : 'All'}
+                  <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+              
+              {ownedMenuOpen && (
+                <div
+                  className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="status-menu-button"
+                  tabIndex={-1}
+                >
+                  <div className="py-1" role="none">
+                    <button
+                      className={`${
+                        filters.owned === 'all' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setOwnedFilter('all')}
+                    >
+                      All Ships
+                    </button>
+                    <button
+                      className={`${
+                        filters.owned === 'owned' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setOwnedFilter('owned')}
+                    >
+                      <span className="flex items-center">
+                        <svg className="mr-2 h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Owned Only
+                      </span>
+                    </button>
+                    <button
+                      className={`${
+                        filters.owned === 'not-owned' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setOwnedFilter('not-owned')}
+                    >
+                      <span className="flex items-center">
+                        <svg className="mr-2 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        Not Owned Only
+                      </span>
+                    </button>
+                    <button
+                      className={`${
+                        filters.owned === 'wishlist' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setOwnedFilter('wishlist')}
+                    >
+                      <span className="flex items-center">
+                        <svg className="mr-2 h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        Wishlist Only
+                      </span>
+                    </button>
+                    <button
+                      className={`${
+                        filters.owned === 'on-order' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setOwnedFilter('on-order')}
+                    >
+                      <span className="flex items-center">
+                        <svg className="mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                        </svg>
+                        On Order Only
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Stats */}
+          <div className="flex flex-col items-end">
+            <div className="flex space-x-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                <svg className="w-4 h-4 mr-1 text-indigo-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
+                </svg>
+                {filteredStarships.length} ships
+              </span>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <svg className="w-4 h-4 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                </svg>
+                {filteredStarships.filter(s => s.owned).length} owned
+              </span>
+            </div>
+            <div className="mt-2 w-full">
+              <div className="text-sm flex justify-between mb-1">
+                <span>Collection Progress</span>
+                <span>{Math.round((filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100)}%</span>
+              </div>
+              <div className="w-64 bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-green-500 h-2.5 rounded-full" 
+                  style={{ width: `${(filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Edition Tabs */}
+        {renderEditionTabs()}
+        
+        {/* Data Table */}
+        <div className="w-full overflow-hidden mt-4">
+          <DataTable
+            data={filteredStarships}
+            columns={columns}
+            keyField="_id"
+            onRowClick={onSelectStarship}
+            sortConfig={{
+              key: sortConfig.key as keyof Starship,
+              direction: sortConfig.direction
+            }}
+            onSort={handleSort}
+            emptyMessage="No starships found. Try adjusting your search or filters."
+          />
+          
+          {filteredStarships.length === 0 && (
+            <div className="text-center p-8 bg-gray-50 rounded-lg mt-4">
+              <p className="text-gray-500">No starships match your current filters.</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowImageModal(false)}></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                      {selectedShipName}
+                    </h3>
+                    <div className="mt-2">
+                      {selectedImage && (
+                        <img 
+                          src={selectedImage} 
+                          alt={selectedShipName} 
+                          className="max-w-full max-h-[70vh] mx-auto object-contain"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button 
+                  type="button" 
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  onClick={() => setShowImageModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* PDF Viewer Modal */}
+      {showPdfViewer && selectedPdfUrl && (
+        <PdfViewer
           pdfUrl={selectedPdfUrl}
           title={selectedPdfTitle}
           onClose={() => setShowPdfViewer(false)}

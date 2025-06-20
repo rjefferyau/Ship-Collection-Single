@@ -321,7 +321,7 @@ const Home: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       {/* Modern Hero Section */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 pt-8 pb-12">
-        <div className="container mx-auto px-6">
+        <div className="w-full px-6">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
               The Collection
@@ -363,7 +363,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="container mx-auto px-6 -mt-6 relative z-10">
+      <div className="w-full px-6 -mt-6 relative z-10">
         {/* Enhanced Collection Filter */}
         <CollectionFilter onFilterChange={handleFilterChange} className="mb-8" />
 

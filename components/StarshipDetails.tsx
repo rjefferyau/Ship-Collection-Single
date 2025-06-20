@@ -42,6 +42,7 @@ interface Starship {
   wishlist: boolean;
   wishlistPriority?: number;
   onOrder: boolean;
+  notInterested: boolean;
   pricePaid?: number;
   orderDate?: Date;
   retailPrice?: number;
@@ -699,6 +700,18 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                       : 'bg-gray-100 text-gray-800'
                   }`}>
                     {starship.onOrder ? 'Yes' : 'No'}
+                  </span>
+                </dd>
+              </div>
+              <div className="flex items-center py-2">
+                <dt className="w-1/3 font-medium text-gray-500">Not Interested:</dt>
+                <dd className="w-2/3 text-gray-900">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    starship.notInterested 
+                      ? 'bg-red-100 text-red-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {starship.notInterested ? 'Yes' : 'No'}
                   </span>
                 </dd>
               </div>

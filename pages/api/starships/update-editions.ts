@@ -1,72 +1,49 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '../../../lib/mongodb';
+import dbConnect from '../../../lib/dbConnect';
 import Starship from '../../../models/Starship';
 import Edition from '../../../models/Edition';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { method } = req;
-
-  if (method !== 'POST') {
+  if (req.method !== 'PUT') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
   try {
     await dbConnect();
-
-    // Get all editions
-    const editions = await Edition.find({});
-    const editionMap = new Map(editions.map(edition => [edition.name.toLowerCase(), edition.name]));
     
-    // Get all starships
-    const starships = await Starship.find({});
+    const { starshipIds, editionId } = req.body;
     
-    let updated = 0;
-    let unchanged = 0;
-    let errors = 0;
-    
-    // Update each starship with the standardized edition name
-    for (const starship of starships) {
-      try {
-        if (!starship.edition) {
-          unchanged++;
-          continue;
-        }
-        
-        const standardizedEdition = editionMap.get(starship.edition.toLowerCase());
-        
-        if (!standardizedEdition) {
-          unchanged++;
-          continue;
-        }
-        
-        if (starship.edition === standardizedEdition) {
-          unchanged++;
-          continue;
-        }
-        
-        starship.edition = standardizedEdition;
-        await starship.save();
-        updated++;
-      } catch (error) {
-        console.error(`Error updating starship ${starship._id}:`, error);
-        errors++;
-      }
+    if (!Array.isArray(starshipIds) || starshipIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No starships specified' });
     }
     
-    res.status(200).json({
-      success: true,
-      data: {
-        total: starships.length,
-        updated,
-        unchanged,
-        errors
+    // Get the edition details
+    const edition = await Edition.findById(editionId);
+    if (!edition) {
+      return res.status(404).json({ success: false, message: 'Edition not found' });
+    }
+    
+    // Update all specified starships
+    const updateResult = await Starship.updateMany(
+      { _id: { $in: starshipIds } },
+      { 
+        $set: { 
+          edition: edition.name,
+          editionInternalName: edition.internalName
+        } 
       }
+    );
+    
+    return res.status(200).json({
+      success: true,
+      message: `Updated ${updateResult.modifiedCount} starships`,
+      data: updateResult
     });
   } catch (error) {
-    console.error('Error updating starships:', error);
-    res.status(500).json({ success: false, error: 'Failed to update starships' });
+    console.error('Error updating editions:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 } 

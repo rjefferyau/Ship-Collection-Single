@@ -16,6 +16,7 @@ export interface IStarship extends Document {
   wishlist: boolean; // Added to wishlist for future purchase
   wishlistPriority?: number; // Priority in the wishlist (lower number = higher priority)
   onOrder: boolean; // Whether the item is currently on order
+  notInterested: boolean; // User has explicitly marked as not interested
   pricePaid?: number; // Price paid for the order
   orderDate?: Date; // When the order was placed
   retailPrice?: number; // Recommended Retail Price
@@ -90,6 +91,10 @@ const StarshipSchema: Schema = new Schema({
   wishlist: { type: Boolean, default: false },
   wishlistPriority: { type: Number },
   onOrder: { type: Boolean, default: false },
+  notInterested: { 
+    type: Boolean, 
+    default: true 
+  },
   pricePaid: { type: Number },
   orderDate: { type: Date },
   retailPrice: { type: Number },
@@ -152,6 +157,7 @@ StarshipSchema.index({ faction: 1 });
 StarshipSchema.index({ franchise: 1 });
 StarshipSchema.index({ manufacturer: 1 });
 StarshipSchema.index({ owned: 1 });
+StarshipSchema.index({ notInterested: 1 });
 StarshipSchema.index({ editionObjectId: 1 });
 
 // Check if the model already exists to prevent overwriting during hot reloads

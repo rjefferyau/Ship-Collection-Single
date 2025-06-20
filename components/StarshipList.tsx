@@ -3,13 +3,24 @@ import DataTable from './DataTable';
 import PdfViewer from './PdfViewer';
 import { Starship, SortConfig, Filters } from '../types';
 import { useCurrency } from '../contexts/CurrencyContext';
+import CustomViewManager from './CustomViewManager';
+import BatchActionManager from './BatchActionManager';
+
+// Add CustomView interface
+interface CustomView {
+  id: string;
+  name: string;
+  columns: string[];
+  filters: any;
+  sortConfig: { key: string; direction: 'asc' | 'desc' };
+}
 
 interface StarshipListProps {
   starships: Starship[];
   onToggleOwned: (id: string) => Promise<void>;
   onSelectStarship: (starship: Starship) => void;
   onToggleWishlist?: (id: string) => Promise<void>;
-  onCycleStatus?: (id: string) => Promise<void>;
+  onCycleStatus?: (id: string, direction: string) => Promise<void>;
   onEditionChange?: (edition: string) => void;
   currentEdition?: string;
   selectedFranchise?: string;
@@ -43,6 +54,16 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
   const { formatCurrency } = useCurrency();
   
+  // Add state for multi-selection
+  const [selectedStarships, setSelectedStarships] = useState<string[]>([]);
+  const [availableManufacturers, setAvailableManufacturers] = useState<any[]>([]);
+  
+  // Add state for custom views
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    'select', 'issue', 'shipName', 'faction', 'manufacturer', 'edition', 'status', 'price', 'imageUrl'
+  ]);
+  const [customView, setCustomView] = useState<CustomView | null>(null);
+  
   // Add state for image modal
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
@@ -56,6 +77,153 @@ const StarshipList: React.FC<StarshipListProps> = ({
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
   const [collectionTypeMenuOpen, setCollectionTypeMenuOpen] = useState(false);
   const [franchiseMenuOpen, setFranchiseMenuOpen] = useState(false);
+
+  // Define available columns for the CustomViewManager
+  const availableColumns = [
+    { key: 'issue', label: 'Issue' },
+    { key: 'shipName', label: 'Ship Name' },
+    { key: 'faction', label: 'Faction' },
+    { key: 'manufacturer', label: 'Manufacturer' },
+    { key: 'edition', label: 'Edition' },
+    { key: 'status', label: 'Status' },
+    { key: 'price', label: 'Price' },
+    { key: 'releaseDate', label: 'Release Date' },
+    { key: 'collectionType', label: 'Collection Type' },
+    { key: 'franchise', label: 'Franchise' },
+    { key: 'imageUrl', label: 'Image' },
+    { key: 'magazinePdfUrl', label: 'Magazine PDF' },
+    { key: 'select', label: 'Select' }
+  ];
+
+  // Handle view selection from CustomViewManager
+  const handleViewSelect = (view: CustomView) => {
+    setCustomView(view);
+    setVisibleColumns(view.columns);
+    setSortConfig({
+      key: view.sortConfig.key as keyof Starship,
+      direction: view.sortConfig.direction
+    });
+    setFilters(view.filters);
+  };
+  
+  // Fetch manufacturers for batch operations
+  useEffect(() => {
+    const fetchManufacturers = async () => {
+      try {
+        const response = await fetch('/api/manufacturers');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableManufacturers(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching manufacturers:', error);
+      }
+    };
+    
+    fetchManufacturers();
+  }, []);
+  
+  // Handle selection toggle
+  const handleSelectionToggle = (id: string) => {
+    setSelectedStarships(prev => 
+      prev.includes(id) 
+        ? prev.filter(shipId => shipId !== id) 
+        : [...prev, id]
+    );
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedStarships.length === filteredStarships.length) {
+      // If all are selected, clear selection
+      setSelectedStarships([]);
+    } else {
+      // Otherwise select all filtered starships
+      setSelectedStarships(filteredStarships.map(ship => ship._id));
+    }
+  };
+
+  // Batch update handlers
+  const handleBatchUpdateManufacturer = async (manufacturerId: string) => {
+    try {
+      const response = await fetch('/api/starships/update-manufacturers', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          starshipIds: selectedStarships,
+          manufacturerId
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh starships after update
+        // This would typically call a parent function to refresh the data
+        alert(`Updated manufacturer for ${selectedStarships.length} starships`);
+        setSelectedStarships([]);
+      }
+    } catch (error) {
+      console.error('Error updating manufacturers:', error);
+    }
+  };
+
+  const handleBatchUpdateFaction = async (factionId: string) => {
+    try {
+      const response = await fetch('/api/starships/update-factions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          starshipIds: selectedStarships,
+          factionId
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh starships after update
+        alert(`Updated faction for ${selectedStarships.length} starships`);
+        setSelectedStarships([]);
+      }
+    } catch (error) {
+      console.error('Error updating factions:', error);
+    }
+  };
+
+  const handleBatchUpdateEdition = async (editionId: string) => {
+    try {
+      const response = await fetch('/api/starships/update-editions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          starshipIds: selectedStarships,
+          editionId
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh starships after update
+        alert(`Updated edition for ${selectedStarships.length} starships`);
+        setSelectedStarships([]);
+      }
+    } catch (error) {
+      console.error('Error updating editions:', error);
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    try {
+      // Create a batch delete endpoint or delete one by one
+      for (const id of selectedStarships) {
+        await fetch(`/api/starships/${id}`, {
+          method: 'DELETE'
+        });
+      }
+      
+      // Refresh starships after deletion
+      alert(`Deleted ${selectedStarships.length} starships`);
+      setSelectedStarships([]);
+    } catch (error) {
+      console.error('Error deleting starships:', error);
+    }
+  };
 
   // Fetch available editions from the API, filtered by franchise
   useEffect(() => {
@@ -292,6 +460,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
         result = result.filter(ship => ship.wishlist);
       } else if (filters.owned === 'on-order') {
         result = result.filter(ship => ship.onOrder);
+      } else if (filters.owned === 'not-interested') {
+        result = result.filter(ship => ship.notInterested);
       }
     }
     
@@ -402,10 +572,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
     }
   };
 
-  const setOwnedFilter = (value: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order') => {
+  const setOwnedFilter = (value: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order' | 'not-interested') => {
     setFilters(prev => ({ ...prev, owned: value }));
-    
-    // Close the dropdown after selection
     setOwnedMenuOpen(false);
   };
 
@@ -480,187 +648,203 @@ const StarshipList: React.FC<StarshipListProps> = ({
     setFilters({ ...filters, franchise: newFranchises });
   };
 
-  // Define columns for the DataTable
-  const columns = [
-    {
-      key: 'issue',
-      header: 'Issue',
-      sortable: true,
-    },
-    {
-      key: 'edition',
-      header: 'Edition',
-      sortable: true,
-    },
-    {
-      key: 'imageUrl',
-      header: 'Image',
-      sortable: false,
-      render: (starship: Starship) => (
-        <div className="flex justify-center">
-          {starship.imageUrl ? (
-            <div className="w-16 h-16 flex items-center justify-center">
-              <img 
-                src={starship.imageUrl} 
-                alt={starship.shipName}
-                className="max-w-full max-h-full object-contain cursor-pointer transition-transform duration-200 hover:scale-110"
-                onClick={(e) => handleImageClick(e, starship.imageUrl, starship.shipName)}
-                title="Click to view larger image"
-              />
-            </div>
-          ) : (
-            <div className="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'shipName',
-      header: 'Ship Name',
-      sortable: true,
-      wrapText: true,
-      className: 'max-w-[200px]',
-      render: (starship: Starship) => (
-        <span className="font-medium">{starship.shipName || 'Unnamed'}</span>
-      ),
-    },
-    {
-      key: 'faction',
-      header: 'Faction',
-      sortable: true,
-    },
-    {
-      key: 'retailPrice',
-      header: 'RRP',
-      sortable: true,
-      render: (starship: Starship) => formatCurrency(starship.retailPrice),
-    },
-    {
-      key: 'purchasePrice',
-      header: 'Purchase',
-      sortable: true,
-      render: (starship: Starship) => formatCurrency(starship.purchasePrice),
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      sortable: true,
-      render: (starship: Starship) => (
-        <div className="flex items-center space-x-2">
-          {/* Owned/Not Owned Icon */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleOwned(starship._id);
-            }}
-            className={`rounded-full p-1 ${
-              starship.owned 
-                ? 'bg-green-100 text-green-600 hover:bg-green-200' 
-                : 'bg-red-100 text-red-600 hover:bg-red-200'
-            }`}
-            title={starship.owned ? "Owned" : "Not Owned"}
-          >
-            {starship.owned ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            )}
-          </button>
-
-          {/* Wishlist/On Order Icon - Only show if not owned */}
-          {!starship.owned && (onCycleStatus || onToggleWishlist) && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onCycleStatus) {
-                  onCycleStatus(starship._id);
-                } else if (onToggleWishlist) {
-                  onToggleWishlist(starship._id);
-                }
-              }}
-              className={`rounded-full p-1 ${
-                starship.onOrder
-                  ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                  : starship.wishlist
-                    ? 'bg-yellow-100 text-yellow-500 hover:bg-yellow-200'
-                    : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-              }`}
-              title={
-                starship.onOrder 
-                  ? "On Order - Click to remove" 
-                  : starship.wishlist 
-                    ? "On Wishlist - Click to mark as on order" 
-                    : "Add to Wishlist"
-              }
-            >
-              {starship.onOrder ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                </svg>
+  // Define columns for the DataTable - modified to use visibleColumns
+  const columns = availableColumns
+    .filter(col => visibleColumns.includes(col.key))
+    .map(col => {
+      if (col.key === 'select') {
+        return {
+          key: col.key,
+          header: (
+            <input
+              type="checkbox"
+              checked={selectedStarships.length === filteredStarships.length && filteredStarships.length > 0}
+              onChange={handleSelectAll}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            />
+          ),
+          sortable: false,
+          render: (starship: Starship) => (
+            <input
+              type="checkbox"
+              checked={selectedStarships.includes(starship._id)}
+              onChange={() => handleSelectionToggle(starship._id)}
+              onClick={(e) => e.stopPropagation()} // Prevent row click when clicking checkbox
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            />
+          )
+        };
+      }
+      
+      if (col.key === 'imageUrl') {
+        return {
+          key: col.key,
+          header: col.label,
+          sortable: false,
+          render: (starship: Starship) => (
+            <div className="flex justify-center">
+              {starship.imageUrl ? (
+                <img
+                  src={starship.imageUrl}
+                  alt={starship.shipName}
+                  className="h-16 w-16 object-contain cursor-pointer"
+                  onClick={(e) => handleImageClick(e, starship.imageUrl, starship.shipName)}
+                />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
+                <div className="h-16 w-16 bg-gray-100 flex items-center justify-center text-gray-400">
+                  No image
+                </div>
               )}
-            </button>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (starship: Starship) => (
-        <div className="flex space-x-2">
-          <button
-            onClick={(e) => {
+            </div>
+          )
+        };
+      }
+
+      // Add status column with interactive buttons
+      if (col.key === 'status') {
+        return {
+          key: col.key,
+          header: 'Status',
+          sortable: false,
+          render: (starship: Starship) => {
+            // Define status cycle functions
+            const handleLeftClick = (e: React.MouseEvent) => {
               e.stopPropagation();
-              onSelectStarship(starship);
-            }}
-            className="p-1 text-indigo-600 hover:text-indigo-900 rounded-full hover:bg-indigo-50"
-            title="View Details"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-          
-          {starship.imageUrl && (
-            <button
-              onClick={(e) => handleImageClick(e, starship.imageUrl, starship.shipName)}
-              className="p-1 text-blue-600 hover:text-blue-900 rounded-full hover:bg-blue-50"
-              title="View Image"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
-          
-          {starship.magazinePdfUrl && (
-            <button
-              onClick={(e) => handlePdfClick(e, starship.magazinePdfUrl, starship.shipName)}
-              className="p-1 text-red-600 hover:text-red-900 rounded-full hover:bg-red-50"
-              title="View PDF"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
-        </div>
-      ),
-    },
-  ];
+              
+              // Always use the cycle-status API for consistent behavior
+              if (onCycleStatus) {
+                onCycleStatus(starship._id, 'forward');
+              }
+            };
+            
+            const handleRightClick = (e: React.MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Always use the cycle-status API for consistent behavior
+              if (onCycleStatus) {
+                onCycleStatus(starship._id, 'backward');
+              }
+            };
+            
+            return (
+              <div className="flex items-center space-x-2">
+                {/* Single status button that cycles through states */}
+                <button
+                  onClick={handleLeftClick}
+                  onContextMenu={handleRightClick}
+                  className={`rounded-full p-2 ${
+                    starship.owned 
+                      ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                      : starship.onOrder
+                        ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        : starship.wishlist
+                          ? 'bg-yellow-100 text-yellow-600 hover:bg-yellow-200'
+                          : starship.notInterested
+                            ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                  title={
+                    starship.owned 
+                      ? "Owned - Left-click to mark as not interested, Right-click to mark as not owned" 
+                      : starship.onOrder
+                        ? "On Order - Left-click to mark as owned, Right-click to return to wishlist"
+                        : starship.wishlist
+                          ? "On Wishlist - Left-click to mark as on order, Right-click to mark as not interested"
+                          : starship.notInterested
+                            ? "Not Interested - Left-click to add to wishlist, Right-click to clear status"
+                            : "Not Owned - Left-click to mark as not interested, Right-click to mark as owned"
+                  }
+                >
+                  {starship.owned ? (
+                    // Green check for owned
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  ) : starship.onOrder ? (
+                    // Blue arrow for on order
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                  ) : starship.wishlist ? (
+                    // Yellow star for wishlist
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ) : starship.notInterested ? (
+                    // Red X for not interested
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    // Gray star outline for not owned
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                  )}
+                </button>
+                
+                {/* Priority Badge - Show if on wishlist */}
+                {starship.wishlist && starship.wishlistPriority && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                    P{starship.wishlistPriority}
+                  </span>
+                )}
+              </div>
+            );
+          }
+        };
+      }
+      
+      // Add price column with retail and purchase price
+      if (col.key === 'price') {
+        return {
+          key: col.key,
+          header: 'Price',
+          sortable: true,
+          render: (starship: Starship) => (
+            <div className="flex flex-col space-y-1">
+              {starship.retailPrice !== undefined && (
+                <div className="flex items-center">
+                  <span className="text-xs font-medium text-gray-500 mr-1">RRP:</span>
+                  <span className="text-sm">{formatCurrency(starship.retailPrice)}</span>
+                </div>
+              )}
+              
+              {starship.purchasePrice !== undefined && (
+                <div className="flex items-center">
+                  <span className="text-xs font-medium text-gray-500 mr-1">Paid:</span>
+                  <span className={`text-sm ${
+                    starship.retailPrice !== undefined && starship.purchasePrice < starship.retailPrice 
+                      ? 'text-green-600' 
+                      : starship.retailPrice !== undefined && starship.purchasePrice > starship.retailPrice
+                        ? 'text-red-600'
+                        : ''
+                  }`}>
+                    {formatCurrency(starship.purchasePrice)}
+                  </span>
+                </div>
+              )}
+              
+              {starship.marketValue !== undefined && (
+                <div className="flex items-center">
+                  <span className="text-xs font-medium text-gray-500 mr-1">Market:</span>
+                  <span className="text-sm text-blue-600">{formatCurrency(starship.marketValue)}</span>
+                </div>
+              )}
+            </div>
+          )
+        };
+      }
+      
+      // Add other special column renderers here
+      
+      return {
+        key: col.key,
+        header: col.label,
+        sortable: true
+      };
+    });
 
   // Edition Tabs rendering
   const renderEditionTabs = () => {
@@ -795,7 +979,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
                    filters.owned === 'owned' ? 'Owned' : 
                    filters.owned === 'not-owned' ? 'Not Owned' :
                    filters.owned === 'wishlist' ? 'Wishlist' :
-                   filters.owned === 'on-order' ? 'On Order' : 'All'}
+                   filters.owned === 'on-order' ? 'On Order' : 
+                   filters.owned === 'not-interested' ? 'Not Interested' : 'All'}
                   <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
@@ -881,6 +1066,21 @@ const StarshipList: React.FC<StarshipListProps> = ({
                         On Order Only
                       </span>
                     </button>
+                    <button
+                      className={`${
+                        filters.owned === 'not-interested' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
+                      role="menuitem"
+                      tabIndex={-1}
+                      onClick={() => setOwnedFilter('not-interested')}
+                    >
+                      <span className="flex items-center">
+                        <svg className="mr-2 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        Not Interested Only
+                      </span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -918,305 +1118,14 @@ const StarshipList: React.FC<StarshipListProps> = ({
           </div>
         </div>
         
-        {/* Edition Tabs */}
-        {renderEditionTabs()}
-        
-        {/* Data Table */}
-        <div className="w-full overflow-hidden mt-4">
-          <DataTable
-            data={filteredStarships}
-            columns={columns}
-            keyField="_id"
-            onRowClick={onSelectStarship}
-            sortConfig={{
-              key: sortConfig.key as keyof Starship,
-              direction: sortConfig.direction
-            }}
-            onSort={handleSort}
-            emptyMessage="No starships found. Try adjusting your search or filters."
-          />
-          
-          {filteredStarships.length === 0 && (
-            <div className="text-center p-8 bg-gray-50 rounded-lg mt-4">
-              <p className="text-gray-500">No starships match your current filters.</p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Image Modal */}
-      {showImageModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowImageModal(false)}></div>
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      {selectedShipName}
-                    </h3>
-                    <div className="mt-2">
-                      {selectedImage && (
-                        <img 
-                          src={selectedImage} 
-                          alt={selectedShipName} 
-                          className="max-w-full max-h-[70vh] mx-auto object-contain"
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button 
-                  type="button" 
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={() => setShowImageModal(false)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* PDF Viewer Modal */}
-      {showPdfViewer && selectedPdfUrl && (
-        <PdfViewer
-          pdfUrl={selectedPdfUrl || ''}
-          title={selectedPdfTitle}
-          onClose={() => setShowPdfViewer(false)}
+        {/* Add CustomViewManager component here */}
+        <CustomViewManager
+          availableColumns={availableColumns}
+          onViewSelect={handleViewSelect}
+          currentColumns={visibleColumns}
+          currentFilters={filters}
+          currentSortConfig={sortConfig}
         />
-      )}
-    </div>
-  );
-
-
-  return (
-    <div className="space-y-4">
-      {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search ships..."
-                value={filters.search}
-                onChange={handleSearchChange}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-            
-            {/* Faction Filter */}
-            <div className="relative inline-block text-left">
-              <div>
-                <button
-                  type="button"
-                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  id="faction-menu-button"
-                  aria-expanded="true"
-                  aria-haspopup="true"
-                  onClick={() => setFactionMenuOpen(!factionMenuOpen)}
-                >
-                  Faction
-                  {filters.faction.length > 0 && (
-                    <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                      {filters.faction.length}
-                    </span>
-                  )}
-                  <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-              
-              {factionMenuOpen && (
-                <div
-                  className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="faction-menu-button"
-                  tabIndex={-1}
-                >
-                  <div className="py-1" role="none">
-                    <button
-                      className={`${
-                        filters.faction.length === 0 ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                      role="menuitem"
-                      tabIndex={-1}
-                      onClick={() => {
-                        setFilters(prev => ({ ...prev, faction: [] }));
-                        setFactionMenuOpen(false);
-                      }}
-                    >
-                      All Factions
-                    </button>
-                    {availableFactions.map(faction => (
-                      <button
-                        key={faction}
-                        className={`${
-                          filters.faction.includes(faction) ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                        } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                        role="menuitem"
-                        tabIndex={-1}
-                        onClick={() => toggleFactionFilter(faction)}
-                      >
-                        {faction}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Status Filter (formerly Owned Filter) */}
-            <div className="relative inline-block text-left">
-              <div>
-                <button
-                  type="button"
-                  className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  id="status-menu-button"
-                  aria-expanded="true"
-                  aria-haspopup="true"
-                  onClick={() => setOwnedMenuOpen(!ownedMenuOpen)}
-                >
-                  Status: {filters.owned === 'all' ? 'All' : 
-                   filters.owned === 'owned' ? 'Owned' : 
-                   filters.owned === 'not-owned' ? 'Not Owned' :
-                   filters.owned === 'wishlist' ? 'Wishlist' :
-                   filters.owned === 'on-order' ? 'On Order' : 'All'}
-                  <svg className="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-              
-              {ownedMenuOpen && (
-                <div
-                  className="origin-top-right absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="status-menu-button"
-                  tabIndex={-1}
-                >
-                  <div className="py-1" role="none">
-                    <button
-                      className={`${
-                        filters.owned === 'all' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                      role="menuitem"
-                      tabIndex={-1}
-                      onClick={() => setOwnedFilter('all')}
-                    >
-                      All Ships
-                    </button>
-                    <button
-                      className={`${
-                        filters.owned === 'owned' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                      role="menuitem"
-                      tabIndex={-1}
-                      onClick={() => setOwnedFilter('owned')}
-                    >
-                      <span className="flex items-center">
-                        <svg className="mr-2 h-4 w-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        Owned Only
-                      </span>
-                    </button>
-                    <button
-                      className={`${
-                        filters.owned === 'not-owned' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                      role="menuitem"
-                      tabIndex={-1}
-                      onClick={() => setOwnedFilter('not-owned')}
-                    >
-                      <span className="flex items-center">
-                        <svg className="mr-2 h-4 w-4 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        Not Owned Only
-                      </span>
-                    </button>
-                    <button
-                      className={`${
-                        filters.owned === 'wishlist' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                      role="menuitem"
-                      tabIndex={-1}
-                      onClick={() => setOwnedFilter('wishlist')}
-                    >
-                      <span className="flex items-center">
-                        <svg className="mr-2 h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        Wishlist Only
-                      </span>
-                    </button>
-                    <button
-                      className={`${
-                        filters.owned === 'on-order' ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
-                      } block px-4 py-2 text-sm w-full text-left hover:bg-gray-50`}
-                      role="menuitem"
-                      tabIndex={-1}
-                      onClick={() => setOwnedFilter('on-order')}
-                    >
-                      <span className="flex items-center">
-                        <svg className="mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                        </svg>
-                        On Order Only
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Stats */}
-          <div className="flex flex-col items-end">
-            <div className="flex space-x-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                <svg className="w-4 h-4 mr-1 text-indigo-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
-                </svg>
-                {filteredStarships.length} ships
-              </span>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                <svg className="w-4 h-4 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                </svg>
-                {filteredStarships.filter(s => s.owned).length} owned
-              </span>
-            </div>
-            <div className="mt-2 w-full">
-              <div className="text-sm flex justify-between mb-1">
-                <span>Collection Progress</span>
-                <span>{Math.round((filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100)}%</span>
-              </div>
-              <div className="w-64 bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-green-500 h-2.5 rounded-full" 
-                  style={{ width: `${(filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
         
         {/* Edition Tabs */}
         {renderEditionTabs()}
@@ -1224,16 +1133,13 @@ const StarshipList: React.FC<StarshipListProps> = ({
         {/* Data Table */}
         <div className="w-full overflow-hidden mt-4">
           <DataTable
-            data={filteredStarships}
             columns={columns}
+            data={filteredStarships}
             keyField="_id"
             onRowClick={onSelectStarship}
-            sortConfig={{
-              key: sortConfig.key as keyof Starship,
-              direction: sortConfig.direction
-            }}
             onSort={handleSort}
-            emptyMessage="No starships found. Try adjusting your search or filters."
+            sortConfig={sortConfig}
+            emptyMessage="No starships found matching your criteria."
           />
           
           {filteredStarships.length === 0 && (
@@ -1291,6 +1197,19 @@ const StarshipList: React.FC<StarshipListProps> = ({
           onClose={() => setShowPdfViewer(false)}
         />
       )}
+      
+      {/* Add BatchActionManager for multi-selection actions */}
+      <BatchActionManager
+        selectedItems={selectedStarships}
+        onClearSelection={() => setSelectedStarships([])}
+        onBatchUpdateManufacturer={handleBatchUpdateManufacturer}
+        onBatchUpdateFaction={handleBatchUpdateFaction}
+        onBatchUpdateEdition={handleBatchUpdateEdition}
+        onBatchDelete={handleBatchDelete}
+        availableManufacturers={availableManufacturers}
+        availableFactions={availableFactions.map(f => ({ _id: f, name: f }))}
+        availableEditions={availableEditions.map(e => ({ _id: e, name: editionDisplayNames[e] || e }))}
+      />
     </div>
   );
 };

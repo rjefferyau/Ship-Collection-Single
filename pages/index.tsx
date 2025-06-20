@@ -224,10 +224,14 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleCycleStatus = async (id: string) => {
+  const handleCycleStatus = async (id: string, direction: string = 'forward') => {
     try {
       const response = await fetch(`/api/starships/${id}/cycle-status`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ direction })
       });
       
       if (!response.ok) {
@@ -245,7 +249,9 @@ const Home: React.FC = () => {
             wishlistPriority: result.data.wishlistPriority,
             onOrder: result.data.onOrder,
             orderDate: result.data.orderDate,
-            pricePaid: result.data.pricePaid
+            pricePaid: result.data.pricePaid,
+            owned: result.data.owned,
+            notInterested: result.data.notInterested
           } : ship
         )
       );
@@ -258,7 +264,9 @@ const Home: React.FC = () => {
           wishlistPriority: result.data.wishlistPriority,
           onOrder: result.data.onOrder,
           orderDate: result.data.orderDate,
-          pricePaid: result.data.pricePaid
+          pricePaid: result.data.pricePaid,
+          owned: result.data.owned,
+          notInterested: result.data.notInterested
         } : null);
       }
     } catch (err) {

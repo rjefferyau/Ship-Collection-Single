@@ -24,6 +24,7 @@ export interface Starship {
   wishlist: boolean;
   wishlistPriority?: number;
   onOrder: boolean;
+  notInterested: boolean;
   pricePaid?: number;
   orderDate?: Date;
   retailPrice?: number;
@@ -56,5 +57,5 @@ export interface Filters {
   edition: string[];
   collectionType: string[];
   franchise: string[];
-  owned: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order';
+  owned: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order' | 'not-interested';
 } 

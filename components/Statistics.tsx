@@ -12,15 +12,17 @@ interface Item {
   releaseDate?: Date;
   imageUrl?: string;
   owned: boolean;
+  onOrder: boolean;
 }
 
 interface StatisticsProps {
   totalItems: number;
   ownedItems: number;
-  factionBreakdown: { [key: string]: { total: number; owned: number } };
-  editionBreakdown: { [key: string]: { total: number; owned: number } };
-  collectionTypeBreakdown: { [key: string]: { total: number; owned: number } };
-  franchiseBreakdown: { [key: string]: { total: number; owned: number } };
+  orderedItems: number;
+  factionBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
+  editionBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
+  collectionTypeBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
+  franchiseBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
   viewMode?: 'all' | 'editions' | 'factions' | 'summary' | 'collectionTypes' | 'franchises';
   selectedCollectionType?: string;
   selectedFranchise?: string;
@@ -31,6 +33,7 @@ type SortOption = 'total-desc' | 'total-asc' | 'owned-desc' | 'owned-asc' | 'per
 const Statistics: React.FC<StatisticsProps> = ({
   totalItems,
   ownedItems,
+  orderedItems,
   factionBreakdown,
   editionBreakdown,
   collectionTypeBreakdown,
@@ -156,16 +159,26 @@ const Statistics: React.FC<StatisticsProps> = ({
       const data = await response.json();
       const items = data.data || [];
       
-      // Filter for missing items (not owned) of the selected edition or faction
+      // Filter for missing items (not owned and not on order) of the selected edition or faction
       const filtered = items.filter((item: Item) => {
         if (type === 'edition') {
-          return item.edition === name && !item.owned;
+          return item.edition === name && !item.owned && !item.onOrder;
         } else {
-          return item.faction === name && !item.owned;
+          return item.faction === name && !item.owned && !item.onOrder;
         }
       });
       
-      setMissingItems(filtered);
+      // Also get items on order
+      const orderedItems = items.filter((item: Item) => {
+        if (type === 'edition') {
+          return item.edition === name && !item.owned && item.onOrder;
+        } else {
+          return item.faction === name && !item.owned && item.onOrder;
+        }
+      });
+      
+      // Combine items, with ordered items first
+      setMissingItems([...orderedItems, ...filtered]);
       setSelectedTitle(name);
       setShowMissingItemsModal(true);
     } catch (err) {
@@ -187,10 +200,12 @@ const Statistics: React.FC<StatisticsProps> = ({
 
   // Update the summary section
   const renderSummary = () => {
+    // Calculate percentages
     const ownedPercentage = totalItems > 0 ? (ownedItems / totalItems) * 100 : 0;
+    const completionPercentage = totalItems > 0 ? ((ownedItems + orderedItems) / totalItems) * 100 : 0;
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
@@ -217,20 +232,38 @@ const Statistics: React.FC<StatisticsProps> = ({
         
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center">
+            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+              <FontAwesomeIcon icon={faCube} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">On Order</p>
+              <p className="text-2xl font-semibold text-gray-800">{orderedItems}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center">
             <div className="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
               <FontAwesomeIcon icon={faPercentage} className="text-xl" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">Collection Completion</p>
-              <p className="text-2xl font-semibold text-gray-800">{ownedPercentage.toFixed(1)}%</p>
+              <p className="text-2xl font-semibold text-gray-800">{completionPercentage.toFixed(1)}%</p>
             </div>
           </div>
           <div className="mt-4">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className={`h-2.5 rounded-full ${getProgressVariant(ownedPercentage)}`}
-                style={{ width: `${ownedPercentage}%` }}
-              ></div>
+              <div className="flex h-2.5">
+                <div 
+                  className={`h-2.5 rounded-l-full ${getProgressVariant(ownedPercentage)}`}
+                  style={{ width: `${ownedPercentage}%` }}
+                ></div>
+                <div 
+                  className="h-2.5 bg-yellow-500"
+                  style={{ width: `${completionPercentage - ownedPercentage}%` }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>
@@ -287,8 +320,12 @@ const Statistics: React.FC<StatisticsProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sortedEditions.map(([edition, data]) => {
-              const percentage = data.total > 0 
+              const ownedPercentage = data.total > 0 
                 ? Math.round((data.owned / data.total) * 100) 
+                : 0;
+              
+              const totalPercentage = data.total > 0
+                ? Math.round(((data.owned + data.ordered) / data.total) * 100)
                 : 0;
                 
               return (
@@ -299,23 +336,34 @@ const Statistics: React.FC<StatisticsProps> = ({
                         <span 
                           className="text-truncate cursor-pointer" 
                           onClick={() => handleEditionClick(edition)}
-                          title={`View missing items in ${edition}`}
+                          title={`View missing & ordered items in ${edition}`}
                         >
                           {edition}
                         </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {percentage}%
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalPercentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                          {totalPercentage}%
                         </span>
                       </h6>
                       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                        <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                        <div className="flex h-2">
+                          <div 
+                            className={`h-2 ${getProgressVariant(ownedPercentage)}`} 
+                            style={{ width: `${ownedPercentage}%` }}
+                          ></div>
+                          {data.ordered > 0 && (
+                            <div 
+                              className="h-2 bg-yellow-500" 
+                              style={{ width: `${(data.ordered / data.total) * 100}%` }}
+                            ></div>
+                          )}
+                        </div>
                       </div>
                       <div className="flex justify-between items-center">
                         <small className="text-gray-500">
-                          <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                          <strong>{data.owned}</strong>{data.ordered > 0 && <span>, <strong>{data.ordered}</strong> ordered</span>} of <strong>{data.total}</strong>
                         </small>
                         <small className="text-gray-500">
-                          {data.total - data.owned} missing
+                          {data.total - data.owned - data.ordered > 0 ? `${data.total - data.owned - data.ordered} missing` : 'Complete!'}
                         </small>
                       </div>
                     </div>
@@ -339,6 +387,16 @@ const Statistics: React.FC<StatisticsProps> = ({
       {(viewMode === 'all' || viewMode === 'summary') && (
         <>
           {renderSummary()}
+          <div className="flex justify-center items-center mb-6 gap-4 text-sm">
+            <div className="flex items-center">
+              <div className="w-4 h-4 rounded bg-blue-500 mr-2"></div>
+              <span>Owned</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 rounded bg-yellow-500 mr-2"></div>
+              <span>On Order</span>
+            </div>
+          </div>
         </>
       )}
       
@@ -392,8 +450,12 @@ const Statistics: React.FC<StatisticsProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedFactions.map(([faction, data]) => {
-                const percentage = data.total > 0 
+                const ownedPercentage = data.total > 0 
                   ? Math.round((data.owned / data.total) * 100) 
+                  : 0;
+                  
+                const totalPercentage = data.total > 0
+                  ? Math.round(((data.owned + data.ordered) / data.total) * 100)
                   : 0;
                   
                 return (
@@ -404,23 +466,34 @@ const Statistics: React.FC<StatisticsProps> = ({
                           <span 
                             className="text-truncate cursor-pointer" 
                             onClick={() => handleFactionClick(faction)}
-                            title={`View missing items in ${faction}`}
+                            title={`View missing & ordered items in ${faction}`}
                           >
                             {faction}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {percentage}%
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalPercentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {totalPercentage}%
                           </span>
                         </h6>
                         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                          <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                          <div className="flex h-2">
+                            <div 
+                              className={`h-2 ${getProgressVariant(ownedPercentage)}`} 
+                              style={{ width: `${ownedPercentage}%` }}
+                            ></div>
+                            {data.ordered > 0 && (
+                              <div 
+                                className="h-2 bg-yellow-500" 
+                                style={{ width: `${(data.ordered / data.total) * 100}%` }}
+                              ></div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex justify-between items-center">
                           <small className="text-gray-500">
-                            <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                            <strong>{data.owned}</strong>{data.ordered > 0 && <span>, <strong>{data.ordered}</strong> ordered</span>} of <strong>{data.total}</strong>
                           </small>
                           <small className="text-gray-500">
-                            {data.total - data.owned} missing
+                            {data.total - data.owned - data.ordered > 0 ? `${data.total - data.owned - data.ordered} missing` : 'Complete!'}
                           </small>
                         </div>
                       </div>
@@ -480,8 +553,12 @@ const Statistics: React.FC<StatisticsProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedCollectionTypes.map(([collectionType, data]) => {
-                const percentage = data.total > 0 
+                const ownedPercentage = data.total > 0 
                   ? Math.round((data.owned / data.total) * 100) 
+                  : 0;
+                  
+                const totalPercentage = data.total > 0
+                  ? Math.round(((data.owned + data.ordered) / data.total) * 100)
                   : 0;
                   
                 return (
@@ -492,19 +569,30 @@ const Statistics: React.FC<StatisticsProps> = ({
                           <span className="text-truncate">
                             {collectionType}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {percentage}%
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalPercentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {totalPercentage}%
                           </span>
                         </h6>
                         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                          <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                          <div className="flex h-2">
+                            <div 
+                              className={`h-2 ${getProgressVariant(ownedPercentage)}`} 
+                              style={{ width: `${ownedPercentage}%` }}
+                            ></div>
+                            {data.ordered > 0 && (
+                              <div 
+                                className="h-2 bg-yellow-500" 
+                                style={{ width: `${(data.ordered / data.total) * 100}%` }}
+                              ></div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex justify-between items-center">
                           <small className="text-gray-500">
-                            <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                            <strong>{data.owned}</strong>{data.ordered > 0 && <span>, <strong>{data.ordered}</strong> ordered</span>} of <strong>{data.total}</strong>
                           </small>
                           <small className="text-gray-500">
-                            {data.total - data.owned} missing
+                            {data.total - data.owned - data.ordered > 0 ? `${data.total - data.owned - data.ordered} missing` : 'Complete!'}
                           </small>
                         </div>
                       </div>
@@ -564,8 +652,12 @@ const Statistics: React.FC<StatisticsProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sortedFranchises.map(([franchise, data]) => {
-                const percentage = data.total > 0 
+                const ownedPercentage = data.total > 0 
                   ? Math.round((data.owned / data.total) * 100) 
+                  : 0;
+                  
+                const totalPercentage = data.total > 0
+                  ? Math.round(((data.owned + data.ordered) / data.total) * 100)
                   : 0;
                   
                 return (
@@ -576,19 +668,30 @@ const Statistics: React.FC<StatisticsProps> = ({
                           <span className="text-truncate">
                             {franchise}
                           </span>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                            {percentage}%
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalPercentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {totalPercentage}%
                           </span>
                         </h6>
                         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                          <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                          <div className="flex h-2">
+                            <div 
+                              className={`h-2 ${getProgressVariant(ownedPercentage)}`} 
+                              style={{ width: `${ownedPercentage}%` }}
+                            ></div>
+                            {data.ordered > 0 && (
+                              <div 
+                                className="h-2 bg-yellow-500" 
+                                style={{ width: `${(data.ordered / data.total) * 100}%` }}
+                              ></div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex justify-between items-center">
                           <small className="text-gray-500">
-                            <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                            <strong>{data.owned}</strong>{data.ordered > 0 && <span>, <strong>{data.ordered}</strong> ordered</span>} of <strong>{data.total}</strong>
                           </small>
                           <small className="text-gray-500">
-                            {data.total - data.owned} missing
+                            {data.total - data.owned - data.ordered > 0 ? `${data.total - data.owned - data.ordered} missing` : 'Complete!'}
                           </small>
                         </div>
                       </div>
@@ -626,8 +729,12 @@ const Statistics: React.FC<StatisticsProps> = ({
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {sortedFactions.map(([faction, data]) => {
-                          const percentage = data.total > 0 
+                          const ownedPercentage = data.total > 0 
                             ? Math.round((data.owned / data.total) * 100) 
+                            : 0;
+                            
+                          const totalPercentage = data.total > 0
+                            ? Math.round(((data.owned + data.ordered) / data.total) * 100)
                             : 0;
                             
                           return (
@@ -638,23 +745,34 @@ const Statistics: React.FC<StatisticsProps> = ({
                                     <span 
                                       className="text-truncate cursor-pointer" 
                                       onClick={() => handleFactionClick(faction)}
-                                      title={`View missing items in ${faction}`}
+                                      title={`View missing & ordered items in ${faction}`}
                                     >
                                       {faction}
                                     </span>
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${percentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                                      {percentage}%
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${totalPercentage === 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                                      {totalPercentage}%
                                     </span>
                                   </h6>
                                   <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                                    <div className={`h-2 ${getProgressVariant(percentage)}`} style={{ width: `${percentage}%` }}></div>
+                                    <div className="flex h-2">
+                                      <div 
+                                        className={`h-2 ${getProgressVariant(ownedPercentage)}`} 
+                                        style={{ width: `${ownedPercentage}%` }}
+                                      ></div>
+                                      {data.ordered > 0 && (
+                                        <div 
+                                          className="h-2 bg-yellow-500" 
+                                          style={{ width: `${(data.ordered / data.total) * 100}%` }}
+                                        ></div>
+                                      )}
+                                    </div>
                                   </div>
                                   <div className="flex justify-between items-center">
                                     <small className="text-gray-500">
-                                      <strong>{data.owned}</strong> of <strong>{data.total}</strong> owned
+                                      <strong>{data.owned}</strong>{data.ordered > 0 && <span>, <strong>{data.ordered}</strong> ordered</span>} of <strong>{data.total}</strong>
                                     </small>
                                     <small className="text-gray-500">
-                                      {data.total - data.owned} missing
+                                      {data.total - data.owned - data.ordered > 0 ? `${data.total - data.owned - data.ordered} missing` : 'Complete!'}
                                     </small>
                                   </div>
                                 </div>
@@ -697,13 +815,13 @@ const Statistics: React.FC<StatisticsProps> = ({
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Missing Items - {selectedTitle}
+                      Missing & Ordered Items - {selectedTitle}
                     </h3>
                     <div className="mt-4">
                       {missingItemsLoading ? (
                         <div className="flex justify-center items-center h-64">
                           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                          <span className="ml-3 text-gray-600">Loading missing items...</span>
+                          <span className="ml-3 text-gray-600">Loading missing & ordered items...</span>
                         </div>
                       ) : missingItemsError ? (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -713,7 +831,7 @@ const Statistics: React.FC<StatisticsProps> = ({
                       ) : missingItems.length === 0 ? (
                         <div className="text-center py-8">
                           <FontAwesomeIcon icon={faExclamationTriangle} size="2x" className="text-yellow-500 mb-2" />
-                          <p className="text-gray-600">No missing items found for this selection.</p>
+                          <p className="text-gray-600">No missing or ordered items found for this selection.</p>
                         </div>
                       ) : (
                         <div className="mt-4 overflow-x-auto">
@@ -724,6 +842,7 @@ const Statistics: React.FC<StatisticsProps> = ({
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edition</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faction</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
@@ -733,6 +852,17 @@ const Statistics: React.FC<StatisticsProps> = ({
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.issue}</td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.edition}</td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.faction}</td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                    {item.onOrder ? (
+                                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        On Order
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Missing
+                                      </span>
+                                    )}
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>

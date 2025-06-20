@@ -11,16 +11,18 @@ const Statistics = dynamic(() => import('../components/Statistics'), {
 interface StatisticsData {
   totalItems: number;
   ownedItems: number;
-  factionBreakdown: { [key: string]: { total: number; owned: number } };
-  editionBreakdown: { [key: string]: { total: number; owned: number } };
-  collectionTypeBreakdown: { [key: string]: { total: number; owned: number } };
-  franchiseBreakdown: { [key: string]: { total: number; owned: number } };
+  orderedItems: number;
+  factionBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
+  editionBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
+  collectionTypeBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
+  franchiseBreakdown: { [key: string]: { total: number; owned: number; ordered: number } };
 }
 
 const StatisticsPage: React.FC = () => {
   const [statistics, setStatistics] = useState<StatisticsData>({
     totalItems: 0,
     ownedItems: 0,
+    orderedItems: 0,
     factionBreakdown: {},
     editionBreakdown: {},
     collectionTypeBreakdown: {},
@@ -104,62 +106,72 @@ const StatisticsPage: React.FC = () => {
       // Calculate statistics
       const totalItems = items.length;
       const ownedItems = items.filter((item: any) => item.owned).length;
+      const orderedItems = items.filter((item: any) => item.onOrder && !item.owned).length;
       
       // Calculate faction breakdown
-      const factionBreakdown: { [key: string]: { total: number; owned: number } } = {};
+      const factionBreakdown: { [key: string]: { total: number; owned: number; ordered: number } } = {};
       items.forEach((item: any) => {
         const faction = item.faction;
         if (!factionBreakdown[faction]) {
-          factionBreakdown[faction] = { total: 0, owned: 0 };
+          factionBreakdown[faction] = { total: 0, owned: 0, ordered: 0 };
         }
         factionBreakdown[faction].total++;
         if (item.owned) {
           factionBreakdown[faction].owned++;
+        } else if (item.onOrder) {
+          factionBreakdown[faction].ordered++;
         }
       });
       
       // Calculate edition breakdown
-      const editionBreakdown: { [key: string]: { total: number; owned: number } } = {};
+      const editionBreakdown: { [key: string]: { total: number; owned: number; ordered: number } } = {};
       items.forEach((item: any) => {
         const edition = item.edition;
         if (!editionBreakdown[edition]) {
-          editionBreakdown[edition] = { total: 0, owned: 0 };
+          editionBreakdown[edition] = { total: 0, owned: 0, ordered: 0 };
         }
         editionBreakdown[edition].total++;
         if (item.owned) {
           editionBreakdown[edition].owned++;
+        } else if (item.onOrder) {
+          editionBreakdown[edition].ordered++;
         }
       });
       
       // Calculate collection type breakdown
-      const collectionTypeBreakdown: { [key: string]: { total: number; owned: number } } = {};
+      const collectionTypeBreakdown: { [key: string]: { total: number; owned: number; ordered: number } } = {};
       items.forEach((item: any) => {
         const collectionType = item.collectionType || 'Unknown';
         if (!collectionTypeBreakdown[collectionType]) {
-          collectionTypeBreakdown[collectionType] = { total: 0, owned: 0 };
+          collectionTypeBreakdown[collectionType] = { total: 0, owned: 0, ordered: 0 };
         }
         collectionTypeBreakdown[collectionType].total++;
         if (item.owned) {
           collectionTypeBreakdown[collectionType].owned++;
+        } else if (item.onOrder) {
+          collectionTypeBreakdown[collectionType].ordered++;
         }
       });
       
       // Calculate franchise breakdown
-      const franchiseBreakdown: { [key: string]: { total: number; owned: number } } = {};
+      const franchiseBreakdown: { [key: string]: { total: number; owned: number; ordered: number } } = {};
       items.forEach((item: any) => {
         const franchise = item.franchise || 'Unknown';
         if (!franchiseBreakdown[franchise]) {
-          franchiseBreakdown[franchise] = { total: 0, owned: 0 };
+          franchiseBreakdown[franchise] = { total: 0, owned: 0, ordered: 0 };
         }
         franchiseBreakdown[franchise].total++;
         if (item.owned) {
           franchiseBreakdown[franchise].owned++;
+        } else if (item.onOrder) {
+          franchiseBreakdown[franchise].ordered++;
         }
       });
       
       setStatistics({
         totalItems,
         ownedItems,
+        orderedItems,
         factionBreakdown,
         editionBreakdown,
         collectionTypeBreakdown,
@@ -203,6 +215,7 @@ const StatisticsPage: React.FC = () => {
           <Statistics
             totalItems={statistics.totalItems}
             ownedItems={statistics.ownedItems}
+            orderedItems={statistics.orderedItems}
             factionBreakdown={statistics.factionBreakdown}
             editionBreakdown={statistics.editionBreakdown}
             collectionTypeBreakdown={statistics.collectionTypeBreakdown}

@@ -7,6 +7,9 @@ interface Column<T> {
   sortable?: boolean;
   className?: string;
   wrapText?: boolean;
+  alignment?: 'left' | 'center' | 'right';
+  width?: string;
+  order?: number;
 }
 
 interface DataTableProps<T> {
@@ -31,6 +34,14 @@ function DataTable<T>({
   sortConfig,
   emptyMessage = 'No data available'
 }: DataTableProps<T>) {
+  // Sort columns by order if available
+  const orderedColumns = [...columns].sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    return 0;
+  });
+
   const getSortIcon = (key: string) => {
     if (!sortConfig || sortConfig.key !== key) {
       return (
@@ -55,6 +66,18 @@ function DataTable<T>({
     );
   };
 
+  const getColumnAlignment = (column: Column<T>) => {
+    switch (column.alignment) {
+      case 'center':
+        return 'text-center';
+      case 'right':
+        return 'text-right';
+      case 'left':
+      default:
+        return 'text-left';
+    }
+  };
+
   return (
     <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/50 bg-white backdrop-blur-sm">
       <div className="overflow-x-auto">
@@ -62,22 +85,23 @@ function DataTable<T>({
           {/* Modern Table Header */}
           <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
             <tr>
-              {columns.map((column, index) => (
+              {orderedColumns.map((column, index) => (
                 <th
                   key={column.key.toString()}
                   scope="col"
-                  className={`group px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider transition-all duration-200 ${
+                  className={`group px-6 py-4 ${getColumnAlignment(column)} text-xs font-bold text-gray-700 uppercase tracking-wider transition-all duration-200 ${
                     column.sortable 
                       ? 'hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 cursor-pointer' 
                       : ''
-                  } ${index === 0 ? 'rounded-tl-2xl' : ''} ${index === columns.length - 1 ? 'rounded-tr-2xl' : ''} ${column.className || ''}`}
+                  } ${index === 0 ? 'rounded-tl-2xl' : ''} ${index === orderedColumns.length - 1 ? 'rounded-tr-2xl' : ''} ${column.className || ''}`}
                   onClick={() => {
                     if (column.sortable && onSort) {
                       onSort(column.key as keyof T);
                     }
                   }}
+                  style={column.width ? { width: column.width } : {}}
                 >
-                  <div className="flex items-center space-x-2">
+                  <div className={`flex items-center ${column.alignment === 'center' ? 'justify-center' : column.alignment === 'right' ? 'justify-end' : 'justify-start'} space-x-2`}>
                     <span className="group-hover:text-indigo-700 transition-colors duration-200">{column.header}</span>
                     {column.sortable && (
                       <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/50 group-hover:bg-white/80 transition-all duration-200">
@@ -103,12 +127,12 @@ function DataTable<T>({
                       : ''
                   } ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
                 >
-                  {columns.map((column, colIndex) => (
+                  {orderedColumns.map((column, colIndex) => (
                     <td
                       key={`${String(item[keyField])}-${column.key.toString()}`}
                       className={`px-6 py-4 text-sm transition-all duration-200 ${
                         column.wrapText ? 'break-words' : 'whitespace-nowrap'
-                      } ${colIndex === 0 ? 'font-medium text-gray-900' : 'text-gray-700'} ${
+                      } ${getColumnAlignment(column)} ${colIndex === 0 ? 'font-medium text-gray-900' : 'text-gray-700'} ${
                         onRowClick ? 'group-hover:text-gray-900' : ''
                       } ${column.className || ''}`}
                     >
@@ -119,7 +143,7 @@ function DataTable<T>({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-6 py-16 text-center">
+                <td colSpan={orderedColumns.length} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4">
                     <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full">
                       <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

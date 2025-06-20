@@ -2,42 +2,42 @@ import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faTag, faBuilding, faFlag } from '@fortawesome/free-solid-svg-icons';
 
-interface BatchActionManagerProps {
-  selectedItems: string[];
+export interface BatchActionManagerProps {
+  selectedCount: number;
   onClearSelection: () => void;
-  onBatchUpdateManufacturer: (manufacturerId: string) => void;
-  onBatchUpdateFaction: (factionId: string) => void;
-  onBatchUpdateEdition: (editionId: string) => void;
-  onBatchDelete: () => void;
-  availableManufacturers: { _id: string; name: string }[];
-  availableFactions: { _id: string; name: string }[];
-  availableEditions: { _id: string; name: string }[];
+  onUpdateManufacturer: (manufacturerId: string) => void;
+  onUpdateFaction: (factionId: string) => void;
+  onUpdateEdition: (editionId: string) => void;
+  onDelete: () => void;
+  manufacturers: any[];
+  factions: string[];
+  editions: string[];
 }
 
 const BatchActionManager: React.FC<BatchActionManagerProps> = ({
-  selectedItems,
+  selectedCount,
   onClearSelection,
-  onBatchUpdateManufacturer,
-  onBatchUpdateFaction,
-  onBatchUpdateEdition,
-  onBatchDelete,
-  availableManufacturers,
-  availableFactions,
-  availableEditions
+  onUpdateManufacturer,
+  onUpdateFaction,
+  onUpdateEdition,
+  onDelete,
+  manufacturers,
+  factions,
+  editions
 }) => {
   const [showManufacturerDropdown, setShowManufacturerDropdown] = useState(false);
   const [showFactionDropdown, setShowFactionDropdown] = useState(false);
   const [showEditionDropdown, setShowEditionDropdown] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  if (selectedItems.length === 0) return null;
+  if (selectedCount === 0) return null;
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 z-40">
-      <div className="container mx-auto flex items-center justify-between">
+    <div className="bg-white border border-gray-200 shadow-md rounded-lg p-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center">
           <span className="font-medium text-gray-700 mr-2">
-            {selectedItems.length} items selected
+            {selectedCount} items selected
           </span>
           <button
             onClick={onClearSelection}
@@ -59,12 +59,12 @@ const BatchActionManager: React.FC<BatchActionManagerProps> = ({
             </button>
             
             {showManufacturerDropdown && (
-              <div className="absolute bottom-full mb-2 right-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                {availableManufacturers.map(manufacturer => (
+              <div className="absolute top-full mt-1 right-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {manufacturers.map(manufacturer => (
                   <button
                     key={manufacturer._id}
                     onClick={() => {
-                      onBatchUpdateManufacturer(manufacturer._id);
+                      onUpdateManufacturer(manufacturer._id);
                       setShowManufacturerDropdown(false);
                     }}
                     className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
@@ -87,17 +87,17 @@ const BatchActionManager: React.FC<BatchActionManagerProps> = ({
             </button>
             
             {showFactionDropdown && (
-              <div className="absolute bottom-full mb-2 right-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                {availableFactions.map(faction => (
+              <div className="absolute top-full mt-1 right-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {factions.map(faction => (
                   <button
-                    key={faction._id}
+                    key={faction}
                     onClick={() => {
-                      onBatchUpdateFaction(faction._id);
+                      onUpdateFaction(faction);
                       setShowFactionDropdown(false);
                     }}
                     className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   >
-                    {faction.name}
+                    {faction}
                   </button>
                 ))}
               </div>
@@ -115,17 +115,17 @@ const BatchActionManager: React.FC<BatchActionManagerProps> = ({
             </button>
             
             {showEditionDropdown && (
-              <div className="absolute bottom-full mb-2 right-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                {availableEditions.map(edition => (
+              <div className="absolute top-full mt-1 right-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                {editions.map(edition => (
                   <button
-                    key={edition._id}
+                    key={edition}
                     onClick={() => {
-                      onBatchUpdateEdition(edition._id);
+                      onUpdateEdition(edition);
                       setShowEditionDropdown(false);
                     }}
                     className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                   >
-                    {edition.name}
+                    {edition}
                   </button>
                 ))}
               </div>
@@ -149,7 +149,7 @@ const BatchActionManager: React.FC<BatchActionManagerProps> = ({
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-medium text-red-600 mb-4">Confirm Deletion</h3>
             <p className="mb-4">
-              Are you sure you want to delete {selectedItems.length} selected items? This action cannot be undone.
+              Are you sure you want to delete {selectedCount} selected items? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-2">
               <button
@@ -160,7 +160,7 @@ const BatchActionManager: React.FC<BatchActionManagerProps> = ({
               </button>
               <button
                 onClick={() => {
-                  onBatchDelete();
+                  onDelete();
                   setShowDeleteConfirm(false);
                 }}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"

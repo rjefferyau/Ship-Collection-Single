@@ -80,6 +80,8 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
   const [loadingManufacturers, setLoadingManufacturers] = useState(false);
+  const [factions, setFactions] = useState<Faction[]>([]);
+  const [loadingFactions, setLoadingFactions] = useState(false);
   const [showSightingsModal, setShowSightingsModal] = useState(false);
   
   // Add state for editable fields
@@ -108,24 +110,47 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     });
   }, [starship]);
 
-  // Fetch manufacturers when editing starts
+  // Fetch manufacturers and factions when editing starts
   useEffect(() => {
     if (isEditing) {
       fetchManufacturers();
+      fetchFactions();
     }
   }, [isEditing]);
 
-  // Fetch manufacturers
+  const fetchFactions = async () => {
+    setLoadingFactions(true);
+    
+    try {
+      const response = await fetch('/api/factions');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch factions');
+      }
+      
+      const data = await response.json();
+      setFactions(data.data || []);
+    } catch (err) {
+      console.error('Error fetching factions:', err);
+    } finally {
+      setLoadingFactions(false);
+    }
+  };
+  
   const fetchManufacturers = async () => {
     setLoadingManufacturers(true);
+    
     try {
       const response = await fetch('/api/manufacturers');
-      if (response.ok) {
-        const data = await response.json();
-        setManufacturers(data.data || []);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch manufacturers');
       }
-    } catch (error) {
-      console.error('Error fetching manufacturers:', error);
+      
+      const data = await response.json();
+      setManufacturers(data.data || []);
+    } catch (err) {
+      console.error('Error fetching manufacturers:', err);
     } finally {
       setLoadingManufacturers(false);
     }
@@ -544,13 +569,19 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                 </dt>
                 <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
-                    <input
-                      type="text"
+                    <select
                       name="faction"
                       value={editedValues.faction}
                       onChange={handleInputChange}
                       className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
+                    >
+                      <option value="">Select a faction</option>
+                      {factions.map(faction => (
+                        <option key={faction._id} value={faction.name}>
+                          {faction.name}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
                     starship.faction
                   )}

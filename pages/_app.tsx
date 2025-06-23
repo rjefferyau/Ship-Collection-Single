@@ -19,7 +19,6 @@ import { CurrencyProvider } from '../contexts/CurrencyContext';
 // Page title mapping
 const PAGE_TITLES: Record<string, string> = {
   '/': 'The Collection',
-  '/fancy-view': 'Gallery | CollectHub',
   '/statistics': 'Statistics | CollectHub',
   '/price-vault': 'Price Vault | CollectHub',
   '/wishlist': 'Wishlist | CollectHub',

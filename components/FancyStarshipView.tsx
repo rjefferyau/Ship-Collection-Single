@@ -145,12 +145,24 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     // Set default sorting to issue ascending
     setSortConfig({ key: 'issue', direction: 'asc' });
     
-    // Set filter to current edition
-    if (availableEditions.includes(currentEdition)) {
-      setFilters(prev => ({ ...prev, edition: [currentEdition] }));
-      setActiveEdition(currentEdition);
+    // Set filter to current edition, or first available edition if current edition is not available
+    if (availableEditions.length > 0) {
+      let editionToUse = currentEdition;
+      
+      // If currentEdition is not in availableEditions, use the first available edition
+      if (!availableEditions.includes(currentEdition)) {
+        editionToUse = availableEditions[0];
+        
+        // Notify parent component of the edition change
+        if (onEditionChange) {
+          onEditionChange(editionToUse);
+        }
+      }
+      
+      setFilters(prev => ({ ...prev, edition: [editionToUse] }));
+      setActiveEdition(editionToUse);
     }
-  }, [availableEditions, currentEdition]);
+  }, [availableEditions, currentEdition, onEditionChange]);
 
   // Update activeEdition when currentEdition prop changes
   useEffect(() => {

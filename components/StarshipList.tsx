@@ -3,7 +3,6 @@ import DataTable from './DataTable';
 import PdfViewer from './PdfViewer';
 import { Starship, SortConfig, Filters } from '../types';
 import { useCurrency } from '../contexts/CurrencyContext';
-import CustomViewManager from './CustomViewManager';
 import BatchActionManager from './BatchActionManager';
 import Alert from './Alert';
 
@@ -1087,33 +1086,21 @@ const StarshipList: React.FC<StarshipListProps> = ({
     <div className="space-y-4">
       {viewError && <Alert type="error" message={viewError} onClose={() => setViewError(null)} />}
       
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
-        <div className="flex-1">
-          <CustomViewManager
-            availableColumns={availableColumns}
-            onViewSelect={handleViewSelect}
-            currentColumns={visibleColumnConfigs.map(col => col.key)}
-            currentFilters={filters}
-            currentSortConfig={sortConfig as { key: string; direction: 'asc' | 'desc' }}
+      {selectedStarships.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <BatchActionManager
+            selectedCount={selectedStarships.length}
+            onClearSelection={() => setSelectedStarships([])}
+            onUpdateManufacturer={handleBatchUpdateManufacturer}
+            onUpdateFaction={handleBatchUpdateFaction}
+            onUpdateEdition={handleBatchUpdateEdition}
+            onDelete={handleBatchDelete}
+            manufacturers={availableManufacturers}
+            factions={availableFactions}
+            editions={availableEditions}
           />
         </div>
-        
-        {selectedStarships.length > 0 && (
-          <div className="flex-shrink-0">
-            <BatchActionManager
-              selectedCount={selectedStarships.length}
-              onClearSelection={() => setSelectedStarships([])}
-              onUpdateManufacturer={handleBatchUpdateManufacturer}
-              onUpdateFaction={handleBatchUpdateFaction}
-              onUpdateEdition={handleBatchUpdateEdition}
-              onDelete={handleBatchDelete}
-              manufacturers={availableManufacturers}
-              factions={availableFactions}
-              editions={availableEditions}
-            />
-          </div>
-        )}
-      </div>
+      )}
       
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow p-4">

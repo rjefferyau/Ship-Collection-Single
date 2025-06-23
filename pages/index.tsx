@@ -5,10 +5,21 @@ import dynamic from 'next/dynamic';
 import { Starship } from '../types';
 import CollectionFilter from '../components/CollectionFilter';
 import ModalContainer from '../components/ModalContainer';
+import CustomViewManager from '../components/CustomViewManager';
 
 // Dynamically import large components
 const StarshipList = dynamic(() => import('../components/StarshipList'), {
   loading: () => <div className="p-4 text-center">Loading starship list...</div>,
+  ssr: false
+});
+
+const FancyStarshipView = dynamic(() => import('../components/FancyStarshipView'), {
+  loading: () => <div className="p-4 text-center">Loading gallery view...</div>,
+  ssr: false
+});
+
+const CollectionOverview = dynamic(() => import('../components/CollectionOverview'), {
+  loading: () => <div className="p-4 text-center">Loading collection overview...</div>,
   ssr: false
 });
 
@@ -27,6 +38,8 @@ const ExcelView = dynamic(() => import('../components/ExcelView'), {
   ssr: false
 });
 
+type ViewMode = 'table' | 'gallery' | 'overview';
+
 const Home: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +50,8 @@ const Home: React.FC = () => {
   const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
   const [selectedFranchise, setSelectedFranchise] = useState<string>('');
   const [excelViewWindow, setExcelViewWindow] = useState<Window | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Fetch default edition on component mount
   useEffect(() => {
@@ -369,6 +384,74 @@ const Home: React.FC = () => {
 
         {/* Content Section */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
+          {/* View Toggle */}
+          {!loading && !error && (
+            <div className="px-6 py-4 border-b border-gray-200/50 bg-gray-50/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <h2 className="text-lg font-semibold text-gray-800">Your Collection</h2>
+                  <span className="text-sm text-gray-600">
+                    {starships.length} {starships.length === 1 ? 'item' : 'items'}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                        viewMode === 'table'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 6h18m-9 8h9" />
+                      </svg>
+                      <span>Table</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('gallery')}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                        viewMode === 'gallery'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                      </svg>
+                      <span>Gallery</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('overview')}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                        viewMode === 'overview'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                      }`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <span>Overview</span>
+                    </button>
+                  </div>
+                  
+                  <button
+                    onClick={() => setShowSettingsModal(true)}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:text-gray-800 hover:bg-gray-50 shadow-sm transition-all duration-200"
+                    title="View Settings"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                    </svg>
+                    <span>Settings</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {loading ? (
             <div className="flex flex-col justify-center items-center py-24 px-6">
               <div className="relative">
@@ -398,16 +481,35 @@ const Home: React.FC = () => {
             </div>
           ) : (
             <div className="p-6">
-              <StarshipList
-                starships={starships}
-                onToggleOwned={handleToggleOwned}
-                onSelectStarship={handleSelectStarship}
-                onToggleWishlist={handleToggleWishlist}
-                onCycleStatus={handleCycleStatus}
-                onEditionChange={handleEditionChange}
-                currentEdition={currentEdition}
-                selectedFranchise={selectedFranchise}
-              />
+              {viewMode === 'table' ? (
+                <StarshipList
+                  starships={starships}
+                  onToggleOwned={handleToggleOwned}
+                  onSelectStarship={handleSelectStarship}
+                  onToggleWishlist={handleToggleWishlist}
+                  onCycleStatus={handleCycleStatus}
+                  onEditionChange={handleEditionChange}
+                  currentEdition={currentEdition}
+                  selectedFranchise={selectedFranchise}
+                />
+              ) : viewMode === 'gallery' ? (
+                <FancyStarshipView
+                  starships={starships}
+                  onToggleOwned={handleToggleOwned}
+                  onSelectStarship={handleSelectStarship}
+                  onEditionChange={handleEditionChange}
+                  currentEdition={currentEdition}
+                />
+              ) : (
+                <CollectionOverview
+                  starships={starships}
+                  onToggleOwned={handleToggleOwned}
+                  onSelectStarship={handleSelectStarship}
+                  onEditionChange={handleEditionChange}
+                  currentEdition={currentEdition}
+                  selectedFranchise={selectedFranchise}
+                />
+              )}
             </div>
           )}
         </div>
@@ -453,6 +555,54 @@ const Home: React.FC = () => {
             currentEdition={currentEdition}
           />
         )}
+      </ModalContainer>
+
+      {/* Settings Modal */}
+      <ModalContainer
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        maxWidth="2xl"
+        showCloseButton={true}
+        closeButtonText="Close"
+      >
+        <div className="px-6 py-4">
+          <div className="mb-6">
+            <h3 className="text-lg font-medium leading-6 text-gray-900 mb-2">
+              View Settings
+            </h3>
+            <p className="text-sm text-gray-600">
+              Manage your custom views, columns, and display preferences
+            </p>
+          </div>
+          
+          <CustomViewManager
+            availableColumns={[
+              { key: 'issue', label: 'Issue' },
+              { key: 'shipName', label: 'Ship Name' },
+              { key: 'faction', label: 'Faction' },
+              { key: 'edition', label: 'Edition' },
+              { key: 'owned', label: 'Owned' },
+              { key: 'wishlist', label: 'Wishlist' },
+              { key: 'onOrder', label: 'On Order' },
+              { key: 'notInterested', label: 'Not Interested' },
+              { key: 'releaseDate', label: 'Release Date' },
+              { key: 'manufacturer', label: 'Manufacturer' },
+              { key: 'collectionType', label: 'Collection Type' },
+              { key: 'franchise', label: 'Franchise' },
+              { key: 'retailPrice', label: 'Retail Price' },
+              { key: 'purchasePrice', label: 'Purchase Price' },
+              { key: 'marketValue', label: 'Market Value' },
+            ]}
+            onViewSelect={(view) => {
+              // Handle view selection - this would need to be passed to the StarshipList component
+              console.log('View selected:', view);
+              setShowSettingsModal(false);
+            }}
+            currentColumns={['issue', 'shipName', 'faction', 'edition', 'owned']}
+            currentFilters={{}}
+            currentSortConfig={{ key: 'issue', direction: 'asc' }}
+          />
+        </div>
       </ModalContainer>
     </div>
   );

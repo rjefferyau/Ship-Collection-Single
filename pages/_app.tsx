@@ -16,24 +16,36 @@ import { CurrencyProvider } from '../contexts/CurrencyContext';
 //
 // See the Management page for an example of the correct structure.
 
+// Page title mapping
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'The Collection',
+  '/fancy-view': 'Gallery | CollectHub',
+  '/statistics': 'Statistics | CollectHub',
+  '/price-vault': 'Price Vault | CollectHub',
+  '/wishlist': 'Wishlist | CollectHub',
+  '/management': 'Management | CollectHub',
+  '/setup': 'Setup | CollectHub',
+  '/icon-setup': 'Icon Setup | CollectHub',
+  '/faction-setup': 'Faction Setup | CollectHub',
+  '/edition-setup': 'Edition Setup | CollectHub',
+  '/franchise-setup': 'Franchise Setup | CollectHub',
+  '/manufacturer-setup': 'Manufacturer Setup | CollectHub',
+  '/collection-type-setup': 'Collection Type Setup | CollectHub',
+  '/import-export': 'Import/Export | CollectHub',
+  '/currency-setup': 'Currency Setup | CollectHub',
+  '/database-check': 'Database Check | CollectHub',
+  '/database-analysis': 'Database Analysis | CollectHub',
+  '/manufacturer-assignment': 'Manufacturer Assignment | CollectHub',
+  '/other-tools': 'Other Tools | CollectHub',
+  '/excel-view': 'Excel View | CollectHub'
+};
+
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const path = router.pathname;
   
   // Determine page title based on current path
-  let pageTitle = 'The Collection';
-  if (path === '/fancy-view') pageTitle = 'Gallery | CollectHub';
-  else if (path === '/statistics') pageTitle = 'Statistics | CollectHub';
-  else if (path === '/price-vault') pageTitle = 'Price Vault | CollectHub';
-  else if (path === '/wishlist') pageTitle = 'Wishlist | CollectHub';
-  else if (path === '/management') pageTitle = 'Management | CollectHub';
-  else if (path === '/setup') pageTitle = 'Setup | CollectHub';
-  else if (path === '/icon-setup') pageTitle = 'Icon Setup | CollectHub';
-  else if (path === '/faction-setup') pageTitle = 'Faction Setup | CollectHub';
-  else if (path === '/edition-setup') pageTitle = 'Edition Setup | CollectHub';
-  else if (path === '/import-export') pageTitle = 'Import/Export | CollectHub';
-  else if (path === '/currency-setup') pageTitle = 'Currency Setup | CollectHub';
-  else if (path === '/other-tools') pageTitle = 'Other Tools | CollectHub';
+  const pageTitle = PAGE_TITLES[path] || 'The Collection';
   
   return (
     <>

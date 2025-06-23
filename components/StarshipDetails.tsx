@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf, faInfoCircle, faTag, faCalendarAlt, faUsers, faCube, faIndustry, faLayerGroup, faMapMarkerAlt, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, faStar as faStarSolid, faShoppingCart, faBoxOpen, faFilePdf, faInfoCircle, faTag, faCalendarAlt, faUsers, faCube, faIndustry, faLayerGroup, faMapMarkerAlt, faExternalLinkAlt, faDollarSign } from '@fortawesome/free-solid-svg-icons';
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import PdfViewer from './PdfViewer';
 import SightingsModal from './modals/SightingsModal';
@@ -93,6 +93,9 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     faction: starship.faction,
     manufacturer: starship.manufacturer || '',
     releaseDate: starship.releaseDate ? new Date(starship.releaseDate).toISOString().split('T')[0] : '',
+    retailPrice: starship.retailPrice?.toString() || '',
+    purchasePrice: starship.purchasePrice?.toString() || '',
+    marketValue: starship.marketValue?.toString() || '',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -108,6 +111,9 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       faction: starship.faction,
       manufacturer: starship.manufacturer || '',
       releaseDate: starship.releaseDate ? new Date(starship.releaseDate).toISOString().split('T')[0] : '',
+      retailPrice: starship.retailPrice?.toString() || '',
+      purchasePrice: starship.purchasePrice?.toString() || '',
+      marketValue: starship.marketValue?.toString() || '',
     });
   }, [starship]);
 
@@ -187,6 +193,9 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
         body: JSON.stringify({
           ...editedValues,
           releaseDate: editedValues.releaseDate ? new Date(editedValues.releaseDate) : undefined,
+          retailPrice: editedValues.retailPrice ? parseFloat(editedValues.retailPrice) : undefined,
+          purchasePrice: editedValues.purchasePrice ? parseFloat(editedValues.purchasePrice) : undefined,
+          marketValue: editedValues.marketValue ? parseFloat(editedValues.marketValue) : undefined,
         }),
       });
       
@@ -394,6 +403,9 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                     faction: starship.faction,
                     manufacturer: starship.manufacturer || '',
                     releaseDate: starship.releaseDate ? new Date(starship.releaseDate).toISOString().split('T')[0] : '',
+                    retailPrice: starship.retailPrice?.toString() || '',
+                    purchasePrice: starship.purchasePrice?.toString() || '',
+                    marketValue: starship.marketValue?.toString() || '',
                   });
                 }
                 setIsEditing(!isEditing);
@@ -717,6 +729,154 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
               </div>
             </dl>
           </div>
+        </div>
+        
+        {/* Pricing Information Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-5 mb-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <FontAwesomeIcon icon={faDollarSign} className="mr-2 text-green-500" />
+            Pricing Information
+          </h4>
+          
+          {isEditing ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Retail Price (RRP) */}
+              <div>
+                <label htmlFor="retailPrice" className="block text-sm font-medium text-gray-700 mb-1">
+                  Retail Price (RRP)
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">{formatCurrency(0).charAt(0)}</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="retailPrice"
+                    name="retailPrice"
+                    value={editedValues.retailPrice}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+              
+              {/* Purchase Price (What I Paid) */}
+              <div>
+                <label htmlFor="purchasePrice" className="block text-sm font-medium text-gray-700 mb-1">
+                  Purchase Price (I Paid)
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">{formatCurrency(0).charAt(0)}</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="purchasePrice"
+                    name="purchasePrice"
+                    value={editedValues.purchasePrice}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+              
+              {/* Market Value */}
+              <div>
+                <label htmlFor="marketValue" className="block text-sm font-medium text-gray-700 mb-1">
+                  Market Value
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">{formatCurrency(0).charAt(0)}</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="marketValue"
+                    name="marketValue"
+                    value={editedValues.marketValue}
+                    onChange={handleInputChange}
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    className="block w-full pl-7 pr-12 rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <dl className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <dt className="font-medium text-gray-500 text-sm">Retail Price (RRP)</dt>
+                <dd className="text-gray-900 text-lg font-medium">
+                  {starship.retailPrice !== undefined ? formatCurrency(starship.retailPrice) : '-'}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-gray-500 text-sm">Purchase Price (I Paid)</dt>
+                <dd className={`text-lg font-medium ${
+                  starship.purchasePrice !== undefined && starship.retailPrice !== undefined
+                    ? starship.purchasePrice < starship.retailPrice 
+                      ? 'text-green-600' 
+                      : starship.purchasePrice > starship.retailPrice
+                        ? 'text-red-600'
+                        : 'text-gray-900'
+                    : 'text-gray-900'
+                }`}>
+                  {starship.purchasePrice !== undefined ? formatCurrency(starship.purchasePrice) : '-'}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-gray-500 text-sm">Market Value</dt>
+                <dd className="text-gray-900 text-lg font-medium">
+                  {starship.marketValue !== undefined ? formatCurrency(starship.marketValue) : '-'}
+                </dd>
+              </div>
+            </dl>
+          )}
+          
+          {/* Pricing summary when not editing */}
+          {!isEditing && (starship.retailPrice !== undefined || starship.purchasePrice !== undefined || starship.marketValue !== undefined) && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-wrap gap-4 text-sm">
+                {starship.retailPrice !== undefined && starship.purchasePrice !== undefined && (
+                  <div className="flex items-center">
+                    <span className="text-gray-500 mr-1">Savings:</span>
+                    <span className={`font-medium ${
+                      starship.retailPrice - starship.purchasePrice >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(starship.retailPrice - starship.purchasePrice)}
+                      {starship.retailPrice > 0 && (
+                        <span className="ml-1">
+                          ({Math.round(((starship.retailPrice - starship.purchasePrice) / starship.retailPrice) * 100)}%)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+                {starship.purchasePrice !== undefined && starship.marketValue !== undefined && (
+                  <div className="flex items-center">
+                    <span className="text-gray-500 mr-1">Potential Profit:</span>
+                    <span className={`font-medium ${
+                      starship.marketValue - starship.purchasePrice >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {formatCurrency(starship.marketValue - starship.purchasePrice)}
+                      {starship.purchasePrice > 0 && (
+                        <span className="ml-1">
+                          ({Math.round(((starship.marketValue - starship.purchasePrice) / starship.purchasePrice) * 100)}%)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         
         {starship.magazinePdfUrl && (

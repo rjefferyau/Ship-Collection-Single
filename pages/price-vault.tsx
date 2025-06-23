@@ -293,6 +293,7 @@ const PriceVaultPage: React.FC = () => {
               <PriceVault
                 starships={priceVaultStarships}
                 viewMode={viewMode}
+                onRefresh={fetchStarships}
               />
             )}
           </div>

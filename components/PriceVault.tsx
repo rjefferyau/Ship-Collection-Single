@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDollarSign, faTag, faShoppingCart, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { faDollarSign, faTag, faShoppingCart, faChartLine, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { useCurrency } from '../contexts/CurrencyContext';
+import PricingEditModal from './modals/PricingEditModal';
 
 interface Starship {
   _id: string;
@@ -20,10 +21,15 @@ interface Starship {
 interface PriceVaultProps {
   starships: Starship[];
   viewMode: 'all' | 'owned' | 'missing';
+  onRefresh?: () => void;
 }
 
-const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
+const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode, onRefresh }) => {
   const { formatCurrency } = useCurrency();
+  
+  // Modal state
+  const [showPricingModal, setShowPricingModal] = useState(false);
+  const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
 
   // Filter starships based on viewMode
   const filteredStarships = viewMode === 'all' 
@@ -47,17 +53,34 @@ const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
     return sum + (ship.marketValue || 0);
   }, 0);
 
-  // Calculate savings
+  // Calculate investment return (profit/loss from market value vs purchase price)
+  const totalInvestmentReturn = totalMarketValue - totalPurchasePrice;
+  const investmentReturnPercentage = totalPurchasePrice > 0 
+    ? Math.round((totalInvestmentReturn / totalPurchasePrice) * 100) 
+    : 0;
+
+  // Calculate savings vs retail (keep for reference but less prominent)
   const totalSavings = totalRetailPrice - totalPurchasePrice;
   const savingsPercentage = totalRetailPrice > 0 
     ? Math.round((totalSavings / totalRetailPrice) * 100) 
     : 0;
 
-  // Calculate potential profit
-  const potentialProfit = totalMarketValue - totalPurchasePrice;
-  const profitPercentage = totalPurchasePrice > 0 
-    ? Math.round((potentialProfit / totalPurchasePrice) * 100) 
-    : 0;
+  // Handle modal actions
+  const handleEditPricing = (starship: Starship) => {
+    setSelectedStarship(starship);
+    setShowPricingModal(true);
+  };
+
+  const handleClosePricingModal = () => {
+    setShowPricingModal(false);
+    setSelectedStarship(null);
+  };
+
+  const handlePricingUpdated = () => {
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
 
   return (
     <div>
@@ -87,43 +110,45 @@ const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <div className="flex items-center mb-2">
             <div className="rounded-full bg-purple-100 p-2 mr-3">
-              <FontAwesomeIcon icon={faDollarSign} className="text-purple-600" />
+              <FontAwesomeIcon icon={faChartLine} className="text-purple-600" />
             </div>
-            <h5 className="text-lg font-medium text-gray-800 mb-0">Savings</h5>
+            <h5 className="text-lg font-medium text-gray-800 mb-0">Investment Return</h5>
           </div>
           <div className="text-3xl font-bold text-gray-900 mb-1">
-            {formatCurrency(totalSavings)}
-            <span className="text-sm font-normal text-green-600 ml-2">({savingsPercentage}%)</span>
+            {formatCurrency(totalInvestmentReturn)}
+            <span className={`text-sm font-normal ml-2 ${totalInvestmentReturn >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ({totalInvestmentReturn >= 0 ? '+' : ''}{investmentReturnPercentage}%)
+            </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
             <div 
-              className="bg-green-500 h-2 rounded-full" 
-              style={{ width: `${Math.min(savingsPercentage, 100)}%` }}
+              className={`h-2 rounded-full ${totalInvestmentReturn >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+              style={{ width: `${Math.min(Math.abs(investmentReturnPercentage), 100)}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-500 mb-0">Saved vs retail price</p>
+          <p className="text-sm text-gray-500 mb-0">Profit/loss vs purchase price</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
           <div className="flex items-center mb-2">
             <div className="rounded-full bg-yellow-100 p-2 mr-3">
-              <FontAwesomeIcon icon={faChartLine} className="text-yellow-600" />
+              <FontAwesomeIcon icon={faDollarSign} className="text-yellow-600" />
             </div>
             <h5 className="text-lg font-medium text-gray-800 mb-0">Market Value</h5>
           </div>
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {formatCurrency(totalMarketValue)}
-            <span className={`text-sm font-normal ml-2 ${potentialProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ({potentialProfit >= 0 ? '+' : ''}{profitPercentage}%)
+            <span className="text-sm font-normal text-gray-600 ml-2">
+              (Portfolio Value)
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
             <div 
-              className={`h-2 rounded-full ${potentialProfit >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
-              style={{ width: `${Math.min(Math.abs(profitPercentage), 100)}%` }}
+              className="bg-blue-500 h-2 rounded-full"
+              style={{ width: `${totalMarketValue > 0 ? Math.min((totalMarketValue / Math.max(totalRetailPrice, totalMarketValue)) * 100, 100) : 0}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-500 mb-0">Current estimated value</p>
+          <p className="text-sm text-gray-500 mb-0">Current estimated portfolio value</p>
         </div>
       </div>
 
@@ -141,14 +166,16 @@ const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Retail Price</th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Purchase Price</th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Market Value</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Savings</th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Profit/Loss</th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredStarships.map(ship => {
-                const savings = (ship.retailPrice || 0) - (ship.purchasePrice || 0);
-                const savingsPercent = (ship.retailPrice || 0) > 0 
-                  ? Math.round((savings / (ship.retailPrice || 1)) * 100) 
+                // Calculate profit/loss from investment (market value vs purchase price)
+                const profitLoss = (ship.marketValue || 0) - (ship.purchasePrice || 0);
+                const profitLossPercent = (ship.purchasePrice || 0) > 0 
+                  ? Math.round((profitLoss / (ship.purchasePrice || 1)) * 100) 
                   : 0;
                 
                 return (
@@ -163,9 +190,19 @@ const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right">{formatCurrency(ship.purchasePrice)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right">{formatCurrency(ship.marketValue)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <span className={`text-sm ${savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(savings)} ({savingsPercent}%)
+                      <span className={`text-sm ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(profitLoss)} ({profitLoss >= 0 ? '+' : ''}{profitLossPercent}%)
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() => handleEditPricing(ship)}
+                        className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                        title="Edit pricing for this item"
+                      >
+                        <FontAwesomeIcon icon={faEdit} className="mr-1" />
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 );
@@ -174,6 +211,14 @@ const PriceVault: React.FC<PriceVaultProps> = ({ starships, viewMode }) => {
           </table>
         </div>
       </div>
+      
+      {/* Pricing Edit Modal */}
+      <PricingEditModal
+        isOpen={showPricingModal}
+        onClose={handleClosePricingModal}
+        starship={selectedStarship}
+        onPricingUpdated={handlePricingUpdated}
+      />
     </div>
   );
 };

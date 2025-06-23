@@ -131,7 +131,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   const hasActiveFilters = selectedCollectionType || selectedFranchise;
 
   return (
-    <div className={`backdrop-blur-sm bg-white/95 rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden transition-all duration-500 hover:shadow-2xl ${className}`}>
+    <div className={`backdrop-blur-sm bg-white/95 rounded-2xl shadow-xl border border-gray-200/50 overflow-visible transition-all duration-500 hover:shadow-2xl relative z-30 ${className}`}>
       {/* Modern Header with gradient */}
       <div 
         className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 px-6 py-5 flex justify-between items-center cursor-pointer transition-all duration-300 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800"
@@ -174,8 +174,8 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
       </div>
       
       {/* Enhanced Filter Content with Animation */}
-      <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-        <div className="p-6 bg-gradient-to-br from-gray-50 to-white">
+      <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-visible`}>
+        <div className="p-6 bg-gradient-to-br from-gray-50 to-white overflow-visible">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Modern Collection Type Selection */}
             <div className="space-y-3 group">
@@ -188,7 +188,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
               <div className="relative" ref={collectionTypeDropdownRef}>
                 <button
                   type="button"
-                  className="group w-full bg-white border-2 border-gray-200 hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 rounded-xl px-4 py-3.5 text-left transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="group w-full bg-white border-2 border-gray-200 hover:border-indigo-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 rounded-xl px-4 py-3.5 text-left transition-all duration-200 shadow-sm hover:shadow-md relative z-10"
                   onClick={() => setCollectionTypeDropdownOpen(!collectionTypeDropdownOpen)}
                 >
                   <div className="flex items-center justify-between">
@@ -203,7 +203,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
                 </button>
                 
                 {collectionTypeDropdownOpen && (
-                  <div className="absolute z-50 mt-2 w-full bg-white shadow-2xl border border-gray-200 rounded-xl py-2 max-h-64 overflow-auto backdrop-blur-lg">
+                  <div className="absolute z-[9999] mt-2 w-full bg-white shadow-2xl border border-gray-200 rounded-xl py-2 max-h-64 overflow-auto backdrop-blur-lg">
                     <div 
                       className="px-4 py-3 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 cursor-pointer transition-all duration-150 border-b border-gray-100"
                       onClick={() => {
@@ -256,7 +256,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
               <div className="relative" ref={franchiseDropdownRef}>
                 <button
                   type="button"
-                  className="group w-full bg-white border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 rounded-xl px-4 py-3.5 text-left transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="group w-full bg-white border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 rounded-xl px-4 py-3.5 text-left transition-all duration-200 shadow-sm hover:shadow-md relative z-10"
                   onClick={() => setFranchiseDropdownOpen(!franchiseDropdownOpen)}
                 >
                   <div className="flex items-center justify-between">
@@ -271,7 +271,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
                 </button>
                 
                 {franchiseDropdownOpen && (
-                  <div className="absolute z-50 mt-2 w-full bg-white shadow-2xl border border-gray-200 rounded-xl py-2 max-h-64 overflow-auto backdrop-blur-lg">
+                  <div className="absolute z-[9999] mt-2 w-full bg-white shadow-2xl border border-gray-200 rounded-xl py-2 max-h-64 overflow-auto backdrop-blur-lg">
                     <div 
                       className="px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 cursor-pointer transition-all duration-150 border-b border-gray-100"
                       onClick={() => {

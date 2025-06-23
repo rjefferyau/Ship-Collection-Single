@@ -126,93 +126,95 @@ const FancyViewPage: React.FC = () => {
   }, [selectedCollectionType, selectedFranchise]);
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Gallery View</h1>
-        <p className="text-gray-600">Visual showcase of your starship collection</p>
-      </div>
-      
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
-        >
-          <FontAwesomeIcon icon={faPlus} className="mr-2" />
-          Add New Item
-        </button>
-      </div>
-      
-      {/* Collection Filter */}
-      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
-      
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-6 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Gallery View</h1>
+          <p className="text-gray-600">Visual showcase of your starship collection</p>
         </div>
-      ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline"> {error}</span>
+        
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow-sm"
+          >
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />
+            Add New Item
+          </button>
         </div>
-      ) : (
-        <FancyStarshipView 
-          starships={starships} 
-          onToggleOwned={handleToggleOwned}
-          onSelectStarship={handleSelectStarship}
-          onEditionChange={handleEditionChange}
-          currentEdition={currentEdition}
-        />
-      )}
-
-      {/* Modal for starship details */}
-      {selectedStarship && (
-        <ModalContainer
-          isOpen={!!selectedStarship}
-          onClose={handleCloseModal}
-          maxWidth="3xl"
-          showCloseButton={true}
-        >
-          <StarshipDetails 
-            starship={selectedStarship} 
+        
+        {/* Collection Filter */}
+        <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
+        
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> {error}</span>
+          </div>
+        ) : (
+          <FancyStarshipView 
+            starships={starships} 
             onToggleOwned={handleToggleOwned}
-            onRefresh={() => fetchStarships()}
+            onSelectStarship={handleSelectStarship}
+            onEditionChange={handleEditionChange}
             currentEdition={currentEdition}
           />
-        </ModalContainer>
-      )}
+        )}
 
-      {/* Modal for adding new starship */}
-      <ModalContainer
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        maxWidth="lg"
-        showCloseButton={true}
-        closeButtonText="Cancel"
-      >
-        <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div className="sm:flex sm:items-start">
-            <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
-                Add New Item
-              </h3>
-              <AddStarshipForm 
-                onStarshipAdded={handleRefreshStarships} 
-                defaultCollectionType={selectedCollectionType}
-                defaultFranchise={selectedFranchise}
-              />
+        {/* Modal for starship details */}
+        {selectedStarship && (
+          <ModalContainer
+            isOpen={!!selectedStarship}
+            onClose={handleCloseModal}
+            maxWidth="3xl"
+            showCloseButton={true}
+          >
+            <StarshipDetails 
+              starship={selectedStarship} 
+              onToggleOwned={handleToggleOwned}
+              onRefresh={() => fetchStarships()}
+              currentEdition={currentEdition}
+            />
+          </ModalContainer>
+        )}
+
+        {/* Modal for adding new starship */}
+        <ModalContainer
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          maxWidth="lg"
+          showCloseButton={true}
+          closeButtonText="Cancel"
+        >
+          <div className="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="sm:flex sm:items-start">
+              <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">
+                  Add New Item
+                </h3>
+                <AddStarshipForm 
+                  onStarshipAdded={handleRefreshStarships} 
+                  defaultCollectionType={selectedCollectionType}
+                  defaultFranchise={selectedFranchise}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </ModalContainer>
+        </ModalContainer>
 
-      {/* PDF Viewer Modal */}
-      {showPdfViewer && selectedPdfUrl && (
-        <PdfViewer 
-          pdfUrl={selectedPdfUrl} 
-          title={selectedPdfTitle || 'Magazine'} 
-          onClose={() => setShowPdfViewer(false)} 
-        />
-      )}
+        {/* PDF Viewer Modal */}
+        {showPdfViewer && selectedPdfUrl && (
+          <PdfViewer 
+            pdfUrl={selectedPdfUrl} 
+            title={selectedPdfTitle || 'Magazine'} 
+            onClose={() => setShowPdfViewer(false)} 
+          />
+        )}
+      </div>
     </div>
   );
 };

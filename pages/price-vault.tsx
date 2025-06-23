@@ -192,108 +192,110 @@ const PriceVaultPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
-        <p className="text-gray-600">Track and manage the value of your collection</p>
-      </div>
-
-      {/* Collection Filter */}
-      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
-
-      {/* Success and error messages */}
-      {success && (
-        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-          <span className="block sm:inline">{success}</span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-6 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Price Vault</h1>
+          <p className="text-gray-600">Track and manage the value of your collection</p>
         </div>
-      )}
-      
-      {error && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline"> {error}</span>
-        </div>
-      )}
 
-      <div className="mb-4 flex flex-wrap justify-end">
-        <div className="flex space-x-2">
-          <InsuranceReport starships={apiStarships} ownerInfo={ownerInfo} />
-          
-          <button 
-            className={`px-4 py-2 rounded-md border border-indigo-500 ${isUpdatingPrices || loading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
-            onClick={handleSetPurchasePrices}
-            disabled={isUpdatingPrices || loading}
-            title="Set purchase prices equal to RRP for all owned ships that don't have a purchase price set"
-          >
-            {isUpdatingPrices ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500 mr-2"></div>
-                <span>Updating Prices...</span>
+        {/* Collection Filter */}
+        <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
+
+        {/* Success and error messages */}
+        {success && (
+          <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{success}</span>
+          </div>
+        )}
+        
+        {error && (
+          <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> {error}</span>
+          </div>
+        )}
+
+        <div className="mb-4 flex flex-wrap justify-end">
+          <div className="flex space-x-2">
+            <InsuranceReport starships={apiStarships} ownerInfo={ownerInfo} />
+            
+            <button 
+              className={`px-4 py-2 rounded-md border border-indigo-500 ${isUpdatingPrices || loading ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-white text-indigo-600 hover:bg-indigo-50'}`}
+              onClick={handleSetPurchasePrices}
+              disabled={isUpdatingPrices || loading}
+              title="Set purchase prices equal to RRP for all owned ships that don't have a purchase price set"
+            >
+              {isUpdatingPrices ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500 mr-2"></div>
+                  <span>Updating Prices...</span>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                  <span>Set Purchase = RRP</span>
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="border-b border-gray-200">
+            <nav className="flex -mb-px">
+              <button
+                onClick={() => setViewMode('all')}
+                className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                  viewMode === 'all'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                All Starships
+              </button>
+              <button
+                onClick={() => setViewMode('owned')}
+                className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                  viewMode === 'owned'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Owned Only
+              </button>
+              <button
+                onClick={() => setViewMode('missing')}
+                className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
+                  viewMode === 'missing'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Missing Only
+              </button>
+            </nav>
+          </div>
+          <div className="p-6">
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                <span className="ml-3 text-gray-600">Loading price data...</span>
+              </div>
+            ) : error ? (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <strong className="font-bold">Error!</strong>
+                <span className="block sm:inline"> {error}</span>
               </div>
             ) : (
-              <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7A.997.997 0 012 10V5a3 3 0 013-3h5c.256 0 .512.098.707.293l7 7zM5 6a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                </svg>
-                <span>Set Purchase = RRP</span>
-              </div>
+              <PriceVault
+                starships={priceVaultStarships}
+                viewMode={viewMode}
+              />
             )}
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
-            <button
-              onClick={() => setViewMode('all')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                viewMode === 'all'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              All Starships
-            </button>
-            <button
-              onClick={() => setViewMode('owned')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                viewMode === 'owned'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Owned Only
-            </button>
-            <button
-              onClick={() => setViewMode('missing')}
-              className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                viewMode === 'missing'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Missing Only
-            </button>
-          </nav>
-        </div>
-        <div className="p-6">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-              <span className="ml-3 text-gray-600">Loading price data...</span>
-            </div>
-          ) : error ? (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <strong className="font-bold">Error!</strong>
-              <span className="block sm:inline"> {error}</span>
-            </div>
-          ) : (
-            <PriceVault
-              starships={priceVaultStarships}
-              viewMode={viewMode}
-            />
-          )}
+          </div>
         </div>
       </div>
     </div>

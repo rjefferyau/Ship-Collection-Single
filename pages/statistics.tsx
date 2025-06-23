@@ -191,40 +191,42 @@ const StatisticsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Collection Statistics</h1>
-        <p className="text-gray-600">Insights and analytics about your collectibles</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="w-full px-6 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-800">Collection Statistics</h1>
+          <p className="text-gray-600">Insights and analytics about your collectibles</p>
+        </div>
 
-      {/* Collection Filter */}
-      <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
+        {/* Collection Filter */}
+        <CollectionFilter onFilterChange={handleFilterChange} className="mb-6" />
 
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-600">Loading statistics...</span>
-          </div>
-        ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <strong className="font-bold">Error!</strong>
-            <span className="block sm:inline"> {error}</span>
-          </div>
-        ) : (
-          <Statistics
-            totalItems={statistics.totalItems}
-            ownedItems={statistics.ownedItems}
-            orderedItems={statistics.orderedItems}
-            factionBreakdown={statistics.factionBreakdown}
-            editionBreakdown={statistics.editionBreakdown}
-            collectionTypeBreakdown={statistics.collectionTypeBreakdown}
-            franchiseBreakdown={statistics.franchiseBreakdown}
-            viewMode="all"
-            selectedCollectionType={selectedCollectionType}
-            selectedFranchise={selectedFranchise}
-          />
-        )}
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              <span className="ml-3 text-gray-600">Loading statistics...</span>
+            </div>
+          ) : error ? (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+              <strong className="font-bold">Error!</strong>
+              <span className="block sm:inline"> {error}</span>
+            </div>
+          ) : (
+            <Statistics
+              totalItems={statistics.totalItems}
+              ownedItems={statistics.ownedItems}
+              orderedItems={statistics.orderedItems}
+              factionBreakdown={statistics.factionBreakdown}
+              editionBreakdown={statistics.editionBreakdown}
+              collectionTypeBreakdown={statistics.collectionTypeBreakdown}
+              franchiseBreakdown={statistics.franchiseBreakdown}
+              viewMode="all"
+              selectedCollectionType={selectedCollectionType}
+              selectedFranchise={selectedFranchise}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

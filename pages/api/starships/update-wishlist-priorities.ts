@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '../../../lib/dbConnect';
+import dbConnect from '../../../lib/mongodb';
 import Starship from '../../../models/Starship';
 
 interface PriorityUpdate {

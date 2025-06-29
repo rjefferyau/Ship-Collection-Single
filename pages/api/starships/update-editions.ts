@@ -1,4 +1,4 @@
-import dbConnect from '../../../lib/dbConnect';
+import dbConnect from '../../../lib/mongodb';
 import Starship from '../../../models/Starship';
 import Edition from '../../../models/Edition';
 import type { NextApiRequest, NextApiResponse } from 'next';

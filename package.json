@@ -20,7 +20,11 @@
     "repair-editions": "node scripts/repair-editions.js",
     "direct-repair": "node scripts/direct-repair.js",
     "fix-ship-editions": "node scripts/fix-ship-editions.js",
-    "fix-bsg-ship": "node scripts/fix-bsg-ship.js"
+    "fix-bsg-ship": "node scripts/fix-bsg-ship.js",
+    "backup:create": "node scripts/backup-database.js",
+    "backup:restore": "node scripts/restore-database.js --interactive",
+    "backup:restore-latest": "node scripts/restore-database.js --latest",
+    "backup:list": "node scripts/list-backups.js"
   },
   "dependencies": {
     "@awesome.me/kit-d0637c0c40": "^1.0.4",
@@ -54,7 +58,9 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-bootstrap": "^2.7.2",
     "react-dom": "^18.2.0",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.3",
+    "archiver": "^5.3.1",
+    "fs-extra": "^11.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",

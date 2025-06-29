@@ -177,7 +177,7 @@ const SetupPage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-800">Database</h2>
               </div>
               <p className="text-gray-600 mb-4">
-                Manage database operations including backups, restores, and data imports/exports.
+                Manage database operations including backups, restores, maintenance, and data analysis.
               </p>
               <Link href="/database-setup" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
                 Database Management

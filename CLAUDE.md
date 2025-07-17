@@ -82,7 +82,7 @@ The app has undergone multiple schema migrations:
 - Added manufacturer relationships and franchise groupings
 - Migrated to `starshipv5` collection with improved indexing
 - Added pricing tracking, condition monitoring, and sightings system
-- Uses `starshipIdMapping` collection for backward compatibility
+- Uses current database IDs with automatic refresh on page load
 
 ### Performance Optimizations
 **Next.js Config**:

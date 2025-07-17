@@ -21,7 +21,11 @@ export default async function handler(
         if (!starship) {
           return res.status(404).json({ success: false, error: 'Starship not found' });
         }
-        res.status(200).json({ success: true, data: starship });
+        const sanitizedStarship = {
+          ...starship.toJSON(),
+          _id: starship._id.toString()
+        };
+        res.status(200).json({ success: true, data: sanitizedStarship });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
@@ -52,9 +56,13 @@ export default async function handler(
         }
         
         // Return the currentEdition in the response for the client to use
+        const sanitizedStarship = {
+          ...starship.toJSON(),
+          _id: starship._id.toString()
+        };
         res.status(200).json({ 
           success: true, 
-          data: starship,
+          data: sanitizedStarship,
           currentEdition: currentEdition || null
         });
       } catch (error) {
@@ -119,7 +127,11 @@ export default async function handler(
           return res.status(404).json({ success: false, error: 'Starship not found' });
         }
         
-        res.status(200).json({ success: true, data: starship });
+        const sanitizedStarship = {
+          ...starship.toJSON(),
+          _id: starship._id.toString()
+        };
+        res.status(200).json({ success: true, data: sanitizedStarship });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }

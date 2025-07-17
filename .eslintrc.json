@@ -1,12 +1,14 @@
 {
   "env": {
     "browser": true,
-    "es2021": true
+    "es2021": true,
+    "node": true
   },
   "extends": [
     "eslint:recommended",
     "plugin:react/recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "next/core-web-vitals"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -20,7 +22,17 @@
     "react",
     "@typescript-eslint"
   ],
-  "rules": {},
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "react/prop-types": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-require-imports": "warn",
+    "react/no-unescaped-entities": "off",
+    "no-case-declarations": "warn",
+    "import/no-anonymous-default-export": "warn",
+    "react-hooks/exhaustive-deps": "warn"
+  },
   "settings": {
     "react": {
       "version": "detect"

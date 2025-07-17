@@ -24,4 +24,6 @@ export const StrictModeDroppable = ({ children, ...props }: DroppableProps) => {
   }
 
   return <Droppable {...props}>{children}</Droppable>;
-}; 
+};
+
+export default StrictModeDroppable; 

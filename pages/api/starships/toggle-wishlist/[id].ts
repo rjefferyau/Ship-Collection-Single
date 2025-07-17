@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import mongoose from 'mongoose';
 import dbConnect from '../../../../lib/mongodb';
-import Starship from '../../../../models/Starship';
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,33 +25,20 @@ export default async function handler(
       return res.status(400).json({ success: false, error: 'Invalid ID format' });
     }
 
-    // Try to find the starship using the Starship model
-    console.log(`Looking for starship with ID: ${id}`);
-    
-    // First try to find by direct ID
-    let starship = await Starship.findById(id);
-    
-    // If not found, check if it's an old ID
-    if (!starship && mongoose.Types.ObjectId.isValid(id)) {
-      console.log(`Starship not found with ID ${id}, checking if it's an old ID...`);
-      
-      // Try to find by originalId
-      starship = await Starship.findOne({ originalId: new mongoose.Types.ObjectId(id) });
-      
-      // If still not found, check the ID mapping collection
-      if (!starship) {
-        const idMappingCollection = mongoose.connection.collection('starshipIdMapping');
-        const mapping = await idMappingCollection.findOne({ oldId: new mongoose.Types.ObjectId(id) });
-        
-        if (mapping) {
-          console.log(`Found ID mapping: ${id} -> ${mapping.newId}`);
-          starship = await Starship.findById(mapping.newId);
-        }
-      }
+    // Check if it's a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log(`Invalid MongoDB ObjectId format: ${id}`);
+      return res.status(400).json({ success: false, error: 'Invalid ObjectId format' });
     }
+
+    // Use direct collection access
+    const collection = mongoose.connection.collection('starshipv5');
+    
+    console.log(`Looking for starship with ID: ${id}`);
+    const starship = await collection.findOne({ _id: id });
     
     if (!starship) {
-      console.log(`Starship not found with ID ${id} or as originalId`);
+      console.log(`Starship not found with ID: ${id}`);
       return res.status(404).json({ success: false, message: 'Starship not found' });
     }
     
@@ -62,17 +48,21 @@ export default async function handler(
     console.log(`Current wishlist status: ${starship.wishlist}, toggling to: ${!starship.wishlist}`);
     const newWishlistStatus = !starship.wishlist;
     
-    // Update the wishlist status
-    starship.wishlist = newWishlistStatus;
+    // Prepare update fields
+    let updateFields = {
+      wishlist: newWishlistStatus,
+      updatedAt: new Date()
+    };
     
     // If adding to wishlist, set a default priority if not already set
     if (newWishlistStatus && !starship.wishlistPriority) {
       console.log(`Adding to wishlist, setting priority`);
       
       // Get the highest priority number currently in use
-      const highestPriorityDoc = await Starship.findOne({ wishlist: true })
-        .sort({ wishlistPriority: -1 })
-        .limit(1);
+      const highestPriorityDoc = await collection.findOne(
+        { wishlist: true },
+        { sort: { wishlistPriority: -1 }, limit: 1 }
+      );
       
       // Set the new priority to be one higher than the current highest
       const nextPriority = highestPriorityDoc && highestPriorityDoc.wishlistPriority 
@@ -80,25 +70,38 @@ export default async function handler(
         : 1;
       
       console.log(`Setting wishlist priority to: ${nextPriority}`);
-      starship.wishlistPriority = nextPriority;
+      updateFields.wishlistPriority = nextPriority;
     }
     
     // If removing from wishlist, clear the priority
     if (!newWishlistStatus) {
       console.log(`Removing from wishlist, clearing priority`);
-      starship.wishlistPriority = undefined;
+      updateFields.wishlistPriority = null;
     }
     
     console.log(`Updating starship ${starship._id}`);
     
-    // Save the updated starship
-    await starship.save();
+    // Update the document directly
+    const result = await collection.updateOne(
+      { _id: id },
+      { $set: updateFields }
+    );
+    
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ success: false, message: 'Update failed' });
+    }
     
     console.log(`Starship updated successfully`);
     
+    // Get the updated document
+    const updatedStarship = await collection.findOne({ _id: id });
+    
     return res.status(200).json({ 
       success: true, 
-      data: starship,
+      data: {
+        ...updatedStarship,
+        _id: updatedStarship._id.toString()
+      },
       message: newWishlistStatus ? 'Added to wishlist' : 'Removed from wishlist'
     });
   } catch (error: any) {

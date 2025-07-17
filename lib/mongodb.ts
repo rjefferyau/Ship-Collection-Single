@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 
 declare global {
-  var mongoose: { conn: any; promise: any };
+  // eslint-disable-next-line no-var
+  var mongoose: { conn: unknown; promise: unknown };
 }
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ship-collection-v2';

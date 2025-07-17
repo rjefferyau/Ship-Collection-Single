@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTimes, faEdit, faTrash, faExternalLinkAlt, faStore, faCalendarAlt, faTag, faLink, faStickyNote } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faEdit, faTrash, faExternalLinkAlt, faStore, faCalendarAlt, faTag, faLink, faStickyNote } from '@fortawesome/free-solid-svg-icons';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
 interface Sighting {

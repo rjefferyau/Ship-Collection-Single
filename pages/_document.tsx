@@ -34,23 +34,13 @@ class MyDocument extends Document {
             referrerPolicy="no-referrer" 
           />
           
-          {/* Font Awesome Pro Kit */}
-          <script src="https://kit.fontawesome.com/d0637c0c40.js" crossOrigin="anonymous"></script>
-          
           {/* DataTables CSS */}
           <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.tailwindcss.min.css" />
-          
-          {/* Alpine.js */}
-          <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
         </Head>
         <body>
           <Main />
           <NextScript />
           
-          {/* jQuery for DataTables */}
-          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-          <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-          <script src="https://cdn.datatables.net/1.11.5/js/dataTables.tailwindcss.min.js"></script>
         </body>
       </Html>
     );

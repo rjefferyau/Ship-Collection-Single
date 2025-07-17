@@ -138,11 +138,6 @@ export default function DatabaseAnalysis() {
                         <td className="border px-4 py-2">{databaseStatus.legacyCollections.counts.starshipv3}</td>
                       </tr>
                       <tr>
-                        <td className="border px-4 py-2">starshipv4</td>
-                        <td className="border px-4 py-2">{databaseStatus.legacyCollections.starshipv4 ? 'Yes' : 'No'}</td>
-                        <td className="border px-4 py-2">{databaseStatus.legacyCollections.counts.starshipv4}</td>
-                      </tr>
-                      <tr>
                         <td className="border px-4 py-2">starshipv5</td>
                         <td className="border px-4 py-2">{databaseStatus.legacyCollections.counts.starshipv5 > 0 ? 'Yes' : 'No'}</td>
                         <td className="border px-4 py-2">{databaseStatus.legacyCollections.counts.starshipv5}</td>
@@ -334,18 +329,6 @@ export default function DatabaseAnalysis() {
                 Remove Legacy Collections
               </button>
               <p className="mt-2 text-sm text-gray-600">Removes starshipv3 and starshipv4 collections if they exist</p>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-medium mb-2">ID Mapping Collection</h3>
-              <button
-                onClick={() => performCleanup('remove_mapping_collection')}
-                disabled={loading.cleanup}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-red-300 mr-2"
-              >
-                Remove ID Mapping Collection
-              </button>
-              <p className="mt-2 text-sm text-gray-600">Removes the starshipIdMapping collection if it exists</p>
             </div>
             
             <div>

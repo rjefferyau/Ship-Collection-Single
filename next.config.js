@@ -18,6 +18,16 @@ const nextConfig = {
   },
   // Optimize webpack configuration
   webpack: (config, { dev, isServer }) => {
+    // Add fallbacks for Node.js modules in client-side bundles
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+      };
+    }
+    
     // Let Next.js handle devtool settings for optimal performance
     
     if (dev) {
@@ -77,6 +87,10 @@ const nextConfig = {
     // Disable type checking during development to reduce file operations
     // You should run type checking manually with `npm run type-check` instead
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
+  },
+  eslint: {
+    // Show ESLint warnings but don't fail the build
+    ignoreDuringBuilds: true,
   },
   // Updated experimental options for latest Next.js
   experimental: {

@@ -60,37 +60,18 @@ export default async function handler(
         // Update the starship with the image URL
         const imageUrl = `/uploads/${fileName}`;
         
-        // Try to find the starship by ID
-        let starship = await Starship.findById(starshipId);
-        
-        // If not found, check if we're using an old ID and try to find by originalId
-        if (!starship) {
-          console.log(`Starship not found with ID ${starshipId}, checking if it's an old ID...`);
-          
-          // Check if the ID is a valid ObjectId
-          if (!mongoose.Types.ObjectId.isValid(starshipId)) {
-            return res.status(400).json({ success: false, error: 'Invalid starship ID format' });
-          }
-          
-          // Try to find by originalId
-          starship = await Starship.findOne({ originalId: starshipId });
-          
-          if (!starship) {
-            // Check if there's a mapping in the ID mapping collection
-            const idMappingCollection = mongoose.connection.collection('starshipIdMapping');
-            const mapping = await idMappingCollection.findOne({ oldId: new mongoose.Types.ObjectId(starshipId) });
-            
-            if (mapping) {
-              console.log(`Found ID mapping: ${starshipId} -> ${mapping.newId}`);
-              starship = await Starship.findById(mapping.newId);
-            }
-          }
+        // Check if the ID is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(starshipId)) {
+          return res.status(400).json({ success: false, error: 'Invalid starship ID format' });
         }
+
+        // Find the starship by ID
+        const starship = await Starship.findById(starshipId);
         
         if (!starship) {
           return res.status(404).json({ 
             success: false, 
-            error: 'Starship not found with either current ID or as originalId' 
+            error: 'Starship not found' 
           });
         }
         

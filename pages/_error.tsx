@@ -1,7 +1,7 @@
 import { NextPage } from 'next';
-import Error, { ErrorProps } from 'next/error';
 import { NextPageContext } from 'next';
 import Head from 'next/head';
+import Link from 'next/link';
 
 interface CustomErrorProps {
   statusCode: number;
@@ -40,20 +40,20 @@ const CustomError: NextPage<CustomErrorProps> = ({ statusCode }) => {
             ? "We couldn't find the page you're looking for."
             : "We're sorry, something went wrong on our end."}
         </p>
-        <a
+        <Link
           href="/"
           className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           Return to Home
-        </a>
+        </Link>
       </div>
     </div>
   );
 };
 
 CustomError.getInitialProps = ({ res, err }: NextPageContext): CustomErrorProps => {
-  const statusCode = res ? res.statusCode : err ? (err as any).statusCode : 404;
-  return { statusCode };
+  const statusCode = res ? res.statusCode : err ? (err as Error & { statusCode?: number }).statusCode : 404;
+  return { statusCode: statusCode || 500 };
 };
 
 export default CustomError; 

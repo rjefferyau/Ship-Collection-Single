@@ -69,6 +69,29 @@ else
     print_success "Git is already installed"
 fi
 
+# Check if MongoDB is installed
+if ! command -v mongod &> /dev/null; then
+    print_warning "MongoDB not found. Installing MongoDB..."
+    brew tap mongodb/brew
+    brew install mongodb-community
+    print_success "MongoDB installed!"
+    
+    print_status "Starting MongoDB service..."
+    brew services start mongodb/brew/mongodb-community
+    print_success "MongoDB service started!"
+else
+    print_success "MongoDB is already installed"
+    
+    # Check if MongoDB service is running
+    if brew services list | grep -q "mongodb-community.*started"; then
+        print_success "MongoDB service is running"
+    else
+        print_status "Starting MongoDB service..."
+        brew services start mongodb/brew/mongodb-community
+        print_success "MongoDB service started!"
+    fi
+fi
+
 print_status "Installing npm dependencies..."
 if [ -f "package.json" ]; then
     npm install

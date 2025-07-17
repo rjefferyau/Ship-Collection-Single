@@ -59,11 +59,17 @@ export default async function handler(
         
         console.log('Fetching starships with filter:', JSON.stringify(filter, null, 2));
         
-        // Query with the filter
-        const starships = await Starship.find(filter);
+        // Query with the filter and consistent sorting
+        const starships = await Starship.find(filter).sort({ issue: 1, shipName: 1 });
         console.log(`Found ${starships.length} starships matching filter`);
         
-        res.status(200).json({ success: true, data: starships });
+        // Ensure all IDs are strings for frontend compatibility
+        const sanitizedStarships = starships.map(ship => ({
+          ...ship.toJSON(),
+          _id: ship._id.toString()
+        }));
+        
+        res.status(200).json({ success: true, data: sanitizedStarships });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
@@ -87,7 +93,11 @@ export default async function handler(
         }
         
         const starship = await Starship.create(req.body);
-        res.status(201).json({ success: true, data: starship });
+        const sanitizedStarship = {
+          ...starship.toJSON(),
+          _id: starship._id.toString()
+        };
+        res.status(201).json({ success: true, data: sanitizedStarship });
       } catch (error: any) {
         console.error('Error creating starship:', error);
         

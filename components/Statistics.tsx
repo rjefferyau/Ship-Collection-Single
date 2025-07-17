@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCube, faCheck, faPercentage, faList, faSort, faChevronRight, faFilter, faSearch, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
-import DataTable from './DataTable';
+import { faCube, faCheck, faPercentage, faList, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
 interface Item {
   _id: string;
@@ -38,9 +37,7 @@ const Statistics: React.FC<StatisticsProps> = ({
   editionBreakdown,
   collectionTypeBreakdown,
   franchiseBreakdown,
-  viewMode = 'all',
-  selectedCollectionType = '',
-  selectedFranchise = ''
+  viewMode = 'all'
 }) => {
   const [editionSortOption, setEditionSortOption] = useState<SortOption>('total-desc');
   const [factionSortOption, setFactionSortOption] = useState<SortOption>('owned-desc');
@@ -63,10 +60,6 @@ const Statistics: React.FC<StatisticsProps> = ({
   const [missingItemsLoading, setMissingItemsLoading] = useState(false);
   const [missingItemsError, setMissingItemsError] = useState<string | null>(null);
 
-  const ownedPercentage = totalItems > 0 
-    ? Math.round((ownedItems / totalItems) * 100) 
-    : 0;
-
   const getSortFunction = (sortOption: SortOption) => {
     switch (sortOption) {
       case 'total-desc':
@@ -84,9 +77,9 @@ const Statistics: React.FC<StatisticsProps> = ({
         return ([, a]: [string, { total: number; owned: number }], [, b]: [string, { total: number; owned: number }]) => 
           (a.total > 0 ? (a.owned / a.total) : 0) - (b.total > 0 ? (b.owned / b.total) : 0);
       case 'name-asc':
-        return ([nameA]: [string, any], [nameB]: [string, any]) => nameA.localeCompare(nameB);
+        return ([nameA]: [string, { total: number; owned: number }], [nameB]: [string, { total: number; owned: number }]) => nameA.localeCompare(nameB);
       case 'name-desc':
-        return ([nameA]: [string, any], [nameB]: [string, any]) => nameB.localeCompare(nameA);
+        return ([nameA]: [string, { total: number; owned: number }], [nameB]: [string, { total: number; owned: number }]) => nameB.localeCompare(nameA);
       default:
         return ([, a]: [string, { total: number; owned: number }], [, b]: [string, { total: number; owned: number }]) => b.total - a.total;
     }
@@ -126,23 +119,7 @@ const Statistics: React.FC<StatisticsProps> = ({
   const sortedFactions = filteredFactions.sort(getSortFunction(factionSortOption));
   const sortedCollectionTypes = filteredCollectionTypes.sort(getSortFunction(collectionTypeSortOption));
   const sortedFranchises = filteredFranchises.sort(getSortFunction(franchiseSortOption));
-  const topFactions = sortedFactions.slice(0, 6); // Only show top 6 factions on dashboard
-  const topCollectionTypes = sortedCollectionTypes.slice(0, 6); // Only show top 6 collection types on dashboard
-  const topFranchises = sortedFranchises.slice(0, 6); // Only show top 6 franchises on dashboard
 
-  const getSortLabel = (sortOption: SortOption) => {
-    switch (sortOption) {
-      case 'total-desc': return 'Total (High to Low)';
-      case 'total-asc': return 'Total (Low to High)';
-      case 'owned-desc': return 'Owned (High to Low)';
-      case 'owned-asc': return 'Owned (Low to High)';
-      case 'percentage-desc': return 'Completion % (High to Low)';
-      case 'percentage-asc': return 'Completion % (Low to High)';
-      case 'name-asc': return 'Name (A to Z)';
-      case 'name-desc': return 'Name (Z to A)';
-      default: return 'Sort by';
-    }
-  };
 
   // Function to fetch missing items for a specific edition or faction
   const fetchMissingItems = async (type: 'edition' | 'faction', name: string) => {

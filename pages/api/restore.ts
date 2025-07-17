@@ -84,7 +84,7 @@ restore.run()
 
     // Spawn restore process
     const restoreProcess = spawn('node', [tempScriptPath], {
-      cwd: process.cwd(),
+      cwd: process.cwd(), // Ensure we're in the project root
       env: {
         ...process.env,
         MONGODB_URI: targetDatabaseUri

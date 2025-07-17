@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IStarship extends Document {
-  originalId?: mongoose.Types.ObjectId; // Reference to the original ID from starshipv4
   issue: string;
   edition: string;  // Display name of the edition (for backward compatibility)
   editionInternalName?: string; // Internal name of the edition (for uniqueness across franchises)
@@ -37,7 +36,6 @@ export interface IStarship extends Document {
 }
 
 const StarshipSchema: Schema = new Schema({
-  originalId: { type: Schema.Types.ObjectId, ref: 'Starship', index: true },
   issue: {
     type: String,
     required: [true, 'Issue number is required'],

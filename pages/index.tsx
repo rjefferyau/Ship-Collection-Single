@@ -56,8 +56,8 @@ const Home: React.FC = () => {
   // Fetch default edition on component mount
   useEffect(() => {
     fetchDefaultEdition().then(() => {
-      // After fetching the default edition, force refresh to get current IDs
-      handleForceRefresh();
+      // After fetching the default edition, fetch starships
+      fetchStarships();
     });
   }, []);
 
@@ -65,8 +65,8 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (selectedFranchise) {
       fetchDefaultEdition(selectedFranchise).then(() => {
-        // After fetching the default edition, force refresh to get current IDs
-        handleForceRefresh();
+        // After fetching the default edition, fetch starships
+        fetchStarships();
       });
     }
   }, [selectedFranchise]);
@@ -168,7 +168,7 @@ const Home: React.FC = () => {
     // Only fetch starships if this is not the initial load
     // The initial load is handled by the fetchDefaultEdition effect
     if (selectedCollectionType) {
-      handleForceRefresh();
+      fetchStarships();
     }
   }, [selectedCollectionType]);
 
@@ -321,54 +321,6 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleForceRefresh = async (showAlert: boolean = false) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Force refreshing starship data...');
-      
-      // Build URL with current filters
-      let url = '/api/starships/force-refresh';
-      const queryParams = new URLSearchParams();
-      
-      if (selectedCollectionType) {
-        queryParams.append('collectionType', selectedCollectionType);
-      }
-      
-      if (selectedFranchise) {
-        queryParams.append('franchise', selectedFranchise);
-      }
-      
-      if (queryParams.toString()) {
-        url = `${url}?${queryParams.toString()}`;
-      }
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Failed to force refresh starships');
-      }
-      
-      const data = await response.json();
-      console.log('Force refresh successful:', data.meta);
-      setStarships(data.data || []);
-      
-      // Show alert if requested (manual refresh)
-      if (showAlert) {
-        alert(`Successfully refreshed ${data.meta?.total || 0} starships with current database IDs!`);
-      }
-    } catch (err) {
-      console.error('Force refresh failed:', err);
-      setError(err instanceof Error ? err.message : 'Force refresh failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleManualForceRefresh = () => {
-    handleForceRefresh(true);
-  };
 
   const handleEditionChange = (edition: string) => {
     setCurrentEdition(edition);
@@ -423,21 +375,6 @@ const Home: React.FC = () => {
                   <span className="text-lg font-bold">+</span>
                 </div>
                 <span className="text-lg">Add New Item to Collection</span>
-              </div>
-            </button>
-            
-            <button
-              onClick={() => handleManualForceRefresh()}
-              className="group bg-orange-600/90 backdrop-blur-sm hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-orange-500/20"
-              disabled={loading}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <span className="text-lg">{loading ? 'Refreshing...' : 'Force Refresh Data'}</span>
               </div>
             </button>
             

@@ -141,7 +141,7 @@ const WishlistPage: React.FC = () => {
   // Mark item as received
   const handleMarkAsReceived = async (id: string) => {
     try {
-      const response = await fetch(`/api/starships/${id}/mark-received`, {
+      const response = await fetch(`/api/starships/toggle-owned/${id}`, {
         method: 'PUT'
       });
       

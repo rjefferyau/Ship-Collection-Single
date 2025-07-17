@@ -206,15 +206,21 @@ const Home: React.FC = () => {
 
   const handleToggleWishlist = async (id: string) => {
     try {
+      console.log(`Calling toggle-wishlist API for ID: ${id}`);
       const response = await fetch(`/api/starships/toggle-wishlist/${id}`, {
         method: 'PUT'
       });
       
+      console.log(`Response status: ${response.status}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to update wishlist status');
+        const errorData = await response.json();
+        console.error('API Error Response:', errorData);
+        throw new Error(`Failed to update wishlist status: ${errorData.error || errorData.message || response.statusText}`);
       }
       
       const result = await response.json();
+      console.log('API Success Response:', result);
       
       // Update the starship in the local state
       setStarships(prevStarships => 
@@ -237,6 +243,7 @@ const Home: React.FC = () => {
       }
     } catch (err) {
       console.error('Error toggling wishlist:', err);
+      alert(`Failed to update wishlist status: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 

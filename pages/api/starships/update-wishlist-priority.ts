@@ -1,14 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '../../../lib/mongodb';
-import mongoose from 'mongoose';
+import { DatabaseService } from '../../../lib/database';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   const { method } = req;
-
-  await dbConnect();
 
   if (method !== 'PUT') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
@@ -24,62 +21,32 @@ export default async function handler(
       });
     }
     
-    // Use direct collection access to bypass any model issues
-    const collection = mongoose.connection.collection('starshipv5');
+    // Validate the starship exists
+    const starship = await DatabaseService.findStarshipById(id);
     
-    // Debug info
-    const dbName = mongoose.connection.db.databaseName;
-    const totalDocs = await collection.countDocuments();
-    
-    // Try multiple ways to find the document
-    const docById = await collection.findOne({ _id: new mongoose.Types.ObjectId(id) });
-    const docByString = await collection.findOne({ _id: id });
-    const anyDoc = await collection.findOne({});
-    
-    console.log(`Debug - DB: ${dbName}, Collection: ${collection.collectionName}, Total: ${totalDocs}`);
-    console.log(`Looking for ID: ${id}, Type: ${typeof id}`);
-    console.log(`Found by ObjectId: ${!!docById}, Found by string: ${!!docByString}`);
-    console.log(`Sample doc ID: ${anyDoc?._id?.toString()}`);
-    
-    if (!docByString) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Starship not found',
-        debug: {
-          database: dbName,
-          collection: collection.collectionName,
-          totalDocuments: totalDocs,
-          searchedId: id,
-          idType: typeof id,
-          sampleId: anyDoc?._id?.toString()
-        }
-      });
-    }
-    
-    // Update the priority directly
-    const result = await collection.updateOne(
-      { _id: id },
-      { $set: { wishlistPriority: priority, updatedAt: new Date() } }
-    );
-    
-    if (result.modifiedCount === 0) {
-      return res.status(400).json({ success: false, message: 'Update failed' });
-    }
+    // Update the priority using the database service
+    await DatabaseService.updateStarship(id, { wishlistPriority: priority });
     
     // Get the updated document
-    const updatedDoc = await collection.findOne({ _id: id });
+    const updatedDoc = await DatabaseService.getUpdatedStarship(id);
     
     return res.status(200).json({ 
       success: true, 
       data: {
-        _id: updatedDoc._id.toString(),
+        _id: updatedDoc._id,
         shipName: updatedDoc.shipName,
         wishlistPriority: updatedDoc.wishlistPriority
       },
       message: 'Wishlist priority updated'
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating wishlist priority:', error);
-    return res.status(400).json({ success: false, error });
+    
+    // Handle specific error types
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    
+    return res.status(400).json({ success: false, error: error.message || 'An error occurred' });
   }
 } 

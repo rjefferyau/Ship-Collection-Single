@@ -13,6 +13,23 @@ if (!MONGODB_URI) {
   );
 }
 
+// Connection options optimized for containerized environments
+const CONNECTION_OPTIONS = {
+  bufferCommands: false,
+  // Connection pool settings for better performance
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  // Retry logic for containerized environments
+  retryWrites: true,
+  retryReads: true,
+  // Heartbeat settings
+  heartbeatFrequencyMS: 10000,
+  // Connection management
+  maxIdleTimeMS: 30000,
+  connectTimeoutMS: 10000,
+};
+
 /**
  * Global is used here to maintain a cached connection across hot reloads
  * in development. This prevents connections growing exponentially
@@ -30,16 +47,26 @@ async function dbConnect() {
   }
 
   if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    console.log('🔄 Connecting to MongoDB:', MONGODB_URI.replace(/\/\/.*@/, '//***:***@'));
+    
+    cached.promise = mongoose.connect(MONGODB_URI, CONNECTION_OPTIONS).then((mongoose) => {
+      console.log('✅ MongoDB connected successfully');
       return mongoose;
+    }).catch((error) => {
+      console.error('❌ MongoDB connection failed:', error);
+      cached.promise = null; // Reset promise on failure
+      throw error;
     });
   }
-  cached.conn = await cached.promise;
-  return cached.conn;
+  
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    console.error('❌ Database connection error:', error);
+    cached.promise = null; // Reset promise on failure
+    throw error;
+  }
 }
 
 export default dbConnect; 

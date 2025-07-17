@@ -1,11 +1,17 @@
 /** @type {import('next').NextConfig} */
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-});
+let withBundleAnalyzer = (config) => config;
+try {
+  withBundleAnalyzer = require('@next/bundle-analyzer')({
+    enabled: process.env.ANALYZE === 'true',
+  });
+} catch (error) {
+  console.warn('Bundle analyzer not available, skipping...');
+}
 
 const nextConfig = {
   reactStrictMode: false,
   distDir: '.next',
+  output: 'standalone',
   images: {
     domains: ['localhost'],
   },

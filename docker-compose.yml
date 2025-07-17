@@ -1,0 +1,80 @@
+services:
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017/ship-collection-v2
+    depends_on:
+      - mongodb
+    networks:
+      - ship-collection-network
+    volumes:
+      - uploads:/app/public/uploads
+      - magazines:/app/public/uploads/magazines
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7-jammy
+    environment:
+      - MONGO_INITDB_DATABASE=ship-collection-v2
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - ship-collection-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Express (Optional - for database administration)
+  mongo-express:
+    image: mongo-express:latest
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=shipCollection2025
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - ship-collection-network
+    restart: unless-stopped
+    profiles:
+      - tools
+
+# Named volumes for persistent data
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  uploads:
+    driver: local
+  magazines:
+    driver: local
+
+# Custom network for service communication
+networks:
+  ship-collection-network:
+    driver: bridge

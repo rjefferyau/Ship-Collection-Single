@@ -1,0 +1,33 @@
+services:
+  # Development configuration for Next.js app
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/ship-collection-v2
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - uploads:/app/public/uploads
+      - magazines:/app/public/uploads/magazines
+    command: sh -c "NODE_OPTIONS='--max-old-space-size=4096' npx next dev"
+    stdin_open: true
+    tty: true
+
+  # Development MongoDB with exposed port
+  mongodb:
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=ship-collection-v2
+    command: mongod --auth
+
+  # Always include mongo-express in development
+  mongo-express:
+    profiles: []

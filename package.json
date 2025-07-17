@@ -24,10 +24,15 @@
     "backup:create": "node scripts/backup-database.js",
     "backup:restore": "node scripts/restore-database.js --interactive",
     "backup:restore-latest": "node scripts/restore-database.js --latest",
-    "backup:list": "node scripts/list-backups.js"
+    "backup:list": "node scripts/list-backups.js",
+    "docker:dev": "scripts/docker-dev.sh",
+    "docker:prod": "scripts/docker-prod.sh",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
-    "@awesome.me/kit-d0637c0c40": "^1.0.4",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
     "@fortawesome/free-regular-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
@@ -53,7 +58,7 @@
     "jspdf": "^3.0.0",
     "jspdf-autotable": "^5.0.2",
     "mongoose": "^7.0.3",
-    "next": "^15.3.4",
+    "next": "^15.4.1",
     "node-fetch": "^2.7.0",
     "react": "^18.2.0",
     "react-beautiful-dnd": "^13.1.1",

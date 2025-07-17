@@ -1,0 +1,11 @@
+name,registry,class,faction,commissioned,status,role,owned
+USS Enterprise,NCC-1701,Constitution,Federation,2245,Destroyed,Exploration,true
+USS Enterprise,NCC-1701-D,Galaxy,Federation,2363,Destroyed,Exploration,true
+USS Defiant,NX-74205,Defiant,Federation,2370,Active,Escort,false
+IKS Bortas,IKC-9865,Vor'cha,Klingon,2367,Active,Battlecruiser,false
+USS Voyager,NCC-74656,Intrepid,Federation,2371,Active,Exploration,true
+IRW Khazara,RW-75341,D'deridex,Romulan,2364,Active,Warbird,false
+USS Reliant,NCC-1864,Miranda,Federation,2250,Destroyed,Science,false
+IKS Rotarran,IKC-1242,B'rel,Klingon,2340,Active,Bird-of-Prey,true
+USS Prometheus,NX-59650,Prometheus,Federation,2374,Active,Multi-vector assault,false
+USS Excelsior,NCC-2000,Excelsior,Federation,2285,Active,Explorer,true 

@@ -18,10 +18,9 @@ const nextConfig = {
   },
   // Optimize webpack configuration
   webpack: (config, { dev, isServer }) => {
+    // Let Next.js handle devtool settings for optimal performance
+    
     if (dev) {
-      // Use faster source maps in development
-      config.devtool = 'eval';
-      
       // Reduce the number of webpack loaders
       config.module.rules.forEach((rule) => {
         if (rule.oneOf) {
@@ -79,14 +78,10 @@ const nextConfig = {
     // You should run type checking manually with `npm run type-check` instead
     ignoreBuildErrors: process.env.NODE_ENV === 'development',
   },
-  // Disable file system watching for specific directories
+  // Updated experimental options for latest Next.js
   experimental: {
-    // Valid experimental options for Next.js 13.5.8
+    // Valid experimental options for latest Next.js
     workerThreads: false,
-    // Reduce file system operations
-    swcMinify: true,
-    // Disable font optimization (using a valid property)
-    optimizeCss: false,
   },
   // Reduce the number of pages that are pre-rendered at once
   staticPageGenerationTimeout: 120,

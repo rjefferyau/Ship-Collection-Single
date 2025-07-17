@@ -143,18 +143,8 @@ class DatabaseRestore {
   async validateBackup() {
     this.log('Validating backup contents...');
     
-    // Find the backup directory (should be the only directory in temp)
-    const items = await fs.readdir(this.tempDir);
-    const backupDirs = items.filter(async item => {
-      const itemPath = path.join(this.tempDir, item);
-      return (await fs.stat(itemPath)).isDirectory();
-    });
-    
-    if (backupDirs.length === 0) {
-      throw new Error('No backup directory found in extracted archive');
-    }
-    
-    const backupContentDir = path.join(this.tempDir, backupDirs[0]);
+    // The backup extracts directly to tempDir, so use tempDir as backupContentDir
+    const backupContentDir = this.tempDir;
     
     // Check for required components
     const databaseDir = path.join(backupContentDir, 'database');
@@ -208,99 +198,92 @@ class DatabaseRestore {
   async dropExistingDatabase() {
     this.log('Dropping existing database...');
     
-    return new Promise((resolve, reject) => {
-      const mongosh = spawn('mongosh', [
-        this.mongoUri,
-        '--eval', `db.dropDatabase()`
-      ]);
-      
-      let stdout = '';
-      let stderr = '';
-      
-      mongosh.stdout.on('data', (data) => {
-        stdout += data.toString();
+    const mongoose = require('mongoose');
+    
+    try {
+      // Use mongoose to connect and drop collections
+      await mongoose.connect(this.mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
       });
       
-      mongosh.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
+      const db = mongoose.connection.db;
+      const collections = await db.collections();
       
-      mongosh.on('close', (code) => {
-        if (code === 0) {
-          this.log('Existing database dropped successfully');
-          resolve();
-        } else {
-          this.log(`Database drop failed with code ${code}`, 'error');
-          this.log(`Stderr: ${stderr}`, 'error');
-          reject(new Error(`Database drop failed: ${stderr}`));
+      if (collections.length > 0) {
+        this.log(`Dropping ${collections.length} existing collections...`);
+        for (const collection of collections) {
+          await collection.drop();
+          this.log(`Dropped collection: ${collection.collectionName}`);
         }
-      });
+      } else {
+        this.log('No existing collections to drop');
+      }
       
-      mongosh.on('error', (error) => {
-        // Try alternative approach with mongo shell
-        this.log('Trying alternative mongo shell...', 'warn');
-        const mongo = spawn('mongo', [
-          this.mongoUri,
-          '--eval', `db.dropDatabase()`
-        ]);
-        
-        mongo.on('close', (altCode) => {
-          if (altCode === 0) {
-            this.log('Database dropped with alternative mongo shell');
-            resolve();
-          } else {
-            reject(new Error(`Both mongosh and mongo failed to drop database`));
-          }
-        });
-        
-        mongo.on('error', () => {
-          reject(new Error(`Cannot connect to MongoDB. Please ensure MongoDB is running.`));
-        });
-      });
-    });
+      await mongoose.connection.close();
+      this.log('Existing database collections dropped successfully');
+      
+    } catch (error) {
+      this.log(`Database drop error: ${error.message}`, 'error');
+      throw new Error(`Cannot connect to MongoDB. Please ensure MongoDB is running and accessible.`);
+    }
   }
 
   async restoreDatabase(databaseDir) {
     this.log('Restoring database from backup...');
     
-    return new Promise((resolve, reject) => {
-      const mongorestoreArgs = [
-        '--uri', this.mongoUri,
-        databaseDir
-      ];
-      
-      this.log(`Running: mongorestore ${mongorestoreArgs.join(' ')}`);
-      
-      const mongorestore = spawn('mongorestore', mongorestoreArgs);
-      
-      let stdout = '';
-      let stderr = '';
-      
-      mongorestore.stdout.on('data', (data) => {
-        stdout += data.toString();
+    const mongoose = require('mongoose');
+    
+    try {
+      // Connect to MongoDB
+      await mongoose.connect(this.mongoUri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
       });
       
-      mongorestore.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
+      const db = mongoose.connection.db;
       
-      mongorestore.on('close', (code) => {
-        if (code === 0) {
-          this.log('Database restore completed successfully');
-          this.log(`Stdout: ${stdout}`);
-          resolve();
+      // Get all JSON files in the database directory
+      const jsonFiles = await fs.readdir(databaseDir);
+      const collections = jsonFiles.filter(file => file.endsWith('.json'));
+      
+      let totalDocuments = 0;
+      
+      for (const collectionFile of collections) {
+        const collectionName = path.basename(collectionFile, '.json');
+        const filePath = path.join(databaseDir, collectionFile);
+        
+        this.log(`Restoring collection: ${collectionName}`);
+        
+                 // Read and parse the JSON file
+         const fileContent = await fs.readFile(filePath, 'utf8');
+         const backupData = JSON.parse(fileContent);
+         
+         // Extract documents from the backup structure
+         const documents = backupData.documents || backupData;
+         
+         if (Array.isArray(documents) && documents.length > 0) {
+          // Insert documents into the collection
+          const collection = db.collection(collectionName);
+          await collection.insertMany(documents);
+          
+          this.log(`✓ Restored ${documents.length} documents to ${collectionName}`);
+          totalDocuments += documents.length;
         } else {
-          this.log(`Database restore failed with code ${code}`, 'error');
-          this.log(`Stderr: ${stderr}`, 'error');
-          reject(new Error(`mongorestore failed with exit code ${code}: ${stderr}`));
+          this.log(`⚠ No documents found in ${collectionName}.json`);
         }
-      });
+      }
       
-      mongorestore.on('error', (error) => {
-        this.log(`Database restore process error: ${error.message}`, 'error');
-        reject(error);
-      });
-    });
+      await mongoose.connection.close();
+      
+      this.log(`Database restore completed successfully: ${collections.length} collections, ${totalDocuments} total documents`);
+      
+      return totalDocuments;
+      
+    } catch (error) {
+      this.log(`Database restore error: ${error.message}`, 'error');
+      throw new Error(`Database restore failed: ${error.message}`);
+    }
   }
 
   async restoreUploads(uploadsDir) {

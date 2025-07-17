@@ -11,6 +11,7 @@ import {
   faCog
 } from '@fortawesome/free-solid-svg-icons';
 import BackupManager from '../components/BackupManager';
+import DatabaseCreator from '../components/DatabaseCreator';
 
 const DatabaseSetupPage: React.FC = () => {
   return (
@@ -58,8 +59,32 @@ const DatabaseSetupPage: React.FC = () => {
           <BackupManager />
         </div>
 
+        {/* Database Creation Section */}
+        <div id="database-creator" className="mb-8">
+          <DatabaseCreator />
+        </div>
+
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+          
+          {/* Database Creation */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-purple-600">
+            <div className="p-5">
+              <div className="flex items-center mb-4">
+                <FontAwesomeIcon icon={faDatabase} className="text-purple-600 text-2xl mr-3" />
+                <h2 className="text-xl font-semibold text-gray-800">Create Database</h2>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Create new databases from backup files. Perfect for testing environments and data duplication.
+              </p>
+              <button
+                onClick={() => document.getElementById('database-creator')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Create from Backup
+              </button>
+            </div>
+          </div>
           
           {/* Import/Export Tools */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden border-t-4 border-yellow-500">

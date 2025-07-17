@@ -1,0 +1,15 @@
+{
+  "current": "starships-single",
+  "databases": {
+    "primary": {
+      "name": "Primary Database",
+      "uri": "mongodb://localhost:27017/ship-collection-v2",
+      "description": "Main collection database"
+    },
+    "starships-single": {
+      "name": "starships",
+      "uri": "mongodb://localhost:27017/starships-single",
+      "description": "starships"
+    }
+  }
+}

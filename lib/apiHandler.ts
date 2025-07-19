@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Model, Document } from 'mongoose';
 import dbConnect from './mongodb';
+import { getImageUrl } from './imageHelper';
 
 // Standard API response interface
 interface ApiResponse<T = any> {
@@ -56,14 +57,31 @@ const handleGet = async <T extends Document>(
   res: NextApiResponse, 
   modelName: string
 ) => {
-  const item = await model.findById(id);
+  // Try to find with ObjectId first, then string (handles both environments)
+  let item = null;
+  try {
+    const mongoose = require('mongoose');
+    item = await model.findOne({ _id: new mongoose.Types.ObjectId(id) });
+  } catch (e) {
+    // If ObjectId conversion fails, try as string
+    item = await model.findOne({ _id: id });
+  }
+  
   if (!item) {
     return res.status(404).json({ 
       success: false, 
       message: `${modelName} not found` 
     });
   }
-  return res.status(200).json({ success: true, data: item });
+  
+  // Transform image URLs if this is a Starship
+  const itemData = item.toJSON();
+  const responseData = modelName === 'Starship' && (itemData as any).imageUrl ? {
+    ...itemData,
+    imageUrl: getImageUrl((itemData as any).imageUrl)
+  } : itemData;
+  
+  return res.status(200).json({ success: true, data: responseData });
 };
 
 const handleUpdate = async <T extends Document>(
@@ -73,10 +91,20 @@ const handleUpdate = async <T extends Document>(
   res: NextApiResponse, 
   modelName: string
 ) => {
-  const updatedItem = await model.findByIdAndUpdate(id, updateData, {
-    new: true,
-    runValidators: true
-  });
+  // Try to update with ObjectId first, then string
+  let updatedItem = null;
+  try {
+    const mongoose = require('mongoose');
+    updatedItem = await model.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, updateData, {
+      new: true,
+      runValidators: true
+    });
+  } catch (e) {
+    updatedItem = await model.findOneAndUpdate({ _id: id }, updateData, {
+      new: true,
+      runValidators: true
+    });
+  }
   
   if (!updatedItem) {
     return res.status(404).json({ 
@@ -85,7 +113,14 @@ const handleUpdate = async <T extends Document>(
     });
   }
   
-  return res.status(200).json({ success: true, data: updatedItem });
+  // Transform image URLs if this is a Starship
+  const updatedData = updatedItem.toJSON();
+  const responseData = modelName === 'Starship' && (updatedData as any).imageUrl ? {
+    ...updatedData,
+    imageUrl: getImageUrl((updatedData as any).imageUrl)
+  } : updatedData;
+  
+  return res.status(200).json({ success: true, data: responseData });
 };
 
 const handleDelete = async <T extends Document>(
@@ -94,7 +129,14 @@ const handleDelete = async <T extends Document>(
   res: NextApiResponse, 
   modelName: string
 ) => {
-  const deletedItem = await model.findByIdAndDelete(id);
+  // Try to delete with ObjectId first, then string
+  let deletedItem = null;
+  try {
+    const mongoose = require('mongoose');
+    deletedItem = await model.findOneAndDelete({ _id: new mongoose.Types.ObjectId(id) });
+  } catch (e) {
+    deletedItem = await model.findOneAndDelete({ _id: id });
+  }
   
   if (!deletedItem) {
     return res.status(404).json({ 
@@ -109,10 +151,21 @@ const handleDelete = async <T extends Document>(
 const handleList = async <T extends Document>(
   model: Model<T>, 
   res: NextApiResponse, 
-  sortOptions: any = { name: 1 }
+  sortOptions: any = { name: 1 },
+  modelName: string = ''
 ) => {
   const items = await model.find({}).sort(sortOptions);
-  return res.status(200).json({ success: true, data: items });
+  
+  // Transform image URLs if this is a Starship list
+  const responseData = modelName === 'Starship' ? items.map(item => {
+    const itemData = item.toJSON();
+    return (itemData as any).imageUrl ? {
+      ...itemData,
+      imageUrl: getImageUrl((itemData as any).imageUrl)
+    } : itemData;
+  }) : items;
+  
+  return res.status(200).json({ success: true, data: responseData });
 };
 
 const handleCreate = async <T extends Document>(
@@ -221,7 +274,7 @@ export function createCollectionApiHandler<T extends Document>(
           if (customHandlers.get) {
             return await customHandlers.get(model, req, res);
           }
-          return await handleList(model, res, sortOptions);
+          return await handleList(model, res, sortOptions, modelName);
           
         case 'POST':
           if (customHandlers.post) {

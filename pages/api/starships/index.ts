@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '../../../lib/mongodb';
 import Starship, { IStarship } from '../../../models/Starship';
 import Edition from '../../../models/Edition';
+import { getImageUrl } from '../../../lib/imageHelper';
 
 export interface Starship {
   _id: string;
@@ -38,23 +39,53 @@ export default async function handler(
     case 'GET':
       try {
         // Extract query parameters
-        const { collectionType, franchise } = req.query;
+        const { collectionType, franchise, edition, noImage } = req.query;
         
         // Build filter object based on query parameters
         const filter: any = {};
+        const orConditions: any[] = [];
         
         if (collectionType && collectionType !== '') {
           // Handle the case where collectionType might be undefined in the database
           // Use $or to match either the specified collectionType or undefined collectionType
-          filter.$or = [
+          orConditions.push(
             { collectionType: collectionType },
             { collectionType: { $exists: false } }
-          ];
+          );
         }
         
         if (franchise && franchise !== '') {
           // Use case-insensitive regex for franchise matching using string pattern
           filter.franchise = { $regex: `^${franchise}$`, $options: 'i' };
+        }
+        
+        if (edition && edition !== '') {
+          filter.edition = edition;
+        }
+        
+        // Filter for ships without images
+        if (noImage === 'true') {
+          filter.$or = [
+            { imageUrl: { $exists: false } },
+            { imageUrl: null },
+            { imageUrl: '' }
+          ];
+        }
+        
+        // If we have collection type conditions and need to combine with other $or conditions
+        if (orConditions.length > 0 && noImage !== 'true') {
+          filter.$or = orConditions;
+        } else if (orConditions.length > 0 && noImage === 'true') {
+          // If we have both collection type and no image filters, combine them with $and
+          filter.$and = [
+            { $or: orConditions },
+            { $or: [
+              { imageUrl: { $exists: false } },
+              { imageUrl: null },
+              { imageUrl: '' }
+            ]}
+          ];
+          delete filter.$or; // Remove the $or we set for noImage
         }
         
         console.log('Fetching starships with filter:', JSON.stringify(filter, null, 2));
@@ -63,11 +94,15 @@ export default async function handler(
         const starships = await Starship.find(filter).sort({ issue: 1, shipName: 1 });
         console.log(`Found ${starships.length} starships matching filter`);
         
-        // Ensure all IDs are strings for frontend compatibility
-        const sanitizedStarships = starships.map(ship => ({
-          ...ship.toJSON(),
-          _id: ship._id.toString()
-        }));
+        // Ensure all IDs are strings and transform image URLs for frontend compatibility
+        const sanitizedStarships = starships.map(ship => {
+          const shipData = ship.toJSON();
+          return {
+            ...shipData,
+            _id: ship._id.toString(),
+            imageUrl: getImageUrl(shipData.imageUrl)
+          };
+        });
         
         res.status(200).json({ success: true, data: sanitizedStarships });
       } catch (error) {
@@ -93,9 +128,11 @@ export default async function handler(
         }
         
         const starship = await Starship.create(req.body);
+        const shipData = starship.toJSON();
         const sanitizedStarship = {
-          ...starship.toJSON(),
-          _id: starship._id.toString()
+          ...shipData,
+          _id: starship._id.toString(),
+          imageUrl: getImageUrl(shipData.imageUrl)
         };
         res.status(201).json({ success: true, data: sanitizedStarship });
       } catch (error: any) {

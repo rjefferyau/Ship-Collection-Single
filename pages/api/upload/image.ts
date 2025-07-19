@@ -12,7 +12,7 @@ export const config = {
   },
 };
 
-export default async function handler(
+export default function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
@@ -20,12 +20,10 @@ export default async function handler(
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  await dbConnect();
-
-  try {
-    const form = new IncomingForm();
-    
-    form.parse(req, async (err, fields, files) => {
+  const form = new IncomingForm();
+  
+  form.parse(req, async (err, fields, files) => {
+    try {
       if (err) {
         console.error('Error parsing form:', err);
         return res.status(500).json({ success: false, error: 'Error parsing form' });
@@ -41,6 +39,9 @@ export default async function handler(
       if (!starshipId || Array.isArray(starshipId)) {
         return res.status(400).json({ success: false, error: 'No starship ID provided' });
       }
+
+      // Connect to database
+      await dbConnect();
       
       // Create uploads directory if it doesn't exist
       const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -53,49 +54,66 @@ export default async function handler(
       const fileName = `${starshipId}-${Date.now()}${fileExt}`;
       const filePath = path.join(uploadsDir, fileName);
       
-      try {
-        // Copy the file to the uploads directory
-        fs.copyFileSync(file.filepath, filePath);
-        
-        // Update the starship with the image URL
-        const imageUrl = `/uploads/${fileName}`;
-        
-        // Check if the ID is a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(starshipId)) {
-          return res.status(400).json({ success: false, error: 'Invalid starship ID format' });
+      // Copy the file to the uploads directory
+      fs.copyFileSync(file.filepath, filePath);
+      
+      // Update the starship with the image URL
+      const imageUrl = `/uploads/${fileName}`;
+      
+      // Find the starship by ID (handle both string and ObjectId formats)
+      let starship = null;
+      
+      // Use collection.findOne to handle the Docker string ID environment
+      const foundDoc = await Starship.collection.findOne({ _id: starshipId as any });
+      if (foundDoc) {
+        starship = foundDoc;
+      } else {
+        // Fallback: try ObjectId format
+        try {
+          const objectId = new mongoose.Types.ObjectId(starshipId);
+          const foundDocObjectId = await Starship.collection.findOne({ _id: objectId });
+          if (foundDocObjectId) {
+            starship = foundDocObjectId;
+          }
+        } catch (e) {
+          // If ObjectId conversion fails, starship remains null
         }
-
-        // Find the starship by ID
-        const starship = await Starship.findById(starshipId);
-        
-        if (!starship) {
-          return res.status(404).json({ 
-            success: false, 
-            error: 'Starship not found' 
-          });
-        }
-        
-        // Update the starship
-        starship.imageUrl = imageUrl;
-        await starship.save();
-        
-        console.log(`Successfully updated image for starship ${starship._id}`);
-        return res.status(200).json({ success: true, data: starship });
-      } catch (error) {
-        console.error('Error handling image upload:', error);
-        return res.status(500).json({ 
+      }
+      
+      if (!starship) {
+        return res.status(404).json({ 
           success: false, 
-          error: 'Error handling image upload',
-          details: error instanceof Error ? error.message : String(error)
+          error: 'Starship not found' 
         });
       }
-    });
-  } catch (error) {
-    console.error('Error in image upload API:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Server error',
-      details: error instanceof Error ? error.message : String(error)
-    });
-  }
+      
+      // Use direct MongoDB collection update to avoid Mongoose model/collection name conflicts
+      const directUpdate = await Starship.collection.findOneAndUpdate(
+        { _id: starship._id.toString() } as any,
+        { $set: { imageUrl: imageUrl } },
+        { returnDocument: 'after' }
+      );
+      
+      if (!directUpdate.value) {
+        throw new Error('Failed to update starship imageUrl');
+      }
+      
+      return res.status(200).json({ 
+        success: true, 
+        data: { 
+          _id: starship._id, 
+          shipName: starship.shipName, 
+          imageUrl: imageUrl 
+        } 
+      });
+      
+    } catch (error) {
+      console.error('Error handling image upload:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Error handling image upload',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 } 

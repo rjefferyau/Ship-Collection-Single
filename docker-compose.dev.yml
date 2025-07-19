@@ -26,7 +26,7 @@ services:
       - "27017:27017"
     environment:
       - MONGO_INITDB_DATABASE=ship-collection-v2
-    command: mongod --auth
+    command: mongod --noauth
 
   # Always include mongo-express in development
   mongo-express:

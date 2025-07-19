@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import ImportExport from '../components/ImportExport';
 import CsvUpload from '../components/CsvUpload';
+import ShipImageUploader from '../components/ShipImageUploader';
 
 const ImportExportPage: React.FC = () => {
   const [selectedEditionId, setSelectedEditionId] = useState<string>('');
   const [selectedEditionName, setSelectedEditionName] = useState<string>('');
   const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
@@ -37,6 +39,30 @@ const ImportExportPage: React.FC = () => {
               <CsvUpload 
                 selectedEdition={selectedEditionId}
                 selectedFranchise={selectedFranchise}
+                onUploadComplete={() => setRefreshKey(prev => prev + 1)}
+              />
+            </div>
+          </div>
+          
+          {/* Image Upload Section */}
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">Add Images to Ships</h2>
+            </div>
+            <div className="p-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Quickly add images to ships that don't have them yet. Drag and drop images or click to select files.
+                {selectedFranchise && selectedEditionName && (
+                  <span className="block mt-2 font-medium text-gray-800">
+                    Showing ships from: {selectedFranchise} - {selectedEditionName}
+                  </span>
+                )}
+              </p>
+              <ShipImageUploader
+                key={refreshKey}
+                franchise={selectedFranchise}
+                edition={selectedEditionName}
+                onUploadComplete={() => setRefreshKey(prev => prev + 1)}
               />
             </div>
           </div>

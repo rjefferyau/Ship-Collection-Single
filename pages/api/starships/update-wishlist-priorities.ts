@@ -30,12 +30,19 @@ export default async function handler(
     }
     
     // Process all updates in a single batch operation
-    const updateOperations = items.map(item => ({
-      updateOne: {
-        filter: { _id: item.id },
-        update: { $set: { wishlistPriority: item.priority } }
+    const mongoose = require('mongoose');
+    const updateOperations = items.map(item => {
+      try {
+        return {
+          updateOne: {
+            filter: { _id: new mongoose.Types.ObjectId(item.id) },
+            update: { $set: { wishlistPriority: item.priority } }
+          }
+        };
+      } catch (error) {
+        throw new Error(`Invalid ID format: ${item.id}`);
       }
-    }));
+    });
     
     const result = await Starship.bulkWrite(updateOperations);
     

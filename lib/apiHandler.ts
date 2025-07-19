@@ -57,14 +57,20 @@ const handleGet = async <T extends Document>(
   res: NextApiResponse, 
   modelName: string
 ) => {
-  // Try to find with ObjectId first, then string (handles both environments)
   let item = null;
+  
+  // Convert frontend string representation to ObjectId for database query
   try {
     const mongoose = require('mongoose');
-    item = await model.findOne({ _id: new mongoose.Types.ObjectId(id) });
-  } catch (e) {
-    // If ObjectId conversion fails, try as string
-    item = await model.findOne({ _id: id });
+    const objectId = new mongoose.Types.ObjectId(id);
+    item = await model.findById(objectId);
+  } catch (error: any) {
+    // If ObjectId conversion fails, the ID format is invalid
+    return res.status(400).json({ 
+      success: false, 
+      message: `Invalid ${modelName} ID format`,
+      error: error.message
+    });
   }
   
   if (!item) {
@@ -91,19 +97,31 @@ const handleUpdate = async <T extends Document>(
   res: NextApiResponse, 
   modelName: string
 ) => {
-  // Try to update with ObjectId first, then string
   let updatedItem = null;
+  
+  // Convert frontend string representation to ObjectId for database query
   try {
     const mongoose = require('mongoose');
-    updatedItem = await model.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, updateData, {
-      new: true,
-      runValidators: true
-    });
-  } catch (e) {
-    updatedItem = await model.findOneAndUpdate({ _id: id }, updateData, {
-      new: true,
-      runValidators: true
-    });
+    const objectId = new mongoose.Types.ObjectId(id);
+    updatedItem = await model.findByIdAndUpdate(
+      objectId, 
+      updateData, 
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+  } catch (error: any) {
+    // If ObjectId conversion fails, the ID format is invalid
+    if (error.name === 'BSONError' || error.message.includes('ObjectId')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid ${modelName} ID format`,
+        error: error.message
+      });
+    }
+    // Re-throw validation or other errors
+    throw error;
   }
   
   if (!updatedItem) {
@@ -129,13 +147,20 @@ const handleDelete = async <T extends Document>(
   res: NextApiResponse, 
   modelName: string
 ) => {
-  // Try to delete with ObjectId first, then string
   let deletedItem = null;
+  
+  // Convert frontend string representation to ObjectId for database query
   try {
     const mongoose = require('mongoose');
-    deletedItem = await model.findOneAndDelete({ _id: new mongoose.Types.ObjectId(id) });
-  } catch (e) {
-    deletedItem = await model.findOneAndDelete({ _id: id });
+    const objectId = new mongoose.Types.ObjectId(id);
+    deletedItem = await model.findByIdAndDelete(objectId);
+  } catch (error: any) {
+    // If ObjectId conversion fails, the ID format is invalid
+    return res.status(400).json({ 
+      success: false, 
+      message: `Invalid ${modelName} ID format`,
+      error: error.message
+    });
   }
   
   if (!deletedItem) {

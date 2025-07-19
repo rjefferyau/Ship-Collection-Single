@@ -44,16 +44,20 @@ The application centers around **Starships** with complex relationships:
 - **CollectionType**: User-defined collection categories
 
 ### Database Architecture
-- **MongoDB** with Mongoose ODM
+- **MongoDB** with Mongoose ODM using **ObjectId format throughout**
 - Main collection: `starshipv5` (migrated from earlier versions)
+- **All documents use MongoDB ObjectIds** (migrated from string IDs in July 2025)
 - Compound unique index on `issue + edition`
 - Multiple performance indexes on commonly queried fields
 - Uses centralized API handler pattern via `lib/apiHandler.ts`
+- Development and Docker environments synchronized with ObjectId format
 
 ### API Design Pattern
-Uses factory-based API handlers:
+Uses factory-based API handlers with **ObjectId-only handling**:
 - `createResourceApiHandler()` for single resource routes (`/api/starships/[id]`)
 - `createCollectionApiHandler()` for collection routes (`/api/starships`)
+- **All ID parameters converted to ObjectIds** using `mongoose.Types.ObjectId()`
+- Uses `findById()`, `findByIdAndUpdate()`, `findByIdAndDelete()` for consistency
 - Standardized error handling, validation, and response format
 - All APIs return `{ success: boolean, data?: any, message?: string, error?: string }`
 
@@ -82,7 +86,11 @@ The app has undergone multiple schema migrations:
 - Added manufacturer relationships and franchise groupings
 - Migrated to `starshipv5` collection with improved indexing
 - Added pricing tracking, condition monitoring, and sightings system
-- Uses current database IDs with automatic refresh on page load
+- **July 2025: Major ObjectId Migration** - Converted all string IDs to MongoDB ObjectIds
+  - Migrated 377 starship records from string to ObjectId format
+  - Updated all API handlers to use ObjectId-only pattern
+  - Synchronized development and Docker environments
+  - Fixed image upload and all CRUD operations for ObjectId compatibility
 
 ### Performance Optimizations
 **Next.js Config**:
@@ -108,14 +116,22 @@ The app has undergone multiple schema migrations:
 ```typescript
 import { createResourceApiHandler } from '../../../lib/apiHandler';
 import Model from '../../../models/Model';
+import mongoose from 'mongoose';
 
 export default createResourceApiHandler(Model, 'ModelName', {
   allowedMethods: ['GET', 'PUT', 'DELETE'],
   customHandlers: {
-    // Custom logic if needed
+    // Custom logic if needed - all IDs are ObjectIds
+    // Example: const objectId = new mongoose.Types.ObjectId(id);
   }
 });
 ```
+
+**Critical: All ID handling uses ObjectId format**
+- Frontend sends ObjectId strings (e.g., "687c2b5129bc04632f78e5cc")
+- API handlers convert to ObjectId: `new mongoose.Types.ObjectId(id)`
+- Database queries use ObjectId format throughout
+- No string/ObjectId dual-format handling
 
 ### Component Pattern
 Components use TypeScript interfaces from `/types/index.ts` and follow the established UI patterns using Tailwind classes with the custom theme.
@@ -123,5 +139,136 @@ Components use TypeScript interfaces from `/types/index.ts` and follow the estab
 ### Database Query Pattern
 Always use the centralized `dbConnect()` from `lib/mongodb.ts` and leverage the existing indexes for performance.
 
+**ObjectId Query Examples:**
+```typescript
+// Single record operations
+const objectId = new mongoose.Types.ObjectId(id);
+const starship = await Starship.findById(objectId);
+const updated = await Starship.findByIdAndUpdate(objectId, data, { new: true });
+const deleted = await Starship.findByIdAndDelete(objectId);
+
+// Collection operations with ObjectId filters
+const ships = await Starship.find({ 
+  manufacturer: new mongoose.Types.ObjectId(manufacturerId) 
+});
+```
+
+**Important Notes:**
+- Always convert string IDs to ObjectId before database operations
+- Use Mongoose methods (`findById`, `findByIdAndUpdate`) for ObjectId operations
+- Frontend receives ObjectId strings via `toJSON` transform in models
+
 ### Error Handling
 Use the standardized error handling in `apiHandler.ts` which provides consistent error responses and handles MongoDB-specific errors (validation, duplicate keys, cast errors).
+
+## Docker & Environment Management
+
+### Docker Architecture
+- **Multi-container setup** with Next.js app and MongoDB
+- Development port: `localhost:3000`
+- MongoDB port: `localhost:27017`
+- Docker Compose configuration for easy deployment
+
+### Database Synchronization
+Both development and Docker environments use identical ObjectId format:
+- Use `mongodump` and `mongorestore` for data synchronization
+- Example: `mongodump --db ship-collection-v2 --out /tmp/backup`
+- Example: `mongorestore --host localhost:27017 --db ship-collection-v2 --drop /tmp/backup/ship-collection-v2/`
+
+### Environment Consistency
+- **Identical database schemas** across environments
+- **ObjectId format standardized** in both dev and Docker
+- **API compatibility** ensures seamless environment switching
+- Regular synchronization maintains data consistency
+
+### Docker Commands
+```bash
+# Complete rebuild with fresh database
+docker compose down
+docker compose build --no-cache app
+docker compose up -d
+
+# Restart just the app container
+docker compose restart app
+
+# Check container status
+docker ps
+docker logs ship-collection-single-app-1
+```
+
+## Migration & Maintenance
+
+### Database Migration Scripts
+Located in `/scripts/` directory for major database operations:
+- `migrate-ids-to-objectid.js` - Converts string IDs to ObjectIds
+- Includes backup procedures and rollback capabilities
+- Handles batch processing for large datasets
+- Comprehensive error handling and verification
+
+### Migration Best Practices
+1. **Always backup before migration**: Create timestamped backup collections
+2. **Test in development first**: Verify migration scripts work correctly
+3. **Use batch processing**: Process documents in chunks to avoid memory issues
+4. **Verify results**: Count documents and spot-check converted data
+5. **Synchronize environments**: Apply migrations to both dev and Docker
+
+### Backup Procedures
+```bash
+# Create backup with timestamp
+mongodump --db ship-collection-v2 --out /tmp/backup-$(date +%Y%m%d-%H%M%S)
+
+# Create backup collection within database
+db.starshipv5.aggregate([{ $out: "starshipv5_backup_" + Date.now() }])
+```
+
+### Common Maintenance Tasks
+- **Database cleanup**: Remove old backup collections
+- **Index optimization**: Monitor and update indexes for performance
+- **Schema validation**: Ensure data consistency across collections
+- **Environment sync**: Regular synchronization between dev and Docker
+- **Image cleanup**: Remove orphaned files from `/public/uploads/`
+
+## Troubleshooting
+
+### Common Issues & Solutions
+
+**"Failed to update item" errors:**
+- **Cause**: ID format mismatch between frontend and API
+- **Solution**: Verify all IDs use ObjectId format, check API handler conversions
+- **Check**: `new mongoose.Types.ObjectId(id)` in API handlers
+
+**Image upload failures:**
+- **Cause**: API handlers not updated for ObjectId format
+- **Solution**: Update upload APIs to use `findByIdAndUpdate()` with ObjectId
+- **Verify**: Check `/api/upload/image` uses ObjectId conversion
+
+**Docker environment issues:**
+- **Cause**: Database state differs between dev and Docker
+- **Solution**: Use `mongodump`/`mongorestore` to synchronize databases
+- **Check**: Verify ObjectId format in both environments
+
+**API 404 errors after migration:**
+- **Cause**: Frontend sending old string IDs to ObjectId-only APIs
+- **Solution**: Ensure frontend refreshes data to get new ObjectId strings
+- **Check**: Browser dev tools for ID format in network requests
+
+### Debugging Commands
+```bash
+# Check database document format
+docker exec ship-collection-single-mongodb-1 mongosh ship-collection-v2 --eval "db.starshipv5.findOne({}, {_id: 1})"
+
+# Verify API response format
+curl -s "http://localhost:3000/api/starships" | jq '.data[0]._id'
+
+# Check Docker app logs
+docker logs ship-collection-single-app-1 --tail 20
+
+# Test specific ship update
+curl -X PUT "http://localhost:3000/api/starships/[OBJECT_ID]" -H "Content-Type: application/json" -d '{"retailPrice": 29.99}'
+```
+
+### Performance Monitoring
+- **API Response Times**: Monitor for slow ObjectId conversions
+- **Database Query Performance**: Check index usage with ObjectId queries
+- **Memory Usage**: Watch for ObjectId conversion overhead
+- **Error Rates**: Track API errors during ID format transitions

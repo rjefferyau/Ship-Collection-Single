@@ -60,42 +60,28 @@ export default function handler(
       // Update the starship with the image URL
       const imageUrl = `/uploads/${fileName}`;
       
-      // Find the starship by ID (handle both string and ObjectId formats)
-      let starship = null;
-      
-      // Use collection.findOne to handle the Docker string ID environment
-      const foundDoc = await Starship.collection.findOne({ _id: starshipId as any });
-      if (foundDoc) {
-        starship = foundDoc;
-      } else {
-        // Fallback: try ObjectId format
-        try {
-          const objectId = new mongoose.Types.ObjectId(starshipId);
-          const foundDocObjectId = await Starship.collection.findOne({ _id: objectId });
-          if (foundDocObjectId) {
-            starship = foundDocObjectId;
-          }
-        } catch (e) {
-          // If ObjectId conversion fails, starship remains null
-        }
+      // Find and update the starship by ObjectId
+      let objectId;
+      try {
+        objectId = new mongoose.Types.ObjectId(starshipId);
+      } catch (error: any) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Invalid starship ID format' 
+        });
       }
+      
+      const starship = await Starship.findByIdAndUpdate(
+        objectId,
+        { $set: { imageUrl: imageUrl } },
+        { new: true }
+      );
       
       if (!starship) {
         return res.status(404).json({ 
           success: false, 
           error: 'Starship not found' 
         });
-      }
-      
-      // Use direct MongoDB collection update to avoid Mongoose model/collection name conflicts
-      const directUpdate = await Starship.collection.findOneAndUpdate(
-        { _id: starship._id.toString() } as any,
-        { $set: { imageUrl: imageUrl } },
-        { returnDocument: 'after' }
-      );
-      
-      if (!directUpdate.value) {
-        throw new Error('Failed to update starship imageUrl');
       }
       
       return res.status(200).json({ 

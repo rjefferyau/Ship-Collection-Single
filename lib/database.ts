@@ -34,14 +34,21 @@ export class DatabaseService {
 
     try {
       const collection = await this.getStarshipCollection();
-      const starship = await collection.findOne({ _id: id });
+      // Convert frontend string representation to ObjectId for database query
+      const { ObjectId } = require('mongodb');
+      const objectId = new ObjectId(id);
+      const starship = await collection.findOne({ _id: objectId });
       
       if (!starship) {
         throw new Error(`Starship not found with ID: ${id}`);
       }
       
       return starship;
-    } catch (error) {
+    } catch (error: any) {
+      // Check if error is due to invalid ObjectId format
+      if (error.message.includes('ObjectId') || error.name === 'BSONError') {
+        throw new Error(`Invalid starship ID format: ${id}`);
+      }
       console.error(`Error finding starship by ID ${id}:`, error);
       throw error;
     }
@@ -67,8 +74,11 @@ export class DatabaseService {
       };
 
       const collection = await this.getStarshipCollection();
+      // Convert string ID to ObjectId for database query
+      const { ObjectId } = require('mongodb');
+      const objectId = new ObjectId(id);
       const result = await collection.updateOne(
-        { _id: id },
+        { _id: objectId },
         { $set: fieldsWithTimestamp }
       );
 
@@ -81,7 +91,11 @@ export class DatabaseService {
       }
 
       return result;
-    } catch (error) {
+    } catch (error: any) {
+      // Check if error is due to invalid ObjectId format
+      if (error.message.includes('ObjectId') || error.name === 'BSONError') {
+        throw new Error(`Invalid starship ID format: ${id}`);
+      }
       console.error(`Error updating starship ${id}:`, error);
       throw error;
     }
@@ -93,7 +107,10 @@ export class DatabaseService {
   static async getUpdatedStarship(id: string) {
     try {
       const collection = await this.getStarshipCollection();
-      const updatedStarship = await collection.findOne({ _id: id });
+      // Convert string ID to ObjectId for database query
+      const { ObjectId } = require('mongodb');
+      const objectId = new ObjectId(id);
+      const updatedStarship = await collection.findOne({ _id: objectId });
       
       if (!updatedStarship) {
         throw new Error(`Starship not found after update: ${id}`);
@@ -103,7 +120,11 @@ export class DatabaseService {
         ...updatedStarship,
         _id: updatedStarship._id.toString()
       };
-    } catch (error) {
+    } catch (error: any) {
+      // Check if error is due to invalid ObjectId format
+      if (error.message.includes('ObjectId') || error.name === 'BSONError') {
+        throw new Error(`Invalid starship ID format: ${id}`);
+      }
       console.error(`Error getting updated starship ${id}:`, error);
       throw error;
     }

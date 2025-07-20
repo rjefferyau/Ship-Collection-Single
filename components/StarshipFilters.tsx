@@ -14,6 +14,7 @@ interface StarshipFiltersProps {
   onClearSearch?: () => void;
   onFactionToggle: (faction: string) => void;
   onOwnedFilterChange: (value: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order' | 'not-interested') => void;
+  statusCounts?: {owned: number, wishlist: number, onOrder: number, notOwned: number} | null;
 }
 
 const StarshipFilters: React.FC<StarshipFiltersProps> = ({
@@ -28,7 +29,8 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
   onSearchChange,
   onClearSearch,
   onFactionToggle,
-  onOwnedFilterChange
+  onOwnedFilterChange,
+  statusCounts
 }) => {
   const [factionMenuOpen, setFactionMenuOpen] = useState(false);
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
@@ -257,18 +259,30 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
               <svg className="w-4 h-4 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
               </svg>
-              {filteredStarships.filter(s => s.owned).length} owned
+              {statusCounts?.owned ?? filteredStarships.filter(s => s.owned).length} owned
             </span>
           </div>
           <div className="mt-2 w-full">
             <div className="text-sm flex justify-between mb-1">
               <span>Collection Progress</span>
-              <span>{filteredStarships.length > 0 ? Math.round((filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100) : 0}%</span>
+              <span>{
+                (statusCounts?.owned !== undefined && (statusCounts.owned + statusCounts.wishlist + statusCounts.onOrder + statusCounts.notOwned) > 0) 
+                  ? Math.round((statusCounts.owned / (statusCounts.owned + statusCounts.wishlist + statusCounts.onOrder + statusCounts.notOwned)) * 100)
+                  : filteredStarships.length > 0 
+                    ? Math.round((filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100) 
+                    : 0
+              }%</span>
             </div>
             <div className="w-64 bg-gray-200 rounded-full h-2.5">
               <div 
                 className="bg-green-500 h-2.5 rounded-full transition-all duration-300" 
-                style={{ width: `${filteredStarships.length > 0 ? (filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100 : 0}%` }}
+                style={{ width: `${
+                  (statusCounts?.owned !== undefined && (statusCounts.owned + statusCounts.wishlist + statusCounts.onOrder + statusCounts.notOwned) > 0) 
+                    ? (statusCounts.owned / (statusCounts.owned + statusCounts.wishlist + statusCounts.onOrder + statusCounts.notOwned)) * 100
+                    : filteredStarships.length > 0 
+                      ? (filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100 
+                      : 0
+                }%` }}
               ></div>
             </div>
           </div>

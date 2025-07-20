@@ -60,8 +60,15 @@ export default async function handler(
         }
         
         if (edition && edition !== '') {
+          console.log('Filtering by edition:', edition);
           // Match by internal name or display name
           andConditions.push({
+            $or: [
+              { editionInternalName: edition },
+              { edition: edition }
+            ]
+          });
+          console.log('Edition filter condition:', {
             $or: [
               { editionInternalName: edition },
               { edition: edition }
@@ -104,6 +111,43 @@ export default async function handler(
         
         // Get total count for pagination info
         const totalCount = await Starship.countDocuments(filter);
+        console.log('Total count with filter:', totalCount);
+        console.log('Complete filter object:', JSON.stringify(filter, null, 2));
+        
+        // Get status counts for badges (using same filter)
+        const statusCounts = await Starship.aggregate([
+          { $match: filter },
+          {
+            $group: {
+              _id: null,
+              ownedCount: { $sum: { $cond: [{ $eq: ["$owned", true] }, 1, 0] } },
+              wishlistCount: { $sum: { $cond: [{ $eq: ["$wishlist", true] }, 1, 0] } },
+              onOrderCount: { $sum: { $cond: [{ $eq: ["$onOrder", true] }, 1, 0] } },
+              notOwnedCount: { 
+                $sum: { 
+                  $cond: [
+                    { 
+                      $and: [
+                        { $ne: ["$owned", true] },
+                        { $ne: ["$wishlist", true] },
+                        { $ne: ["$onOrder", true] }
+                      ]
+                    }, 
+                    1, 
+                    0
+                  ] 
+                }
+              }
+            }
+          }
+        ]);
+        
+        const counts = statusCounts.length > 0 ? statusCounts[0] : {
+          ownedCount: 0,
+          wishlistCount: 0,
+          onOrderCount: 0,
+          notOwnedCount: 0
+        };
         
         // Use aggregation pipeline for proper alphanumeric sorting of issue numbers
         const starships = await Starship.aggregate([
@@ -162,6 +206,12 @@ export default async function handler(
             pages: Math.ceil(totalCount / limitNum),
             hasNext: pageNum < Math.ceil(totalCount / limitNum),
             hasPrev: pageNum > 1
+          },
+          statusCounts: {
+            owned: counts.ownedCount,
+            wishlist: counts.wishlistCount,
+            onOrder: counts.onOrderCount,
+            notOwned: counts.notOwnedCount
           }
         });
       } catch (error) {

@@ -69,7 +69,7 @@ async function getEditionDetails(editionName: string) {
   if (!edition) return {};
   return {
     editionInternalName: edition.internalName,
-    collectionType: edition.collectionType || '',
+    collectionType: edition.collectionType || 'Die Cast Models',
     franchise: edition.franchise || ''
   };
 }
@@ -87,12 +87,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     form.parse(req, async (err, fields, files) => {
       if (err) {
+        console.error('Form parsing error:', err);
         return res.status(500).json({ success: false, error: 'Error parsing form data' });
       }
 
       const file = files.file as formidable.File;
       if (!file) {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
+      }
+
+      // Extract the selected edition and franchise from form fields
+      const selectedEditionId = Array.isArray(fields.editionId) ? fields.editionId[0] : fields.editionId;
+      const selectedFranchise = Array.isArray(fields.franchise) ? fields.franchise[0] : fields.franchise;
+      
+      console.log('Import parameters:', { selectedEditionId, selectedFranchise });
+
+      // Get the selected edition details
+      let selectedEditionDetails = null;
+      if (selectedEditionId) {
+        try {
+          selectedEditionDetails = await Edition.findById(selectedEditionId);
+          console.log('Selected edition details:', selectedEditionDetails);
+        } catch (error) {
+          console.error('Error finding selected edition:', error);
+          return res.status(400).json({ success: false, error: 'Invalid edition selected' });
+        }
       }
 
       const fileContent = fs.readFileSync(file.filepath, 'utf-8');
@@ -106,7 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // Convert string values to appropriate types
           const starshipData = {
             issue: record.issue,
-            edition: record.edition,
+            edition: selectedEditionDetails ? selectedEditionDetails.name : record.edition,
             shipName: record.shipName,
             faction: record.faction,
             releaseDate: parseDate(record.releaseDate),
@@ -123,12 +142,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             conditionNotes: record.conditionNotes
           };
           
-          const editionDetails = await getEditionDetails(starshipData.edition);
+          // Use selected edition details if available, otherwise fall back to CSV data
+          const editionDetails = selectedEditionDetails ? {
+            editionInternalName: selectedEditionDetails.internalName,
+            collectionType: selectedEditionDetails.collectionType || 'Die Cast Models',
+            franchise: selectedEditionDetails.franchise || selectedFranchise || ''
+          } : await getEditionDetails(starshipData.edition);
+          
           const fullStarshipData = {
             ...(starshipData as any),
-            editionInternalName: (starshipData as any).editionInternalName || editionDetails.editionInternalName || starshipData.edition,
-            collectionType: (starshipData as any).collectionType || editionDetails.collectionType || '',
-            franchise: (starshipData as any).franchise || editionDetails.franchise || '',
+            editionInternalName: editionDetails.editionInternalName || starshipData.edition,
+            collectionType: editionDetails.collectionType || 'Die Cast Models',
+            franchise: editionDetails.franchise || selectedFranchise || '',
             owned: typeof starshipData.owned === 'boolean' ? starshipData.owned : false,
             wishlist: typeof starshipData.wishlist === 'boolean' ? starshipData.wishlist : false,
             onOrder: typeof starshipData.onOrder === 'boolean' ? starshipData.onOrder : false,
@@ -168,7 +193,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           // Convert string values to appropriate types
           const starshipData = {
             issue: record.issue,
-            edition: record.edition,
+            edition: selectedEditionDetails ? selectedEditionDetails.name : record.edition,
             shipName: record.shipName,
             faction: record.faction,
             releaseDate: parseDate(record.releaseDate),
@@ -185,12 +210,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             conditionNotes: record.conditionNotes
           };
           
-          const editionDetails = await getEditionDetails(starshipData.edition);
+          // Use selected edition details if available, otherwise fall back to CSV data
+          const editionDetails = selectedEditionDetails ? {
+            editionInternalName: selectedEditionDetails.internalName,
+            collectionType: selectedEditionDetails.collectionType || 'Die Cast Models',
+            franchise: selectedEditionDetails.franchise || selectedFranchise || ''
+          } : await getEditionDetails(starshipData.edition);
+          
           const fullStarshipData = {
             ...(starshipData as any),
-            editionInternalName: (starshipData as any).editionInternalName || editionDetails.editionInternalName || starshipData.edition,
-            collectionType: (starshipData as any).collectionType || editionDetails.collectionType || '',
-            franchise: (starshipData as any).franchise || editionDetails.franchise || '',
+            editionInternalName: editionDetails.editionInternalName || starshipData.edition,
+            collectionType: editionDetails.collectionType || 'Die Cast Models',
+            franchise: editionDetails.franchise || selectedFranchise || '',
             owned: typeof starshipData.owned === 'boolean' ? starshipData.owned : false,
             wishlist: typeof starshipData.wishlist === 'boolean' ? starshipData.wishlist : false,
             onOrder: typeof starshipData.onOrder === 'boolean' ? starshipData.onOrder : false,
@@ -222,6 +253,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       
       res.status(200).json({ 
         success: true, 
+        imported: imported,
         message: `Successfully imported ${imported} items` 
       });
     });

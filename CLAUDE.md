@@ -60,6 +60,7 @@ Uses factory-based API handlers with **ObjectId-only handling**:
 - Uses `findById()`, `findByIdAndUpdate()`, `findByIdAndDelete()` for consistency
 - Standardized error handling, validation, and response format
 - All APIs return `{ success: boolean, data?: any, message?: string, error?: string }`
+- **Starships API Enhancement**: `/api/starships` includes `statusCounts` and `pagination` objects for intelligent UI updates
 
 ### Frontend Architecture
 **Next.js** with TypeScript:
@@ -74,6 +75,25 @@ Uses factory-based API handlers with **ObjectId-only handling**:
 - **Specialized Views**: `FancyStarshipView`, `ExcelView`, `PriceVault`
 - **Management Tools**: `ManufacturerManager`, `DatabaseFix`, `CollectionTypeManager`
 - **Modals**: `BaseModal`, `PricingEditModal`, `SightingsModal`
+
+### View Modes and Pagination System
+The application supports three distinct view modes with intelligent pagination:
+
+**View Modes:**
+- **Table View**: Paginated display (50 items per page) with full CRUD operations, filtering, and sorting
+- **Gallery View**: Non-paginated thumbnail grid showing all items for visual browsing
+- **Overview View**: Non-paginated summary view with status badges and edition tabs
+
+**Smart Pagination Logic:**
+- **Table Mode**: Uses `limit=50` with pagination controls for performance
+- **Gallery/Overview Modes**: Uses `limit=1000` to fetch all items for complete collection view
+- **Automatic Refetch**: Data automatically refetches when switching between view modes
+
+**Status Count System:**
+- **API Level**: `/api/starships` returns `statusCounts` object with total counts across all pages
+- **Badge Display**: All count badges (Owned, Wishlist, On Order, Not Owned) show totals, not current page counts
+- **Edition Switching**: Status counts update when switching between edition tabs
+- **Consistent Data**: Same total counts displayed across all view modes
 
 ### File Upload System
 - Images: Stored in `/public/uploads/` with MongoDB ObjectId naming
@@ -232,6 +252,18 @@ db.starshipv5.aggregate([{ $out: "starshipv5_backup_" + Date.now() }])
 
 ### Common Issues & Solutions
 
+**Badge counts showing limited numbers (e.g., 50 instead of total):**
+- **Cause**: Component calculating counts from paginated results instead of using API statusCounts
+- **Solution**: Ensure components use `statusCounts` prop from API response, not `filteredStarships.filter().length`
+- **Check**: Verify `/api/starships` returns `statusCounts` object with `{owned, wishlist, onOrder, notOwned}`
+- **Implementation**: Components should use `statusCounts?.owned ?? fallback` pattern
+
+**Gallery/Overview modes showing only 50 items:**
+- **Cause**: View mode not triggering appropriate API limit parameter
+- **Solution**: Verify `fetchStarships()` uses different limits based on `viewMode` state
+- **Check**: Table view should use `limit=50`, Gallery/Overview should use `limit=1000`
+- **Testing**: Switch between view modes and verify network requests in browser dev tools
+
 **"Failed to update item" errors:**
 - **Cause**: ID format mismatch between frontend and API
 - **Solution**: Verify all IDs use ObjectId format, check API handler conversions
@@ -265,6 +297,15 @@ docker logs ship-collection-single-app-1 --tail 20
 
 # Test specific ship update
 curl -X PUT "http://localhost:3000/api/starships/[OBJECT_ID]" -H "Content-Type: application/json" -d '{"retailPrice": 29.99}'
+
+# Test pagination and status counts
+curl -s "http://localhost:3000/api/starships?limit=50&page=1" | jq '{statusCounts, pagination}'
+
+# Test large limit for Gallery/Overview modes
+curl -s "http://localhost:3000/api/starships?limit=1000&page=1" | jq '.data | length'
+
+# Test edition-specific status counts
+curl -s "http://localhost:3000/api/starships?edition=regular-star-trek&limit=1" | jq '.statusCounts'
 ```
 
 ### Performance Monitoring

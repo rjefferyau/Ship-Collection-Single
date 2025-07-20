@@ -8,6 +8,7 @@ interface CollectionOverviewProps {
   onEditionChange?: (edition: string) => void;
   currentEdition?: string;
   selectedFranchise?: string;
+  statusCounts?: {owned: number, wishlist: number, onOrder: number, notOwned: number} | null;
 }
 
 const CollectionOverview: React.FC<CollectionOverviewProps> = ({
@@ -16,12 +17,14 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
   onSelectStarship,
   onEditionChange,
   currentEdition = 'Regular',
-  selectedFranchise
+  selectedFranchise,
+  statusCounts
 }) => {
   const [filteredStarships, setFilteredStarships] = useState<Starship[]>(starships || []);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
   const [editionDisplayNames, setEditionDisplayNames] = useState<Record<string, string>>({});
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
+  const [localStatusCounts, setLocalStatusCounts] = useState<{owned: number, wishlist: number, onOrder: number, notOwned: number} | null>(statusCounts || null);
 
   // Fetch available editions from the API, filtered by franchise
   useEffect(() => {
@@ -161,10 +164,48 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
   useEffect(() => {
     console.log('CollectionOverview currentEdition changed to:', currentEdition);
     setActiveEdition(currentEdition);
-  }, [currentEdition]);
+    setLocalStatusCounts(statusCounts || null);
+  }, [currentEdition, statusCounts]);
+
+  // Fetch status counts for a specific edition
+  const fetchStatusCountsForEdition = async (edition: string) => {
+    try {
+      console.log('Fetching status counts for edition:', edition);
+      let url = '/api/starships?limit=1'; // We only need the statusCounts, not the actual data
+      
+      // Add filter parameters
+      const queryParams = new URLSearchParams();
+      queryParams.append('edition', edition);
+      
+      if (selectedFranchise) {
+        queryParams.append('franchise', selectedFranchise);
+      }
+      
+      // Add cache-busting parameter
+      queryParams.append('_t', Date.now().toString());
+      
+      url = `${url}&${queryParams.toString()}`;
+      console.log('Fetching URL:', url);
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('API response for edition counts:', data.statusCounts);
+        if (data.success && data.statusCounts) {
+          setLocalStatusCounts(data.statusCounts);
+        }
+      } else {
+        console.error('API response not OK:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error fetching status counts for edition:', error);
+    }
+  };
 
   const handleEditionSelect = (edition: string) => {
     setActiveEdition(edition);
+    // Fetch new status counts for this edition
+    fetchStatusCountsForEdition(edition);
     if (onEditionChange) {
       onEditionChange(edition);
     }
@@ -227,28 +268,28 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
         <div className="bg-white rounded-lg px-4 py-2 shadow-sm border-2 border-green-500">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">
-              Owned: {filteredStarships.filter(s => s.owned).length}
+              Owned: {localStatusCounts?.owned ?? filteredStarships.filter(s => s.owned).length}
             </span>
           </div>
         </div>
         <div className="bg-white rounded-lg px-4 py-2 shadow-sm border-2 border-yellow-500">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">
-              Wishlist: {filteredStarships.filter(s => s.wishlist).length}
+              Wishlist: {localStatusCounts?.wishlist ?? filteredStarships.filter(s => s.wishlist).length}
             </span>
           </div>
         </div>
         <div className="bg-white rounded-lg px-4 py-2 shadow-sm border-2 border-blue-500">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">
-              On Order: {filteredStarships.filter(s => s.onOrder).length}
+              On Order: {localStatusCounts?.onOrder ?? filteredStarships.filter(s => s.onOrder).length}
             </span>
           </div>
         </div>
         <div className="bg-white rounded-lg px-4 py-2 shadow-sm border-2 border-gray-300">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">
-              Not Owned: {filteredStarships.filter(s => !s.owned && !s.wishlist && !s.onOrder).length}
+              Not Owned: {localStatusCounts?.notOwned ?? filteredStarships.filter(s => !s.owned && !s.wishlist && !s.onOrder).length}
             </span>
           </div>
         </div>

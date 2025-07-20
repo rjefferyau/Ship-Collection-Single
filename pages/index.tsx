@@ -46,6 +46,7 @@ const Home: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [statusCounts, setStatusCounts] = useState<{owned: number, wishlist: number, onOrder: number, notOwned: number} | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
@@ -148,9 +149,15 @@ const Home: React.FC = () => {
         queryParams.append('edition', currentEdition);
       }
       
-      // Add pagination parameters
-      queryParams.append('page', resetPage ? '1' : page.toString());
-      queryParams.append('limit', '50'); // Items per page
+      // Add pagination parameters - use different limits based on view mode
+      if (viewMode === 'table') {
+        queryParams.append('page', resetPage ? '1' : page.toString());
+        queryParams.append('limit', '50'); // Items per page for table view
+      } else {
+        // For gallery and overview modes, fetch all items
+        queryParams.append('page', '1');
+        queryParams.append('limit', '1000'); // Large limit to get all items
+      }
       
       // Add cache-busting parameter to force fresh data
       queryParams.append('_t', Date.now().toString());
@@ -167,6 +174,7 @@ const Home: React.FC = () => {
       const data = await response.json();
       setStarships(data.data || []);
       setPagination(data.pagination || null);
+      setStatusCounts(data.statusCounts || null);
       
       if (resetPage) {
         setCurrentPage(1);
@@ -177,6 +185,7 @@ const Home: React.FC = () => {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setStarships([]);
       setPagination(null);
+      setStatusCounts(null);
     } finally {
       setLoading(false);
     }
@@ -215,6 +224,14 @@ const Home: React.FC = () => {
       fetchStarships(1, true); // Reset to page 1 when filters change
     }
   }, [selectedCollectionType, selectedFranchise, currentEdition]);
+
+  // Refetch data when view mode changes to adjust pagination
+  useEffect(() => {
+    if (currentEdition) {
+      console.log('Fetching due to view mode change:', viewMode);
+      fetchStarships(1, true); // Reset to page 1 with new limit based on view mode
+    }
+  }, [viewMode]);
 
   const handleFilterChange = (collectionType: string, franchise: string) => {
     setSelectedCollectionType(collectionType);
@@ -464,7 +481,7 @@ const Home: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <h2 className="text-lg font-semibold text-gray-800">Your Collection</h2>
                   <span className="text-sm text-gray-600">
-                    {starships.length} {starships.length === 1 ? 'item' : 'items'}
+                    {pagination?.total || starships.length} {(pagination?.total || starships.length) === 1 ? 'item' : 'items'}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -568,6 +585,7 @@ const Home: React.FC = () => {
                     onSearchChange={handleSearchChange}
                     onClearSearch={handleClearSearch}
                     searchTerm={searchTerm}
+                    statusCounts={statusCounts}
                   />
                   {pagination && (
                     <Pagination
@@ -593,6 +611,7 @@ const Home: React.FC = () => {
                   onEditionChange={handleEditionChange}
                   currentEdition={currentEdition}
                   selectedFranchise={selectedFranchise}
+                  statusCounts={statusCounts}
                 />
               )}
             </div>

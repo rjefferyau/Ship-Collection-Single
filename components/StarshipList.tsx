@@ -34,6 +34,7 @@ interface StarshipListProps {
   onSearchChange?: (search: string) => void;
   onClearSearch?: () => void;
   searchTerm?: string;
+  statusCounts?: {owned: number, wishlist: number, onOrder: number, notOwned: number} | null;
 }
 
 const StarshipList: React.FC<StarshipListProps> = ({ 
@@ -47,7 +48,8 @@ const StarshipList: React.FC<StarshipListProps> = ({
   selectedFranchise,
   onSearchChange,
   onClearSearch,
-  searchTerm = ''
+  searchTerm = '',
+  statusCounts
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'issue', direction: 'asc' });
   const [filters, setFilters] = useState<Filters>({
@@ -980,6 +982,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
         onClearSearch={onClearSearch}
         onFactionToggle={toggleFactionFilter}
         onOwnedFilterChange={setOwnedFilter}
+        statusCounts={statusCounts}
       />
       
       {/* Data Table */}

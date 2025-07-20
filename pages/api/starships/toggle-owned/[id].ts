@@ -34,7 +34,7 @@ export default async function handler(
     const newOwnedStatus = !starship.owned;
     
     // Prepare update fields
-    let updateFields: any = {
+    const updateFields: any = {
       owned: newOwnedStatus
     };
     

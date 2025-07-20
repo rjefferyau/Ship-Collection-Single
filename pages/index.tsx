@@ -2,10 +2,11 @@ import React, { useState, useEffect, Fragment, Suspense } from 'react';
 import Link from 'next/link';
 import { Dialog, Transition } from '@headlessui/react';
 import dynamic from 'next/dynamic';
-import { Starship } from '../types';
+import { Starship, PaginationInfo } from '../types';
 import CollectionFilter from '../components/CollectionFilter';
 import ModalContainer from '../components/ModalContainer';
 import CustomViewManager from '../components/CustomViewManager';
+import Pagination from '../components/Pagination';
 
 // Dynamically import large components
 const StarshipList = dynamic(() => import('../components/StarshipList'), {
@@ -44,6 +45,9 @@ const Home: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedStarship, setSelectedStarship] = useState<Starship | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentEdition, setCurrentEdition] = useState<string>('Regular');
@@ -57,7 +61,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     fetchDefaultEdition().then(() => {
       // After fetching the default edition, fetch starships
-      fetchStarships();
+      fetchStarships(1);
     });
   }, []);
 
@@ -66,7 +70,7 @@ const Home: React.FC = () => {
     if (selectedFranchise) {
       fetchDefaultEdition(selectedFranchise).then(() => {
         // After fetching the default edition, fetch starships
-        fetchStarships();
+        fetchStarships(1, true);
       });
     }
   }, [selectedFranchise]);
@@ -80,7 +84,6 @@ const Home: React.FC = () => {
         url += `&franchise=${encodeURIComponent(franchise)}`;
       }
       
-      console.log('Fetching default edition for franchise:', franchise || 'all');
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -88,12 +91,10 @@ const Home: React.FC = () => {
       }
       
       const data = await response.json();
-      console.log('Default edition data:', data);
       
       if (data.success && data.data && data.data.length > 0) {
         // Set the default edition as the current edition
         const defaultEdition = data.data[0].internalName;
-        console.log('Setting default edition:', defaultEdition);
         setCurrentEdition(defaultEdition);
         return defaultEdition;
       } else {
@@ -104,14 +105,12 @@ const Home: React.FC = () => {
             const fallbackData = await fallbackResponse.json();
             if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
               const firstEdition = fallbackData.data[0].internalName;
-              console.log('No default edition found, using first available edition:', firstEdition);
               setCurrentEdition(firstEdition);
               return firstEdition;
             }
           }
         }
         
-        console.log('No default edition found, using Regular');
         setCurrentEdition('regular-star-trek');
         return 'regular-star-trek';
       }
@@ -123,7 +122,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const fetchStarships = async () => {
+  const fetchStarships = async (page = 1, resetPage = false) => {
     setLoading(true);
     setError(null);
     
@@ -141,6 +140,18 @@ const Home: React.FC = () => {
         queryParams.append('franchise', selectedFranchise);
       }
       
+      if (searchTerm) {
+        queryParams.append('search', searchTerm);
+      }
+      
+      if (currentEdition) {
+        queryParams.append('edition', currentEdition);
+      }
+      
+      // Add pagination parameters
+      queryParams.append('page', resetPage ? '1' : page.toString());
+      queryParams.append('limit', '50'); // Items per page
+      
       // Add cache-busting parameter to force fresh data
       queryParams.append('_t', Date.now().toString());
       
@@ -155,27 +166,72 @@ const Home: React.FC = () => {
       
       const data = await response.json();
       setStarships(data.data || []);
+      setPagination(data.pagination || null);
+      
+      if (resetPage) {
+        setCurrentPage(1);
+      } else {
+        setCurrentPage(page);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      setStarships([]); // Set to empty array on error
+      setStarships([]);
+      setPagination(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch starships when filters change
+  // Debounce search term to avoid excessive API calls
+  useEffect(() => {
+    // Skip if currentEdition is not set
+    if (!currentEdition) return;
+
+    // If search is empty, fetch immediately (but only if we had a search before)
+    if (!searchTerm || searchTerm.trim().length === 0) {
+      fetchStarships(1, true);
+      return;
+    }
+
+    // Debounce search input - wait 1200ms after user stops typing
+    console.log('Setting search timeout for:', searchTerm);
+    const searchTimeout = setTimeout(() => {
+      console.log('Executing search for:', searchTerm);
+      fetchStarships(1, true);
+    }, 1200);
+
+    return () => {
+      console.log('Clearing search timeout for:', searchTerm);
+      clearTimeout(searchTimeout);
+    };
+  }, [searchTerm]);
+
+  // Fetch starships when non-search filters change (but not search)
   useEffect(() => {
     // Only fetch starships if this is not the initial load
     // The initial load is handled by the fetchDefaultEdition effect
-    if (selectedCollectionType) {
-      fetchStarships();
+    if (currentEdition) {
+      console.log('Fetching due to filter change, not search');
+      fetchStarships(1, true); // Reset to page 1 when filters change
     }
-  }, [selectedCollectionType]);
+  }, [selectedCollectionType, selectedFranchise, currentEdition]);
 
   const handleFilterChange = (collectionType: string, franchise: string) => {
-    console.log('Filter changed:', { collectionType, franchise });
     setSelectedCollectionType(collectionType);
     setSelectedFranchise(franchise);
+  };
+
+  const handlePageChange = (page: number) => {
+    fetchStarships(page);
+  };
+
+  const handleSearchChange = (search: string) => {
+    setSearchTerm(search);
+    // The useEffect will handle refetching with the new search term
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
   const handleToggleOwned = async (id: string) => {
@@ -206,12 +262,10 @@ const Home: React.FC = () => {
 
   const handleToggleWishlist = async (id: string) => {
     try {
-      console.log(`Calling toggle-wishlist API for ID: ${id}`);
       const response = await fetch(`/api/starships/toggle-wishlist/${id}`, {
         method: 'PUT'
       });
       
-      console.log(`Response status: ${response.status}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -220,7 +274,6 @@ const Home: React.FC = () => {
       }
       
       const result = await response.json();
-      console.log('API Success Response:', result);
       
       // Update the starship in the local state
       setStarships(prevStarships => 
@@ -264,7 +317,7 @@ const Home: React.FC = () => {
         if (response.status === 404) {
           console.error('Starship not found:', result.message);
           // Optionally refresh the starship list to sync with database
-          fetchStarships();
+          fetchStarships(currentPage);
           return;
         }
         throw new Error(result.message || 'Failed to cycle status');
@@ -311,7 +364,7 @@ const Home: React.FC = () => {
   };
 
   const handleRefreshStarships = async (edition?: string) => {
-    await fetchStarships();
+    await fetchStarships(currentPage);
     // Close the add modal after refresh
     setShowAddModal(false);
     
@@ -324,6 +377,8 @@ const Home: React.FC = () => {
 
   const handleEditionChange = (edition: string) => {
     setCurrentEdition(edition);
+    // Clear search when switching editions/tabs
+    setSearchTerm('');
   };
 
   // Function to open Excel view in a new window
@@ -500,16 +555,28 @@ const Home: React.FC = () => {
           ) : (
             <div className="p-6">
               {viewMode === 'table' ? (
-                <StarshipList
-                  starships={starships}
-                  onToggleOwned={handleToggleOwned}
-                  onSelectStarship={handleSelectStarship}
-                  onToggleWishlist={handleToggleWishlist}
-                  onCycleStatus={handleCycleStatus}
-                  onEditionChange={handleEditionChange}
-                  currentEdition={currentEdition}
-                  selectedFranchise={selectedFranchise}
-                />
+                <div className="space-y-4">
+                  <StarshipList
+                    starships={starships}
+                    onToggleOwned={handleToggleOwned}
+                    onSelectStarship={handleSelectStarship}
+                    onToggleWishlist={handleToggleWishlist}
+                    onCycleStatus={handleCycleStatus}
+                    onEditionChange={handleEditionChange}
+                    currentEdition={currentEdition}
+                    selectedFranchise={selectedFranchise}
+                    onSearchChange={handleSearchChange}
+                    onClearSearch={handleClearSearch}
+                    searchTerm={searchTerm}
+                  />
+                  {pagination && (
+                    <Pagination
+                      pagination={pagination}
+                      onPageChange={handlePageChange}
+                      className="mt-6"
+                    />
+                  )}
+                </div>
               ) : viewMode === 'gallery' ? (
                 <FancyStarshipView
                   starships={starships}
@@ -613,7 +680,6 @@ const Home: React.FC = () => {
             ]}
             onViewSelect={(view) => {
               // Handle view selection - this would need to be passed to the StarshipList component
-              console.log('View selected:', view);
               setShowSettingsModal(false);
             }}
             currentColumns={['issue', 'shipName', 'faction', 'edition', 'owned']}

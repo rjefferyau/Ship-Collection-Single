@@ -31,7 +31,7 @@ export default async function handler(
     const newWishlistStatus = !starship.wishlist;
     
     // Prepare update fields
-    let updateFields: any = {
+    const updateFields: any = {
       wishlist: newWishlistStatus
     };
     

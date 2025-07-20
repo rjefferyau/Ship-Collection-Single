@@ -39,19 +39,19 @@ export default async function handler(
     case 'GET':
       try {
         // Extract query parameters
-        const { collectionType, franchise, edition, noImage } = req.query;
-        
+        const { collectionType, franchise, edition, noImage, page, limit, search } = req.query;
         // Build filter object based on query parameters
         const filter: any = {};
-        const orConditions: any[] = [];
+        const andConditions: any[] = [];
         
         if (collectionType && collectionType !== '') {
           // Handle the case where collectionType might be undefined in the database
-          // Use $or to match either the specified collectionType or undefined collectionType
-          orConditions.push(
-            { collectionType: collectionType },
-            { collectionType: { $exists: false } }
-          );
+          andConditions.push({
+            $or: [
+              { collectionType: collectionType },
+              { collectionType: { $exists: false } }
+            ]
+          });
         }
         
         if (franchise && franchise !== '') {
@@ -60,51 +60,110 @@ export default async function handler(
         }
         
         if (edition && edition !== '') {
-          filter.edition = edition;
+          // Match by internal name or display name
+          andConditions.push({
+            $or: [
+              { editionInternalName: edition },
+              { edition: edition }
+            ]
+          });
+        }
+        
+        // Handle search filter
+        if (search && search !== '') {
+          const searchRegex = { $regex: search, $options: 'i' };
+          andConditions.push({
+            $or: [
+              { shipName: searchRegex },
+              { faction: searchRegex },
+              { issue: searchRegex }
+            ]
+          });
         }
         
         // Filter for ships without images
         if (noImage === 'true') {
-          filter.$or = [
-            { imageUrl: { $exists: false } },
-            { imageUrl: null },
-            { imageUrl: '' }
-          ];
-        }
-        
-        // If we have collection type conditions and need to combine with other $or conditions
-        if (orConditions.length > 0 && noImage !== 'true') {
-          filter.$or = orConditions;
-        } else if (orConditions.length > 0 && noImage === 'true') {
-          // If we have both collection type and no image filters, combine them with $and
-          filter.$and = [
-            { $or: orConditions },
-            { $or: [
+          andConditions.push({
+            $or: [
               { imageUrl: { $exists: false } },
               { imageUrl: null },
               { imageUrl: '' }
-            ]}
-          ];
-          delete filter.$or; // Remove the $or we set for noImage
+            ]
+          });
         }
         
-        console.log('Fetching starships with filter:', JSON.stringify(filter, null, 2));
+        // Apply all AND conditions
+        if (andConditions.length > 0) {
+          filter.$and = andConditions;
+        }
         
-        // Query with the filter and consistent sorting
-        const starships = await Starship.find(filter).sort({ issue: 1, shipName: 1 });
-        console.log(`Found ${starships.length} starships matching filter`);
+        // Parse pagination parameters
+        const pageNum = parseInt(page as string) || 1;
+        const limitNum = parseInt(limit as string) || 50; // Default to 50 items per page
+        const skip = (pageNum - 1) * limitNum;
+        
+        // Get total count for pagination info
+        const totalCount = await Starship.countDocuments(filter);
+        
+        // Use aggregation pipeline for proper alphanumeric sorting of issue numbers
+        const starships = await Starship.aggregate([
+          { $match: filter },
+          {
+            $addFields: {
+              // Extract prefix and numeric parts for proper sorting
+              issuePrefix: {
+                $regexFind: { input: "$issue", regex: /^([A-Za-z]*)/ }
+              },
+              issueNumericPart: {
+                $regexFind: { input: "$issue", regex: /(\d+)/ }
+              }
+            }
+          },
+          {
+            $addFields: {
+              // Clean prefix (empty string if no match)
+              sortPrefix: {
+                $ifNull: [{ $arrayElemAt: ["$issuePrefix.captures", 0] }, ""]
+              },
+              // Convert numeric part to integer (0 if no match)
+              sortNumeric: {
+                $convert: {
+                  input: { $ifNull: [{ $arrayElemAt: ["$issueNumericPart.captures", 0] }, "0"] },
+                  to: "int",
+                  onError: 0
+                }
+              }
+            }
+          },
+          { $sort: { sortPrefix: 1, sortNumeric: 1, shipName: 1 } },
+          { $skip: skip },
+          { $limit: limitNum },
+          { $project: { issuePrefix: 0, issueNumericPart: 0, sortPrefix: 0, sortNumeric: 0 } } // Remove temporary fields
+        ]);
+        
+        console.log(`Found ${starships.length} starships on page ${pageNum} of ${Math.ceil(totalCount / limitNum)} (total: ${totalCount})`);
         
         // Ensure all IDs are strings and transform image URLs for frontend compatibility
         const sanitizedStarships = starships.map(ship => {
-          const shipData = ship.toJSON();
           return {
-            ...shipData,
+            ...ship,
             _id: ship._id.toString(),
-            imageUrl: getImageUrl(shipData.imageUrl)
+            imageUrl: getImageUrl(ship.imageUrl)
           };
         });
         
-        res.status(200).json({ success: true, data: sanitizedStarships });
+        res.status(200).json({ 
+          success: true, 
+          data: sanitizedStarships,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: totalCount,
+            pages: Math.ceil(totalCount / limitNum),
+            hasNext: pageNum < Math.ceil(totalCount / limitNum),
+            hasPrev: pageNum > 1
+          }
+        });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }

@@ -31,6 +31,9 @@ interface StarshipListProps {
   onEditionChange?: (edition: string) => void;
   currentEdition?: string;
   selectedFranchise?: string;
+  onSearchChange?: (search: string) => void;
+  onClearSearch?: () => void;
+  searchTerm?: string;
 }
 
 const StarshipList: React.FC<StarshipListProps> = ({ 
@@ -41,11 +44,14 @@ const StarshipList: React.FC<StarshipListProps> = ({
   onCycleStatus,
   onEditionChange,
   currentEdition = 'Regular',
-  selectedFranchise
+  selectedFranchise,
+  onSearchChange,
+  onClearSearch,
+  searchTerm = ''
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'issue', direction: 'asc' });
   const [filters, setFilters] = useState<Filters>({
-    search: '',
+    search: searchTerm || '',
     faction: [],
     edition: [currentEdition],
     collectionType: [],
@@ -398,17 +404,6 @@ const StarshipList: React.FC<StarshipListProps> = ({
       if (availableEditions.includes(currentEdition)) {
         setActiveEdition(currentEdition);
         setFilters(prev => ({ ...prev, edition: [currentEdition] }));
-        
-        // Use a short timeout to ensure the DOM has updated
-        setTimeout(() => {
-          const editionTab = document.querySelector(`button[data-edition="${currentEdition}"]`);
-          if (editionTab) {
-            console.log('Found edition tab, simulating click');
-            (editionTab as HTMLButtonElement).click();
-          } else {
-            console.log('Edition tab not found in DOM');
-          }
-        }, 100);
       } else {
         console.log(`Current edition ${currentEdition} not in available editions:`, availableEditions);
         
@@ -423,15 +418,6 @@ const StarshipList: React.FC<StarshipListProps> = ({
           if (onEditionChange) {
             onEditionChange(firstEdition);
           }
-          
-          // Use a short timeout to ensure the DOM has updated
-          setTimeout(() => {
-            const editionTab = document.querySelector(`button[data-edition="${firstEdition}"]`);
-            if (editionTab) {
-              console.log('Found edition tab, simulating click');
-              (editionTab as HTMLButtonElement).click();
-            }
-          }, 100);
         }
       }
     }
@@ -451,7 +437,13 @@ const StarshipList: React.FC<StarshipListProps> = ({
     setFilters(prev => ({ ...prev, edition: [currentEdition] }));
   }, [currentEdition]);
 
-  // Apply filters and sorting
+  // Sync internal search state with searchTerm prop
+  useEffect(() => {
+    setFilters(prev => ({ ...prev, search: searchTerm || '' }));
+  }, [searchTerm]);
+
+  // Since pagination is now handled server-side, we just display the received starships
+  // The server already applies filters, pagination, and sorting
   useEffect(() => {
     if (!starships || starships.length === 0) {
       setFilteredStarships([]);
@@ -460,145 +452,10 @@ const StarshipList: React.FC<StarshipListProps> = ({
     
     console.log('StarshipList received starships:', starships);
     
-    let result = [...starships];
-    
-    // Apply search filter
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(ship => 
-        (ship.shipName ? ship.shipName.toLowerCase().includes(searchLower) : false) || 
-        (ship.issue ? ship.issue.toLowerCase().includes(searchLower) : false)
-      );
-    }
-    
-    // Apply faction filter
-    if (filters.faction.length > 0) {
-      result = result.filter(ship => filters.faction.includes(ship.faction));
-    }
-    
-    // Apply edition filter - use editionInternalName if available, otherwise fall back to edition
-    if (filters.edition.length > 0) {
-      console.log('Applying edition filter:', filters.edition);
-      
-      // Always apply the edition filter
-      result = result.filter(ship => {
-        // If the ship has an editionInternalName, use that for filtering
-        if (ship.editionInternalName) {
-          return filters.edition.includes(ship.editionInternalName);
-        }
-        // Otherwise fall back to the edition name
-        return filters.edition.includes(ship.edition);
-      });
-      
-      console.log(`After edition filter: ${result.length} ships remaining`);
-    }
-    
-    // Apply collection type filter
-    if (filters.collectionType.length > 0) {
-      console.log('Applying collection type filter:', filters.collectionType);
-      result = result.filter(ship => {
-        console.log(`Ship ${ship.shipName} collection type:`, ship.collectionType);
-        return filters.collectionType.includes(ship.collectionType);
-      });
-    }
-    
-    // Apply franchise filter
-    if (filters.franchise.length > 0) {
-      console.log('Applying franchise filter:', filters.franchise);
-      result = result.filter(ship => {
-        console.log(`Ship ${ship.shipName} franchise:`, ship.franchise);
-        return filters.franchise.includes(ship.franchise);
-      });
-    }
-    
-    // Apply owned filter
-    if (filters.owned !== 'all') {
-      if (filters.owned === 'owned') {
-        result = result.filter(ship => ship.owned);
-      } else if (filters.owned === 'not-owned') {
-        result = result.filter(ship => !ship.owned);
-      } else if (filters.owned === 'wishlist') {
-        result = result.filter(ship => ship.wishlist);
-      } else if (filters.owned === 'on-order') {
-        result = result.filter(ship => ship.onOrder);
-      } else if (filters.owned === 'not-interested') {
-        result = result.filter(ship => ship.notInterested);
-      }
-    }
-    
-    console.log('Filtered starships:', result);
-    
-    // Apply sorting
-    if (sortConfig.key) {
-      result.sort((a, b) => {
-        const aValue = a[sortConfig.key as keyof Starship];
-        const bValue = b[sortConfig.key as keyof Starship];
-        
-        if (aValue === undefined && bValue === undefined) return 0;
-        if (aValue === undefined) return 1;
-        if (bValue === undefined) return -1;
-        
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          // Special handling for issue field to ensure numeric sorting
-          if (sortConfig.key === 'issue') {
-            // Extract numeric part from issue
-            const aMatch = aValue.match(/(\d+)$/);
-            const bMatch = bValue.match(/(\d+)$/);
-            
-            const aNum = aMatch ? parseInt(aMatch[1], 10) : NaN;
-            const bNum = bMatch ? parseInt(bMatch[1], 10) : NaN;
-            
-            // If both have numeric parts, compare them numerically
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-              // If they have the same prefix (or no prefix), sort by number
-              const aPrefix = aValue.replace(/\d+$/, '');
-              const bPrefix = bValue.replace(/\d+$/, '');
-              
-              if (aPrefix === bPrefix) {
-                return sortConfig.direction === 'asc' 
-                  ? aNum - bNum 
-                  : bNum - aNum;
-              }
-              
-              // If prefixes are different, sort by prefix first
-              return sortConfig.direction === 'asc'
-                ? aPrefix.localeCompare(bPrefix)
-                : bPrefix.localeCompare(aPrefix);
-            }
-            
-            // If only one has a numeric part, prioritize numbers before strings
-            if (!isNaN(aNum) && isNaN(bNum)) {
-              return sortConfig.direction === 'asc' ? -1 : 1;
-            }
-            if (isNaN(aNum) && !isNaN(bNum)) {
-              return sortConfig.direction === 'asc' ? 1 : -1;
-            }
-          }
-          
-          // Default string comparison for other fields
-          return sortConfig.direction === 'asc' 
-            ? aValue.localeCompare(bValue) 
-            : bValue.localeCompare(aValue);
-        }
-        
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return sortConfig.direction === 'asc' 
-            ? aValue - bValue 
-            : bValue - aValue;
-        }
-        
-        if (aValue instanceof Date && bValue instanceof Date) {
-          return sortConfig.direction === 'asc' 
-            ? aValue.getTime() - bValue.getTime() 
-            : bValue.getTime() - aValue.getTime();
-        }
-        
-        return 0;
-      });
-    }
-    
-    setFilteredStarships(result);
-  }, [starships, filters, sortConfig]);
+    // Simply use the starships as received from the server
+    // Server-side filtering, pagination, and sorting is already applied
+    setFilteredStarships(starships);
+  }, [starships]);
 
   const handleSort = (key: keyof Starship) => {
     setSortConfig(prevConfig => ({
@@ -608,7 +465,13 @@ const StarshipList: React.FC<StarshipListProps> = ({
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({ ...prev, search: e.target.value }));
+    const searchValue = e.target.value;
+    setFilters(prev => ({ ...prev, search: searchValue }));
+    
+    // Notify parent component of search change
+    if (onSearchChange) {
+      onSearchChange(searchValue);
+    }
   };
 
   const toggleFactionFilter = (faction: string) => {
@@ -1114,6 +977,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
         onEditionSelect={handleEditionSelect}
         filteredStarships={filteredStarships}
         onSearchChange={handleSearchChange}
+        onClearSearch={onClearSearch}
         onFactionToggle={toggleFactionFilter}
         onOwnedFilterChange={setOwnedFilter}
       />

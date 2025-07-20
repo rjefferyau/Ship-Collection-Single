@@ -95,8 +95,6 @@ const SightingsModal: React.FC<SightingsModalProps> = ({ isOpen, onClose, starsh
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submitted with data:', formData);
-    console.log('Starship ID:', starship._id);
     
     try {
       setLoading(true);
@@ -109,9 +107,6 @@ const SightingsModal: React.FC<SightingsModalProps> = ({ isOpen, onClose, starsh
         ? JSON.stringify({ ...formData, sightingId: currentSightingId })
         : JSON.stringify(formData);
       
-      console.log('Sending request to:', url);
-      console.log('Method:', method);
-      console.log('Request body:', body);
       
       const response = await fetch(url, {
         method,
@@ -130,7 +125,6 @@ const SightingsModal: React.FC<SightingsModalProps> = ({ isOpen, onClose, starsh
       }
       
       const data = await response.json();
-      console.log('Success response:', data);
       
       // Update the UI
       await fetchSightings();
@@ -138,8 +132,6 @@ const SightingsModal: React.FC<SightingsModalProps> = ({ isOpen, onClose, starsh
       setSuccess(isEditing ? 'Sighting updated successfully' : 'Sighting added successfully');
       onSightingsUpdated();
       
-      // Log the updated starship data
-      console.log('Sighting saved successfully. Starship data:', data);
       
       // Clear success message after 3 seconds
       setTimeout(() => {

@@ -112,7 +112,6 @@ const ShipImageUploader: React.FC<ShipImageUploaderProps> = ({
   const uploadImage = async (ship: Starship, file: File) => {
     try {
       setUploadStatus(prev => ({ ...prev, [ship._id]: 'uploading' }));
-      console.log('Starting upload for ship:', ship.shipName, 'File:', file.name, 'Type:', file.type);
 
       // Validate file type
       if (!file.type.startsWith('image/')) {
@@ -128,14 +127,12 @@ const ShipImageUploader: React.FC<ShipImageUploaderProps> = ({
       formData.append('image', file);
       formData.append('starshipId', ship._id);
 
-      console.log('Uploading to /api/upload/image with ship ID:', ship._id);
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',
         body: formData,
       });
 
-      console.log('Upload response status:', response.status);
 
       if (!response.ok) {
         let errorMessage = `Upload failed with status ${response.status}`;
@@ -151,7 +148,6 @@ const ShipImageUploader: React.FC<ShipImageUploaderProps> = ({
       }
 
       const result = await response.json();
-      console.log('Upload successful:', result);
 
       setUploadStatus(prev => ({ ...prev, [ship._id]: 'success' }));
       

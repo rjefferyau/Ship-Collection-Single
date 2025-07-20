@@ -46,6 +46,15 @@ export interface Edition {
   description?: string;
 }
 
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 export interface SortConfig {
   key: keyof Starship | '';
   direction: 'asc' | 'desc';

@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(`Starship found: ${starship.shipName}`);
     
     // Prepare update operations
-    let updateFields: any = {};
+    const updateFields: any = {};
     
     if (onOrder) {
       updateFields.onOrder = true;

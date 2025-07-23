@@ -1,0 +1,36 @@
+# Database Configuration
+POSTGRES_PASSWORD=postgres
+POSTGRES_PORT=5432
+
+# Supabase URLs
+SITE_URL=http://localhost:3000
+SUPABASE_URL=http://localhost:3001
+SUPABASE_AUTH_URL=http://localhost:9999
+
+# JWT Configuration (Generate new secrets for production!)
+JWT_SECRET=your-super-secret-jwt-token-with-at-least-32-characters-long
+ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjIwNzk4NSwiZXhwIjoxOTU3NzgzOTg1fQ.zT8PnrOGYQ3WdT8G8QZz3Q5Q1Q5Q1Q5Q1Q5Q1Q5Q1Q5Q
+SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQyMjA3OTg1LCJleHAiOjE5NTc3ODM5ODV9.0Fh0VjGhPNaN8O0L0z0z0z0z0z0z0z0z0z0z0z0z0z0z
+
+# Port Configuration
+APP_PORT=3000
+REST_PORT=3001
+STUDIO_PORT=3002
+AUTH_PORT=9999
+FUNCTIONS_PORT=54321
+
+# Email Configuration (for production)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+
+# OAuth Configuration (optional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# Next.js Configuration
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:3001
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjIwNzk4NSwiZXhwIjoxOTU3NzgzOTg1fQ.zT8PnrOGYQ3WdT8G8QZz3Q5Q1Q5Q1Q5Q1Q5Q1Q5Q1Q5Q

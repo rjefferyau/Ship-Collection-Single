@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: supabase/postgres:15.1.0.147
+    container_name: ship-collection-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - supabase
+
+  # Supabase Auth (GoTrue)
+  auth:
+    image: supabase/gotrue:v2.132.3
+    container_name: ship-collection-auth
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres?search_path=auth
+      
+      # Site configuration
+      GOTRUE_SITE_URL: ${SITE_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: ${SITE_URL:-http://localhost:3000}
+      
+      # JWT configuration
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: admin
+      
+      # Auth configuration
+      GOTRUE_DISABLE_SIGNUP: false
+      GOTRUE_MAILER_AUTOCONFIRM: true
+      GOTRUE_PASSWORD_MIN_LENGTH: 8
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: true
+      
+      # External OAuth providers (optional)
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: false
+      GOTRUE_EXTERNAL_GITHUB_ENABLED: false
+      
+    ports:
+      - "${AUTH_PORT:-9999}:9999"
+    networks:
+      - supabase
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgREST API
+  rest:
+    image: postgrest/postgrest:v12.0.2
+    container_name: ship-collection-rest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
+      PGRST_DB_USE_LEGACY_GUCS: false
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+    ports:
+      - "${REST_PORT:-3001}:3000"
+    networks:
+      - supabase
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Supabase Studio (Admin UI)
+  studio:
+    image: supabase/studio:20240101-ce42139
+    container_name: ship-collection-studio
+    depends_on:
+      - rest
+      - auth
+    environment:
+      STUDIO_PG_META_URL: http://rest:3000/
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      
+      # Studio configuration
+      SUPABASE_URL: http://localhost:${REST_PORT:-3001}
+      SUPABASE_ANON_KEY: ${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjIwNzk4NSwiZXhwIjoxOTU3NzgzOTg1fQ.zT8PnrOGYQ3WdT8G8QZz3Q5Q1Q5Q1Q5Q1Q5Q1Q5Q1Q5Q}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQyMjA3OTg1LCJleHAiOjE5NTc3ODM5ODV9.0Fh0VjGhPNaN8O0L0z0z0z0z0z0z0z0z0z0z0z0z0z0z}
+      
+    ports:
+      - "${STUDIO_PORT:-3002}:3000"
+    networks:
+      - supabase
+
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        NODE_VERSION: 18-alpine
+    container_name: ship-collection-app
+    depends_on:
+      db:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_SUPABASE_URL=http://localhost:${REST_PORT:-3001}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MjIwNzk4NSwiZXhwIjoxOTU3NzgzOTg1fQ.zT8PnrOGYQ3WdT8G8QZz3Q5Q1Q5Q1Q5Q1Q5Q1Q5Q1Q5Q}
+      - SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjQyMjA3OTg1LCJleHAiOjE5NTc3ODM5ODV9.0Fh0VjGhPNaN8O0L0z0z0z0z0z0z0z0z0z0z0z0z0z0z}
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - supabase
+    command: npm run dev
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  supabase:
+    driver: bridge

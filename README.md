@@ -139,8 +139,33 @@ To access these tools:
 - `/public`: Static assets
 - `/styles`: CSS styles
 
-### Future Migration
+### Future Development
 
+#### Multi-Tenant Architecture (Supabase Edition)
+This single-user application has a comprehensive migration plan to a modern multi-tenant platform using Supabase for authentication, PostgreSQL for data, and Row-Level Security for user isolation. The multi-tenant version will feature:
+
+- **Supabase Authentication**: Built-in user management with OAuth support
+- **PostgreSQL with RLS**: Automatic data isolation between users
+- **Admin Portal**: Master catalog management with role-based access
+- **User Collections**: Personal collection tracking with real-time updates
+- **Auto-Generated APIs**: REST/GraphQL APIs created from database schema
+- **Docker Development**: Complete local development stack
+- **Scalability**: Support for hundreds of concurrent users
+
+**Comprehensive Documentation**: 
+- [Supabase Migration Plan](./docs/technical/supabase-migration-plan.md)
+- [PostgreSQL Schema Design](./docs/technical/postgresql-schema-design.md)
+- [Docker Supabase Setup](./docs/technical/docker-supabase-setup.md)
+- [Data Migration Strategy](./docs/technical/data-migration-strategy.md)
+- [Development Workflow](./docs/technical/development-workflow.md)
+- [Repository Strategy](./docs/REPOSITORY_STRATEGY.md)
+- [Multi-Tenant Specification](./docs/technical/multi-tenant-specification.md)
+
+**Timeline**: 3-month development project (reduced from 6 months due to Supabase capabilities)
+**Approach**: Repository fork with parallel development to preserve stable single-user version
+**Technology**: Next.js + Supabase + PostgreSQL + Docker
+
+#### Legacy Migration Plans
 A plan for migrating to Supabase for improved multi-tenancy and maintainability is available in [SUPABASE_MIGRATION.md](./SUPABASE_MIGRATION.md).
 
 ### API Endpoints

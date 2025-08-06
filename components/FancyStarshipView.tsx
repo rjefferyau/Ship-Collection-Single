@@ -472,11 +472,44 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   <span>Collection Progress</span>
                   <span>{Math.round((filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100)}%</span>
                 </div>
-                <div className="w-64 bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-green-500 h-2.5 rounded-full" 
-                    style={{ width: `${(filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100}%` }}
-                  ></div>
+                <div className="w-64 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                  <div className="flex h-full">
+                    {/* Owned - Green */}
+                    <div 
+                      className="bg-green-500 h-full transition-all duration-300" 
+                      style={{ width: `${(filteredStarships.filter(s => s.owned).length / filteredStarships.length) * 100}%` }}
+                    ></div>
+                    {/* Wishlist - Yellow */}
+                    <div 
+                      className="bg-yellow-500 h-full transition-all duration-300" 
+                      style={{ width: `${(filteredStarships.filter(s => s.wishlist && !s.owned).length / filteredStarships.length) * 100}%` }}
+                    ></div>
+                    {/* On Order - Blue */}
+                    <div 
+                      className="bg-blue-500 h-full transition-all duration-300" 
+                      style={{ width: `${(filteredStarships.filter(s => s.onOrder && !s.owned).length / filteredStarships.length) * 100}%` }}
+                    ></div>
+                    {/* Not Owned - Light Gray (remaining space is handled by the gray background) */}
+                  </div>
+                </div>
+                {/* Legend */}
+                <div className="flex justify-center space-x-4 mt-1 text-xs text-gray-600">
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                    <span>Owned</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-1"></div>
+                    <span>Wishlist</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
+                    <span>On Order</span>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-gray-300 rounded-full mr-1"></div>
+                    <span>Not Owned</span>
+                  </div>
                 </div>
               </div>
             </div>

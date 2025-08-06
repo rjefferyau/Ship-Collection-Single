@@ -80,8 +80,8 @@ const Home: React.FC = () => {
         return;
       }
 
-      // Ctrl+N - Open Add Item modal
-      if (e.ctrlKey && e.key === 'n') {
+      // Ctrl+Shift+A - Open Add Item modal
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
         e.preventDefault();
         setShowAddModal(true);
       }
@@ -536,7 +536,7 @@ const Home: React.FC = () => {
               <button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors border border-white/20"
-                title="Add New Item (Ctrl+N)"
+                title="Add New Item (Ctrl+Shift+A)"
               >
                 <span className="text-sm font-bold">+</span>
                 <span className="text-sm">Add</span>

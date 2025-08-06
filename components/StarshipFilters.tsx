@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Filters, Starship } from '../types';
 
 interface StarshipFiltersProps {
@@ -34,6 +34,7 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
 }) => {
   const [factionMenuOpen, setFactionMenuOpen] = useState(false);
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -47,6 +48,37 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+F to focus search
+      if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+      
+      // Escape to clear search when focused
+      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        if (filters.search) {
+          // Clear search if there's text
+          const syntheticEvent = {
+            target: { value: '' }
+          } as React.ChangeEvent<HTMLInputElement>;
+          
+          onFiltersChange({ ...filters, search: '' });
+          onSearchChange(syntheticEvent);
+        } else {
+          // Blur if search is already empty
+          searchInputRef.current?.blur();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filters, onFiltersChange, onSearchChange]);
 
   const renderEditionTabs = () => {
     if (availableEditions.length === 0) {
@@ -129,8 +161,9 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
               </svg>
             </div>
             <input
+              ref={searchInputRef}
               type="text"
-              placeholder="Search ships..."
+              placeholder="Search ships... (Ctrl+F to focus)"
               value={filters.search}
               onChange={onSearchChange}
               className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors"

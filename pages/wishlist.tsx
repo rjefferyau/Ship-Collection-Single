@@ -25,18 +25,94 @@ const WishlistPage: React.FC = () => {
   const [processingOrder, setProcessingOrder] = useState(false);
   const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
   const [selectedFranchise, setSelectedFranchise] = useState<string>('');
+  const [currentEdition, setCurrentEdition] = useState<string>('');
   const [allFranchises, setAllFranchises] = useState<string[]>([]);
   const [allCollectionTypes, setAllCollectionTypes] = useState<string[]>([]);
   const [showSightingsModal, setShowSightingsModal] = useState(false);
   const [selectedStarshipForSightings, setSelectedStarshipForSightings] = useState<Starship | null>(null);
 
   useEffect(() => {
-    fetchStarships();
-  }, [selectedCollectionType, selectedFranchise]);
+    // Only fetch if edition is set
+    if (currentEdition) {
+      fetchStarships();
+    }
+  }, [selectedCollectionType, selectedFranchise, currentEdition]);
 
   useEffect(() => {
     fetchAllOptions();
+    fetchDefaultEdition().then(() => {
+      // Fetch starships after default edition is loaded
+      fetchStarships();
+    });
   }, []);
+
+  useEffect(() => {
+    if (selectedFranchise) {
+      fetchDefaultEdition(selectedFranchise).then(() => {
+        // Fetch starships after edition is updated for franchise
+        fetchStarships();
+      });
+    }
+  }, [selectedFranchise]);
+
+  const fetchDefaultEdition = async (franchise?: string) => {
+    try {
+      let url = '/api/editions?default=true';
+      
+      if (franchise) {
+        url += `&franchise=${encodeURIComponent(franchise)}`;
+      }
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch default edition');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.data && data.data.length > 0) {
+        const defaultEdition = data.data[0].internalName;
+        setCurrentEdition(defaultEdition);
+        return defaultEdition;
+      } else {
+        if (franchise) {
+          const fallbackResponse = await fetch(`/api/editions?franchise=${encodeURIComponent(franchise)}`);
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
+              // Look for "Regular" edition first, otherwise use the first one
+              const regularEdition = fallbackData.data.find((edition: any) => 
+                edition.name.toLowerCase() === 'regular'
+              );
+              const selectedEdition = regularEdition || fallbackData.data[0];
+              setCurrentEdition(selectedEdition.internalName);
+              return selectedEdition.internalName;
+            }
+          }
+        }
+        
+        // Default fallback based on franchise
+        const franchiseDefaults: Record<string, string> = {
+          'Star Trek': 'regular-star-trek',
+          'Battlestar Galactica': 'regular-battlestar-galactica'
+        };
+        const defaultEdition = franchiseDefaults[franchise || 'Star Trek'] || 'regular-star-trek';
+        setCurrentEdition(defaultEdition);
+        return defaultEdition;
+      }
+    } catch (err) {
+      console.error('Error fetching default edition:', err);
+      // If there's an error, use franchise-specific default
+      const franchiseDefaults: Record<string, string> = {
+        'Star Trek': 'regular-star-trek',
+        'Battlestar Galactica': 'regular-battlestar-galactica'
+      };
+      const defaultEdition = franchiseDefaults[franchise || 'Star Trek'] || 'regular-star-trek';
+      setCurrentEdition(defaultEdition);
+      return defaultEdition;
+    }
+  };
 
   const fetchAllOptions = async () => {
     try {
@@ -79,6 +155,13 @@ const WishlistPage: React.FC = () => {
       if (selectedFranchise) {
         queryParams.push(`franchise=${encodeURIComponent(selectedFranchise)}`);
       }
+      
+      if (currentEdition) {
+        queryParams.push(`edition=${encodeURIComponent(currentEdition)}`);
+      }
+      
+      // Get all items for wishlist (don't limit to 50)
+      queryParams.push('limit=1000');
       
       if (queryParams.length > 0) {
         apiUrl += `?${queryParams.join('&')}`;

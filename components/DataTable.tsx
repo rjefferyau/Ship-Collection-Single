@@ -80,10 +80,10 @@ function DataTable<T>({
 
   return (
     <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200/50 bg-white backdrop-blur-sm">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
         <table className="min-w-full">
-          {/* Modern Table Header */}
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+          {/* Modern Table Header - Sticky */}
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 sticky top-0 z-10">
             <tr>
               {orderedColumns.map((column, index) => (
                 <th

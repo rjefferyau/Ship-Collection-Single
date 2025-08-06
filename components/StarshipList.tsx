@@ -294,6 +294,27 @@ const StarshipList: React.FC<StarshipListProps> = ({
     }
   };
 
+  // Handle duplicate starship
+  const handleDuplicateStarship = async (id: string) => {
+    try {
+      const response = await fetch(`/api/starships/${id}/duplicate`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert('Item duplicated successfully! A new variant has been created.');
+        // Refresh the list - this would typically call a parent refresh function
+        window.location.reload(); // Simple refresh for now
+      } else {
+        throw new Error('Failed to duplicate item');
+      }
+    } catch (error) {
+      console.error('Error duplicating starship:', error);
+      alert('Failed to duplicate item. Please try again.');
+    }
+  };
+
   // Fetch available editions from the API, filtered by franchise
   useEffect(() => {
     const fetchEditions = async () => {
@@ -766,6 +787,20 @@ const StarshipList: React.FC<StarshipListProps> = ({
                       P{starship.wishlistPriority}
                     </span>
                   )}
+                  
+                  {/* Duplicate Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicateStarship(starship._id);
+                    }}
+                    className="rounded-full p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                    title="Duplicate this item"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
                 </div>
               );
             },

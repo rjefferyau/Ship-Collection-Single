@@ -58,6 +58,56 @@ const Home: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
+  // Load saved view mode from localStorage on mount
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem('preferredViewMode') as ViewMode;
+    if (savedViewMode && ['table', 'gallery', 'overview'].includes(savedViewMode)) {
+      setViewMode(savedViewMode);
+    }
+  }, []);
+
+  // Save view mode to localStorage when it changes
+  const handleViewModeChange = (newViewMode: ViewMode) => {
+    setViewMode(newViewMode);
+    localStorage.setItem('preferredViewMode', newViewMode);
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Ctrl+N - Open Add Item modal
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        setShowAddModal(true);
+      }
+
+      // Ctrl+F - Focus search (will be handled by StarshipList component)
+      if (e.ctrlKey && e.key === 'f') {
+        e.preventDefault();
+        // Let the StarshipList component handle this
+      }
+
+      // Escape - Close any open modal
+      if (e.key === 'Escape') {
+        if (showAddModal) {
+          setShowAddModal(false);
+        } else if (selectedStarship) {
+          setSelectedStarship(null);
+        } else if (showSettingsModal) {
+          setShowSettingsModal(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showAddModal, selectedStarship, showSettingsModal]);
+
   // Fetch default edition on component mount
   useEffect(() => {
     fetchDefaultEdition().then(() => {
@@ -105,21 +155,36 @@ const Home: React.FC = () => {
           if (fallbackResponse.ok) {
             const fallbackData = await fallbackResponse.json();
             if (fallbackData.success && fallbackData.data && fallbackData.data.length > 0) {
-              const firstEdition = fallbackData.data[0].internalName;
-              setCurrentEdition(firstEdition);
-              return firstEdition;
+              // Look for "Regular" edition first, otherwise use the first one
+              const regularEdition = fallbackData.data.find((edition: any) => 
+                edition.name.toLowerCase() === 'regular'
+              );
+              const selectedEdition = regularEdition || fallbackData.data[0];
+              setCurrentEdition(selectedEdition.internalName);
+              return selectedEdition.internalName;
             }
           }
         }
         
-        setCurrentEdition('regular-star-trek');
-        return 'regular-star-trek';
+        // Default fallback based on franchise
+        const franchiseDefaults: Record<string, string> = {
+          'Star Trek': 'regular-star-trek',
+          'Battlestar Galactica': 'regular-battlestar-galactica'
+        };
+        const defaultEdition = franchiseDefaults[franchise || 'Star Trek'] || 'regular-star-trek';
+        setCurrentEdition(defaultEdition);
+        return defaultEdition;
       }
     } catch (err) {
       console.error('Error fetching default edition:', err);
-      // If there's an error, we'll just use the default 'Regular'
-      setCurrentEdition('regular-star-trek');
-      return 'regular-star-trek';
+      // If there's an error, use franchise-specific default
+      const franchiseDefaults: Record<string, string> = {
+        'Star Trek': 'regular-star-trek',
+        'Battlestar Galactica': 'regular-battlestar-galactica'
+      };
+      const defaultEdition = franchiseDefaults[franchise || 'Star Trek'] || 'regular-star-trek';
+      setCurrentEdition(defaultEdition);
+      return defaultEdition;
     }
   };
 
@@ -424,141 +489,160 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      {/* Modern Hero Section */}
-      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 pt-8 pb-12">
+      {/* Compact Header */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 py-4">
         <div className="w-full px-6">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">
-              The Collection
-            </h1>
-            <p className="text-xl md:text-2xl text-indigo-100 font-medium max-w-3xl mx-auto">
-              Discover, organize, and manage your complete starship collection with intelligent filtering and modern design
-            </p>
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex justify-center space-x-4 flex-wrap gap-4">
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="group bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-white/20"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-200">
-                  <span className="text-lg font-bold">+</span>
-                </div>
-                <span className="text-lg">Add New Item to Collection</span>
+          <div className="flex items-center justify-between">
+            {/* Dynamic Title and Stats */}
+            <div className="flex items-center space-x-6">
+              <div>
+                <h1 className="text-2xl font-bold text-white tracking-tight mb-1">
+                  {(() => {
+                    // Get display name for current edition
+                    const getEditionDisplayName = () => {
+                      // For now, convert internal names to display names
+                      if (currentEdition === 'regular-star-trek') return 'Regular';
+                      if (currentEdition === 'bonus-star-trek') return 'Bonus';
+                      if (currentEdition === 'discovery') return 'Discovery';
+                      // Add more mappings as needed, or use API data if available
+                      return currentEdition?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || '';
+                    };
+
+                    if (selectedFranchise && currentEdition) {
+                      return `${selectedFranchise} - ${getEditionDisplayName()}`;
+                    } else if (selectedFranchise) {
+                      return selectedFranchise;
+                    } else if (currentEdition) {
+                      return getEditionDisplayName();
+                    } else {
+                      return 'The Collection';
+                    }
+                  })()}
+                </h1>
+                {statusCounts && !loading && (
+                  <p className="text-sm text-indigo-100">
+                    <span className="font-semibold text-green-300">{statusCounts.owned}</span> owned • <span className="font-semibold text-yellow-300">{statusCounts.wishlist}</span> wishlist • <span className="font-semibold text-blue-300">{statusCounts.onOrder}</span> on order
+                  </p>
+                )}
               </div>
-            </button>
+            </div>
             
-            <button
-              onClick={openExcelView}
-              className="group bg-green-600/90 backdrop-blur-sm hover:bg-green-600 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-green-500/20"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-200">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <span className="text-lg">Open in Excel</span>
-              </div>
-            </button>
-            
-            <Link href="/checklist">
+            {/* Welcome Message and Action Buttons */}
+            <div className="flex flex-col items-end space-y-2">
+              <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-indigo-100 text-xs font-medium">
+                Welcome back, Captain! ✨
+              </span>
+              <div className="flex items-center space-x-2">
               <button
-                className="group bg-purple-600/90 backdrop-blur-sm hover:bg-purple-600 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-3xl border border-purple-500/20"
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-2 px-4 rounded-lg transition-colors border border-white/20"
+                title="Add New Item (Ctrl+N)"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center justify-center w-8 h-8 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h2a2 2 0 100-4h-.5a1 1 0 000-2H8a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-lg">Print Checklist</span>
-                </div>
+                <span className="text-sm font-bold">+</span>
+                <span className="text-sm">Add</span>
               </button>
-            </Link>
+              
+              <button
+                onClick={openExcelView}
+                className="flex items-center space-x-2 bg-green-600/20 hover:bg-green-600/30 text-white font-medium py-2 px-4 rounded-lg transition-colors border border-green-500/20"
+                title="Open Excel View"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm">Excel</span>
+              </button>
+              
+              <Link href="/checklist">
+                <button
+                  className="flex items-center space-x-2 bg-purple-600/20 hover:bg-purple-600/30 text-white font-medium py-2 px-4 rounded-lg transition-colors border border-purple-500/20"
+                  title="Print Checklist"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H6a2 2 0 100 4h2a2 2 0 100-4h-.5a1 1 0 000-2H8a2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm">Checklist</span>
+                </button>
+              </Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="w-full px-6 -mt-6 relative z-10">
-        {/* Enhanced Collection Filter */}
-        <CollectionFilter onFilterChange={handleFilterChange} className="mb-8" />
-
-        {/* Content Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-          {/* View Toggle */}
-          {!loading && !error && (
-            <div className="px-6 py-4 border-b border-gray-200/50 bg-gray-50/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <h2 className="text-lg font-semibold text-gray-800">Your Collection</h2>
-                  <span className="text-sm text-gray-600">
-                    {pagination?.total || starships.length} {(pagination?.total || starships.length) === 1 ? 'item' : 'items'}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 p-1">
-                    <button
-                      onClick={() => setViewMode('table')}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        viewMode === 'table'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 6h18m-9 8h9" />
-                      </svg>
-                      <span>Table</span>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('gallery')}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        viewMode === 'gallery'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                      </svg>
-                      <span>Gallery</span>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('overview')}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                        viewMode === 'overview'
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      <span>Overview</span>
-                    </button>
-                  </div>
-                  
-                  <button
-                    onClick={() => setShowSettingsModal(true)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-200 text-gray-600 hover:text-gray-800 hover:bg-gray-50 shadow-sm transition-all duration-200"
-                    title="View Settings"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                    </svg>
-                    <span>Settings</span>
-                  </button>
-                </div>
-              </div>
+      {/* Main Content Area - Reduced padding */}
+      <div className="w-full px-6 py-1">
+        {/* Compact filters and view controls in one row */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 mb-2">
+          <div className="flex items-center justify-between">
+            {/* Left: Compact filters + item count */}
+            <div className="flex items-center space-x-3">
+              <CollectionFilter onFilterChange={handleFilterChange} className="" />
+              <span className="text-xs text-gray-500 border-l pl-3">
+                {pagination?.total || starships.length} items
+              </span>
             </div>
-          )}
-          
-          {loading ? (
+
+            {/* Right: Super compact view controls - icons only */}
+            <div className="flex items-center space-x-1">
+              <div className="flex items-center bg-gray-50 rounded p-0.5">
+                <button
+                  onClick={() => handleViewModeChange('table')}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewMode === 'table'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Table View"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 6h18m-9 8h9" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleViewModeChange('gallery')}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewMode === 'gallery'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Gallery View"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleViewModeChange('overview')}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewMode === 'overview'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title="Overview"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </button>
+              </div>
+              
+              <button
+                onClick={() => setShowSettingsModal(true)}
+                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+                title="Settings"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content area */}
+        {loading ? (
             <div className="flex flex-col justify-center items-center py-24 px-6">
               <div className="relative">
                 <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200"></div>
@@ -632,7 +716,6 @@ const Home: React.FC = () => {
               )}
             </div>
           )}
-        </div>
       </div>
 
       {/* Modal for adding new starship */}

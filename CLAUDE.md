@@ -19,6 +19,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - ESLint
 - `npm run type-check` - TypeScript type checking (manual - disabled in dev builds)
 
+**Testing:**
+- `npm test` - Run Jest test suite
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run test:ci` - Run tests for CI environment
+
 **Database Scripts:**
 - `npm run fix-editions` - Fix edition data issues
 - `npm run simple-fix` - Simple database fixes
@@ -27,6 +33,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run direct-repair` - Direct database repair
 - `npm run fix-ship-editions` - Fix ship-edition relationships
 - `npm run fix-bsg-ship` - Fix Battlestar Galactica ships
+
+**Backup & Restore:**
+- `npm run backup:create` - Create database backup
+- `npm run backup:restore` - Restore database (interactive)
+- `npm run backup:restore-latest` - Restore latest backup
+- `npm run backup:list` - List available backups
+
+**Docker Commands:**
+- `npm run docker:build` - Build Docker containers
+- `npm run docker:up` - Start Docker environment
+- `npm run docker:down` - Stop Docker environment
+- `npm run docker:logs` - View container logs
+- `npm run docker:dev` - Development Docker setup
+- `npm run docker:prod` - Production Docker setup
 
 **Cache Management:**
 - `npm run clear-cache` - Clear Next.js cache and npm cache
@@ -64,11 +84,14 @@ Uses factory-based API handlers with **ObjectId-only handling**:
 
 ### Frontend Architecture
 **Next.js** with TypeScript:
-- **Pages Router** (not App Router)
-- **Component Structure**: 40+ React components in `/components/`
+- **Pages Router** (not App Router) - Uses traditional file-based routing
+- **Component Structure**: 40+ React components in `/components/` organized by category
+- **Dynamic Imports**: Performance optimization with `next/dynamic` for large components
 - **Custom Hooks**: `useStarshipFilters`, `useBatchOperations`, `useForm`
-- **State Management**: React Context for Theme and Currency
-- **Styling**: Tailwind CSS with custom theme extensions
+- **State Management**: React Context for Theme and Currency, local state with useState/useEffect
+- **Styling**: Tailwind CSS with custom theme extensions and color palette
+- **UI Framework**: Custom components built on Headless UI for modals and interactions
+- **Icons**: Font Awesome integration for consistent iconography
 
 ### Key Component Categories
 - **Data Management**: `StarshipList`, `DataTable`, `BatchActionManager`  
@@ -116,19 +139,27 @@ The app has undergone multiple schema migrations:
 **Next.js Config**:
 - React Strict Mode disabled (compatibility with react-beautiful-dnd)
 - Custom webpack config for faster development builds
-- Bundle splitting optimizations for React and common dependencies
-- TypeScript checking disabled in development (run manually)
+- Bundle splitting optimizations for React and common dependencies  
+- TypeScript checking disabled in development (run manually with `npm run type-check`)
+- Image optimization configured for localhost domain
+- Standalone output for Docker deployment
 
-**Development Notes**:
-- Uses absolute imports with `@/*` path mapping
-- Memory allocation increased to 4GB for large datasets
+**Development Optimizations**:
+- Uses absolute imports with `@/*` path mapping for cleaner imports
+- Memory allocation increased to 4GB for large datasets (NODE_OPTIONS in package.json)
 - File watching optimized to prevent lock issues
+- Dynamic component loading to reduce initial bundle size
+- CSS source maps disabled in development for faster compilation
+- Custom cache configuration for improved hot reloading
 
 ### TypeScript Configuration
-- Strict mode enabled
-- Path aliases: `@/*` maps to project root
-- Custom type definitions in `/types/index.ts`
-- Interface definitions match Mongoose schemas exactly
+- Strict mode enabled with comprehensive error checking
+- Path aliases: `@/*` maps to project root for absolute imports
+- Custom type definitions in `/types/index.ts` with complete interface coverage
+- Interface definitions match Mongoose schemas exactly for type safety
+- JSX preserve mode for Next.js compilation
+- ES5 target for broad browser compatibility
+- Incremental compilation for faster builds
 
 ## Key Patterns to Follow
 
@@ -154,7 +185,28 @@ export default createResourceApiHandler(Model, 'ModelName', {
 - No string/ObjectId dual-format handling
 
 ### Component Pattern
-Components use TypeScript interfaces from `/types/index.ts` and follow the established UI patterns using Tailwind classes with the custom theme.
+```typescript
+// Component structure follows this pattern
+interface ComponentProps {
+  // Props typed according to /types/index.ts interfaces
+  data: Starship[];
+  onAction: (id: string) => Promise<void>;
+}
+
+const Component: React.FC<ComponentProps> = ({ data, onAction }) => {
+  // Use Tailwind classes with custom theme extensions
+  // Utilize Headless UI for interactive elements
+  // Implement proper error boundaries and loading states
+};
+```
+
+**Component Guidelines**:
+- Use TypeScript interfaces from `/types/index.ts`
+- Follow established UI patterns using Tailwind classes with custom theme
+- Implement proper loading states and error handling
+- Use dynamic imports for large components to improve performance
+- Follow React hooks patterns for state management
+- Utilize Font Awesome icons consistently
 
 ### Database Query Pattern
 Always use the centralized `dbConnect()` from `lib/mongodb.ts` and leverage the existing indexes for performance.
@@ -214,6 +266,12 @@ docker compose restart app
 # Check container status
 docker ps
 docker logs ship-collection-single-app-1
+
+# Start with MongoDB Express admin tool
+docker compose --profile tools up -d
+
+# Database administration (MongoDB Express available at :8081)
+# Username: admin, Password: shipCollection2025
 ```
 
 ## Migration & Maintenance
@@ -306,6 +364,12 @@ curl -s "http://localhost:3000/api/starships?limit=1000&page=1" | jq '.data | le
 
 # Test edition-specific status counts
 curl -s "http://localhost:3000/api/starships?edition=regular-star-trek&limit=1" | jq '.statusCounts'
+
+# Jest Testing Commands
+npm test                    # Run all tests
+npm run test:watch          # Watch mode for development
+npm run test:coverage       # Generate coverage report
+npm run test:ci             # CI-optimized test run
 ```
 
 ### Performance Monitoring

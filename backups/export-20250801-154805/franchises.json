@@ -1,0 +1,24 @@
+{
+	"_id": "68157e5d96223cd52186ac8f",
+	"name": "Star Trek",
+	"description": "Star Trek",
+	"createdAt": "2025-05-03T02:24:29.950Z",
+	"updatedAt": "2025-05-03T02:24:29.950Z",
+	"__v": 0
+}
+{
+	"_id": "68157e6596223cd52186ac92",
+	"name": "Battlestar Galactica",
+	"description": "Battlestar Galactica",
+	"createdAt": "2025-05-03T02:24:37.690Z",
+	"updatedAt": "2025-05-03T02:24:37.690Z",
+	"__v": 0
+}
+{
+	"_id": "68414d0b890c0261e7cbaa8f",
+	"name": "Stargate",
+	"description": "Stargate",
+	"createdAt": "2025-06-05T07:53:47.848Z",
+	"updatedAt": "2025-06-05T07:53:47.848Z",
+	"__v": 0
+}

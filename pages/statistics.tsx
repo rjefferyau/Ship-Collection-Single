@@ -47,7 +47,7 @@ const StatisticsPage: React.FC = () => {
   // Function to fetch all available franchises and collection types
   const fetchAllOptions = async () => {
     try {
-      const response = await fetch('/api/starships');
+      const response = await fetch('/api/starships?limit=1000');
       
       if (!response.ok) {
         throw new Error('Failed to fetch items');
@@ -89,6 +89,9 @@ const StatisticsPage: React.FC = () => {
       if (selectedFranchise) {
         queryParams.push(`franchise=${encodeURIComponent(selectedFranchise)}`);
       }
+      
+      // Always add limit=1000 to get all items for statistics
+      queryParams.push('limit=1000');
       
       if (queryParams.length > 0) {
         apiUrl += `?${queryParams.join('&')}`;

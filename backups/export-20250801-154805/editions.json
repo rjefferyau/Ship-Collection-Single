@@ -1,0 +1,157 @@
+{
+	"_id": "67c4206760c1e8bd886bb3bd",
+	"name": "Bonus",
+	"createdAt": "2025-03-02T09:09:59.627Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"description": "",
+	"retailPrice": 39.95,
+	"franchise": "Star Trek",
+	"internalName": "bonus-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "67c4206760c1e8bd886bb3bf",
+	"name": "Regular",
+	"createdAt": "2025-03-02T09:09:59.631Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"description": "",
+	"retailPrice": 22.95,
+	"franchise": "Star Trek",
+	"internalName": "regular-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "67c4206760c1e8bd886bb3c1",
+	"name": "Shuttles",
+	"createdAt": "2025-03-02T09:09:59.633Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"franchise": "Star Trek",
+	"internalName": "shuttles-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "67c4206760c1e8bd886bb3c3",
+	"name": "Special",
+	"createdAt": "2025-03-02T09:09:59.635Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"franchise": "Star Trek",
+	"internalName": "special-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "67c4206760c1e8bd886bb3c5",
+	"name": "XL",
+	"createdAt": "2025-03-02T09:09:59.636Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"description": "",
+	"retailPrice": 100,
+	"franchise": "Star Trek",
+	"internalName": "xl-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "67c4208160c1e8bd886bb3ca",
+	"name": "FanHome",
+	"description": "For FanHome Collection",
+	"createdAt": "2025-03-02T09:10:25.559Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"franchise": "Star Trek",
+	"internalName": "fanhome-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "67c79b6b70eeba7248c3d154",
+	"name": "ST Online",
+	"description": "Ships from Star Trek Online",
+	"retailPrice": 50,
+	"createdAt": "2025-03-05T00:31:39.406Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	},
+	"__v": 0,
+	"franchise": "Star Trek",
+	"internalName": "st-online-star-trek",
+	"collectionType": "Die Cast Models",
+	"isDefault": false
+}
+{
+	"_id": "681b18cfbd0a00ba1dd9616e",
+	"name": "Regular",
+	"internalName": "regular-battlestar-galactica",
+	"description": "",
+	"retailPrice": null,
+	"franchise": "Battlestar Galactica",
+	"isDefault": true,
+	"createdAt": "2025-05-07T08:24:47.661Z",
+	"updatedAt": "2025-06-05T08:03:46.211Z",
+	"__v": 0
+}
+{
+	"_id": "68414efe890c0261e7cbaaca",
+	"name": "Discovery",
+	"franchise": "Star Trek",
+	"isDefault": false,
+	"description": "Discovery",
+	"retailPrice": 49.95,
+	"internalName": "discovery-star-trek",
+	"createdAt": "2025-06-05T08:02:06.170Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	}
+}
+{
+	"_id": "68414efe890c0261e7cbaacb",
+	"name": "Discovery - Special",
+	"franchise": "Star Trek",
+	"isDefault": false,
+	"description": "Discovery - Special",
+	"retailPrice": 59.95,
+	"internalName": "discovery-special-star-trek",
+	"createdAt": "2025-06-05T08:02:06.171Z",
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.454Z"
+	}
+}
+{
+	"_id": {
+		"$oid": "687c8152804a46df8921a662"
+	},
+	"name": "Universe",
+	"internalName": "universe-star-trek",
+	"description": "",
+	"retailPrice": 34.95,
+	"franchise": "Star Trek",
+	"isDefault": true,
+	"createdAt": {
+		"$date": "2025-07-20T05:40:34.461Z"
+	},
+	"updatedAt": {
+		"$date": "2025-07-20T05:40:34.461Z"
+	},
+	"__v": 0,
+	"collectionType": "Die Cast Models"
+}

@@ -1,0 +1,705 @@
+{
+	"_id": "67c41f06887118c3707815c1",
+	"name": "Federation",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c2",
+	"name": "Klingon Empire",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c3",
+	"name": "United Earth (Pre-Federation)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c4",
+	"name": "Romulan Star Empire",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c5",
+	"name": "Borg Collective",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c6",
+	"name": "Dominion",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c7",
+	"name": "Cardassian Union",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c8",
+	"name": "Ferengi Alliance",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815c9",
+	"name": "Bajoran",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815ca",
+	"name": "Krenim Imperium",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815cb",
+	"name": "Xindi",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815cc",
+	"name": "Tholian Assembly",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815cd",
+	"name": "Maquis",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815ce",
+	"name": "Nausicaan",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815cf",
+	"name": "Vulcan",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d0",
+	"name": "Andorian Imperial Guard",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d1",
+	"name": "Species 8472",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d2",
+	"name": "Malon Cooperative",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d3",
+	"name": "Earth Cargo Service",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d4",
+	"name": "Hirogen",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d5",
+	"name": "Federation (29th Century)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d6",
+	"name": "Human (Augment)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.880Z",
+	"updatedAt": "2025-03-02T09:04:06.880Z"
+}
+{
+	"_id": "67c41f06887118c3707815d7",
+	"name": "Voth",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815d8",
+	"name": "Human (Earth)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815d9",
+	"name": "Federation (Civilian)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815da",
+	"name": "Breen Confederacy",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815db",
+	"name": "Talaxian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815dc",
+	"name": "Independent Trader",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815dd",
+	"name": "Gorn Hegemony",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815de",
+	"name": "Federation (26th Century)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815df",
+	"name": "Suliban Cabal",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e0",
+	"name": "Orion Syndicate",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e1",
+	"name": "Holographic",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e2",
+	"name": "Independent",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e3",
+	"name": "Kazon Collective",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e4",
+	"name": "Lokirrim",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e5",
+	"name": "Tellarite",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e6",
+	"name": "Karemma (Dominion)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e7",
+	"name": "Sentient Ship",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e8",
+	"name": "Eymorg",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815e9",
+	"name": "Federation (Alternate)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815ea",
+	"name": "Independent (Impostor)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815eb",
+	"name": "Vaadwaur",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815ec",
+	"name": "Promellian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815ed",
+	"name": "Kraylor",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815ee",
+	"name": "First Federation",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815ef",
+	"name": "B'omar Sovereignty",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f0",
+	"name": "Federation (Concept)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f1",
+	"name": "Devore Imperium",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f2",
+	"name": "Void Species",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f3",
+	"name": "El-Aurian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f4",
+	"name": "Tamarian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f5",
+	"name": "Axanar",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f6",
+	"name": "Suliban",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f7",
+	"name": "Ocampa",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f8",
+	"name": "Norcadian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815f9",
+	"name": "Denobulan",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815fa",
+	"name": "United Earth",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815fb",
+	"name": "Pakled",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815fc",
+	"name": "Tarellian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815fd",
+	"name": "Sheliak Corporate",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815fe",
+	"name": "Husnock",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c3707815ff",
+	"name": "Vidiian Sodality",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c370781600",
+	"name": "Federation (Alternate Future)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c370781601",
+	"name": "Terran Empire",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c370781602",
+	"name": "Federation (STO)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.881Z",
+	"updatedAt": "2025-03-02T09:04:06.881Z"
+}
+{
+	"_id": "67c41f06887118c370781603",
+	"name": "Earth Colony Ship",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781604",
+	"name": "Klingon Empire (Concept)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781605",
+	"name": "Human/Alien Hybrid Probe",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781606",
+	"name": "Talarian",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781607",
+	"name": "Hierarchy",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781608",
+	"name": "Reman/Romulan",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781609",
+	"name": "Cravic",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c37078160a",
+	"name": "Pralor",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c37078160b",
+	"name": "Bajoran/Federation",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c37078160c",
+	"name": "Federation (Kelvin Timeline)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c37078160d",
+	"name": "Section 31/Federation",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c37078160e",
+	"name": "Klingon Empire (Kelvin Timeline)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c37078160f",
+	"name": "Vulcan (Future)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781610",
+	"name": "Altamid/Krall's Forces",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781611",
+	"name": "Civilian/Federation",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781612",
+	"name": "Sentient Machine Entity",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781613",
+	"name": "Alien Doomsday Machine",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781614",
+	"name": "Son'a",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781615",
+	"name": "Caretaker/Nacene",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c41f06887118c370781616",
+	"name": "Federation (32nd Century)",
+	"description": "Imported from starship collection",
+	"__v": 0,
+	"createdAt": "2025-03-02T09:04:06.882Z",
+	"updatedAt": "2025-03-02T09:04:06.882Z"
+}
+{
+	"_id": "67c4595d5e0630f8367d764a",
+	"name": "Rogue Changelings",
+	"description": "From: Picard",
+	"createdAt": "2025-03-02T13:13:01.858Z",
+	"updatedAt": "2025-03-02T13:13:01.858Z",
+	"__v": 0
+}
+{
+	"_id": "681b18b9bd0a00ba1dd96166",
+	"name": "Colonial",
+	"description": "",
+	"franchise": "Battlestar Galactica",
+	"createdAt": "2025-05-07T08:24:25.304Z",
+	"updatedAt": "2025-05-07T08:24:25.304Z",
+	"__v": 0
+}

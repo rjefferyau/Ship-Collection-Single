@@ -1,0 +1,72 @@
+{
+	"_id": "68551aaf573a1ba4fdf684cd",
+	"name": "Default",
+	"columns": [
+		{
+			"key": "select",
+			"order": 0,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684ce"
+		},
+		{
+			"key": "imageUrl",
+			"order": 1,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684cf"
+		},
+		{
+			"key": "issue",
+			"order": 2,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684d0"
+		},
+		{
+			"key": "shipName",
+			"order": 3,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684d1"
+		},
+		{
+			"key": "faction",
+			"order": 4,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684d2"
+		},
+		{
+			"key": "edition",
+			"order": 5,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684d3"
+		},
+		{
+			"key": "status",
+			"order": 6,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684d4"
+		},
+		{
+			"key": "price",
+			"order": 7,
+			"alignment": "left",
+			"_id": "68551aaf573a1ba4fdf684d5"
+		}
+	],
+	"filters": {
+		"search": "",
+		"faction": [],
+		"edition": [
+			"bonus-star-trek"
+		],
+		"collectionType": [],
+		"franchise": [],
+		"owned": "all"
+	},
+	"sortConfig": {
+		"key": "issue",
+		"direction": "asc"
+	},
+	"isDefault": true,
+	"createdAt": "2025-06-20T08:24:15.472Z",
+	"updatedAt": "2025-06-20T08:24:19.928Z",
+	"__v": 0
+}

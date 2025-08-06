@@ -1,0 +1,27 @@
+{
+	"_id": "68157e8696223cd52186ac9e",
+	"name": "Eaglemoss",
+	"description": "Eaglemoss",
+	"website": "https://www.eaglemoss.com.au",
+	"country": "",
+	"franchises": [
+		"Battlestar Galactica",
+		"Star Trek"
+	],
+	"createdAt": "2025-05-03T02:25:10.921Z",
+	"updatedAt": "2025-05-03T02:25:10.921Z",
+	"__v": 0
+}
+{
+	"_id": "68157e9496223cd52186aca1",
+	"name": "Fanhome",
+	"description": "Fanhome",
+	"website": "https://www.fanhome.com",
+	"country": "America",
+	"franchises": [
+		"Star Trek"
+	],
+	"createdAt": "2025-05-03T02:25:24.853Z",
+	"updatedAt": "2025-05-03T02:25:24.853Z",
+	"__v": 0
+}

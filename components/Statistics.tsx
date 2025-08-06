@@ -12,6 +12,7 @@ interface Item {
   imageUrl?: string;
   owned: boolean;
   onOrder: boolean;
+  wishlist: boolean;
 }
 
 interface StatisticsProps {
@@ -59,6 +60,7 @@ const Statistics: React.FC<StatisticsProps> = ({
   const [selectedTitle, setSelectedTitle] = useState('');
   const [missingItemsLoading, setMissingItemsLoading] = useState(false);
   const [missingItemsError, setMissingItemsError] = useState<string | null>(null);
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
   const getSortFunction = (sortOption: SortOption) => {
     switch (sortOption) {
@@ -121,13 +123,13 @@ const Statistics: React.FC<StatisticsProps> = ({
   const sortedFranchises = filteredFranchises.sort(getSortFunction(franchiseSortOption));
 
 
-  // Function to fetch missing items for a specific edition or faction
+  // Function to fetch all items for a specific edition or faction
   const fetchMissingItems = async (type: 'edition' | 'faction', name: string) => {
     setMissingItemsLoading(true);
     setMissingItemsError(null);
     
     try {
-      const response = await fetch('/api/starships');
+      const response = await fetch('/api/starships?limit=1000');
       
       if (!response.ok) {
         throw new Error('Failed to fetch items');
@@ -136,32 +138,66 @@ const Statistics: React.FC<StatisticsProps> = ({
       const data = await response.json();
       const items = data.data || [];
       
-      // Filter for missing items (not owned and not on order) of the selected edition or faction
+      // Filter for non-owned items of the selected edition or faction
       const filtered = items.filter((item: Item) => {
-        if (type === 'edition') {
-          return item.edition === name && !item.owned && !item.onOrder;
-        } else {
-          return item.faction === name && !item.owned && !item.onOrder;
-        }
+        const matchesType = type === 'edition' ? item.edition === name : item.faction === name;
+        return matchesType && !item.owned;
       });
       
-      // Also get items on order
-      const orderedItems = items.filter((item: Item) => {
-        if (type === 'edition') {
-          return item.edition === name && !item.owned && item.onOrder;
-        } else {
-          return item.faction === name && !item.owned && item.onOrder;
+      // Sort by issue number (try to parse as number, fallback to string comparison)
+      filtered.sort((a: Item, b: Item) => {
+        const aNum = parseInt(a.issue);
+        const bNum = parseInt(b.issue);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return aNum - bNum;
         }
+        return a.issue.localeCompare(b.issue);
       });
       
-      // Combine items, with ordered items first
-      setMissingItems([...orderedItems, ...filtered]);
+      setMissingItems(filtered);
       setSelectedTitle(name);
       setShowMissingItemsModal(true);
     } catch (err) {
       setMissingItemsError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setMissingItemsLoading(false);
+    }
+  };
+
+  // Function to update item status
+  const updateItemStatus = async (itemId: string, updates: { owned?: boolean; onOrder?: boolean; wishlist?: boolean }) => {
+    setUpdatingItems(prev => new Set(prev).add(itemId));
+    
+    try {
+      const response = await fetch(`/api/starships/${itemId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update item');
+      }
+
+      // If item is now owned, remove it from the list
+      if (updates.owned) {
+        setMissingItems(prev => prev.filter(item => item._id !== itemId));
+      } else {
+        // Otherwise update the item in the list
+        setMissingItems(prev => prev.map(item => 
+          item._id === itemId ? { ...item, ...updates } : item
+        ));
+      }
+    } catch (err) {
+      alert('Failed to update item status');
+    } finally {
+      setUpdatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
     }
   };
 
@@ -792,13 +828,13 @@ const Statistics: React.FC<StatisticsProps> = ({
                 <div className="sm:flex sm:items-start">
                   <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
                     <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                      Missing & Ordered Items - {selectedTitle}
+                      {selectedTitle} - Missing Items
                     </h3>
                     <div className="mt-4">
                       {missingItemsLoading ? (
                         <div className="flex justify-center items-center h-64">
                           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                          <span className="ml-3 text-gray-600">Loading missing & ordered items...</span>
+                          <span className="ml-3 text-gray-600">Loading missing items...</span>
                         </div>
                       ) : missingItemsError ? (
                         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -807,41 +843,96 @@ const Statistics: React.FC<StatisticsProps> = ({
                         </div>
                       ) : missingItems.length === 0 ? (
                         <div className="text-center py-8">
-                          <FontAwesomeIcon icon={faExclamationTriangle} size="2x" className="text-yellow-500 mb-2" />
-                          <p className="text-gray-600">No missing or ordered items found for this selection.</p>
+                          <FontAwesomeIcon icon={faCheck} size="2x" className="text-green-500 mb-2" />
+                          <p className="text-gray-600">All items in this collection are owned!</p>
                         </div>
                       ) : (
                         <div className="mt-4 overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                               <tr>
+                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
+                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edition</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faction</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                              {missingItems.map((item) => (
-                                <tr key={item._id}>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.shipName}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.issue}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.edition}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.faction}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {item.onOrder ? (
-                                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                        On Order
-                                      </span>
-                                    ) : (
-                                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                        Missing
-                                      </span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
+                              {missingItems.map((item) => {
+                                const isUpdating = updatingItems.has(item._id);
+                                return (
+                                  <tr key={item._id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{item.issue}</td>
+                                    <td className="px-4 py-2">
+                                      {item.imageUrl ? (
+                                        <img 
+                                          src={item.imageUrl} 
+                                          alt={item.shipName}
+                                          className="h-12 w-12 object-cover rounded"
+                                          onError={(e) => {
+                                            e.currentTarget.src = '/images/placeholder-ship.png';
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
+                                          <span className="text-gray-400 text-xs">No image</span>
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.shipName}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      <div className="flex justify-center space-x-1">
+                                        <button
+                                          onClick={() => updateItemStatus(item._id, { owned: false, onOrder: false, wishlist: false })}
+                                          disabled={isUpdating}
+                                          className={`w-8 h-8 text-xs font-bold rounded transition-colors ${
+                                            !item.wishlist && !item.onOrder
+                                              ? 'bg-red-500 text-white'
+                                              : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+                                          } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                          title="Not Owned"
+                                        >
+                                          NO
+                                        </button>
+                                        <button
+                                          onClick={() => updateItemStatus(item._id, { owned: false, onOrder: false, wishlist: true })}
+                                          disabled={isUpdating}
+                                          className={`w-8 h-8 text-xs font-bold rounded transition-colors ${
+                                            item.wishlist
+                                              ? 'bg-blue-500 text-white'
+                                              : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+                                          } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                          title="Wishlist"
+                                        >
+                                          W
+                                        </button>
+                                        <button
+                                          onClick={() => updateItemStatus(item._id, { owned: false, onOrder: true, wishlist: false })}
+                                          disabled={isUpdating}
+                                          className={`w-8 h-8 text-xs font-bold rounded transition-colors ${
+                                            item.onOrder
+                                              ? 'bg-yellow-500 text-white'
+                                              : 'bg-gray-300 text-gray-600 hover:bg-gray-400'
+                                          } ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                          title="On Order"
+                                        >
+                                          OR
+                                        </button>
+                                        <button
+                                          onClick={() => updateItemStatus(item._id, { owned: true, onOrder: false, wishlist: false })}
+                                          disabled={isUpdating}
+                                          className={`w-8 h-8 text-xs font-bold rounded transition-colors bg-gray-300 text-gray-600 hover:bg-green-500 hover:text-white ${
+                                            isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                                          }`}
+                                          title="Mark as Owned (will remove from list)"
+                                        >
+                                          OW
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

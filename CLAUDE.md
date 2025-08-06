@@ -98,6 +98,8 @@ Uses factory-based API handlers with **ObjectId-only handling**:
 - **Specialized Views**: `FancyStarshipView`, `ExcelView`, `PriceVault`
 - **Management Tools**: `ManufacturerManager`, `DatabaseFix`, `CollectionTypeManager`
 - **Modals**: `BaseModal`, `PricingEditModal`, `SightingsModal`
+- **Searchable Selectors**: `SearchableFactionSelect`, `SearchableManufacturerSelect` - Use Headless UI Combobox for type-ahead search functionality
+- **Checklist & PDF**: `ChecklistGenerator`, `ChecklistPDF` - Generate printable PDF checklists with filtering and image support
 
 ### View Modes and Pagination System
 The application supports three distinct view modes with intelligent pagination:
@@ -110,6 +112,7 @@ The application supports three distinct view modes with intelligent pagination:
 **Smart Pagination Logic:**
 - **Table Mode**: Uses `limit=50` with pagination controls for performance
 - **Gallery/Overview Modes**: Uses `limit=1000` to fetch all items for complete collection view
+- **Price Vault & Non-Paginated Views**: Always use `limit=1000` to ensure all items are loaded for accurate calculations
 - **Automatic Refetch**: Data automatically refetches when switching between view modes
 
 **Status Count System:**
@@ -207,6 +210,8 @@ const Component: React.FC<ComponentProps> = ({ data, onAction }) => {
 - Use dynamic imports for large components to improve performance
 - Follow React hooks patterns for state management
 - Utilize Font Awesome icons consistently
+- **For dropdowns with many options**: Use `SearchableFactionSelect` or `SearchableManufacturerSelect` instead of standard `<select>` elements
+- **For API calls needing all data**: Always include `limit=1000` parameter (Price Vault, Gallery, Overview, PDF generation)
 
 ### Database Query Pattern
 Always use the centralized `dbConnect()` from `lib/mongodb.ts` and leverage the existing indexes for performance.
@@ -229,6 +234,42 @@ const ships = await Starship.find({
 - Always convert string IDs to ObjectId before database operations
 - Use Mongoose methods (`findById`, `findByIdAndUpdate`) for ObjectId operations
 - Frontend receives ObjectId strings via `toJSON` transform in models
+
+### Searchable Component Pattern
+For dropdowns with many options, use searchable components instead of standard `<select>` elements:
+
+```typescript
+// Instead of standard select dropdown
+<select name="faction" value={value} onChange={handleChange}>
+  <option value="">Select a faction</option>
+  {factions.map(faction => (
+    <option key={faction._id} value={faction.name}>
+      {faction.name}
+    </option>
+  ))}
+</select>
+
+// Use searchable component
+<SearchableFactionSelect
+  factions={availableFactions}
+  value={formData.faction}
+  onChange={(value) => setFormData(prev => ({ ...prev, faction: value }))}
+  loading={loadingFactions}
+  disabled={loadingFactions || !formData.franchise}
+  placeholder="Select a faction"
+  className="w-full"
+/>
+```
+
+**Available Searchable Components:**
+- `SearchableFactionSelect` - For faction/race selection with type-ahead search
+- `SearchableManufacturerSelect` - For manufacturer selection with type-ahead search
+- Built on Headless UI Combobox with consistent styling and accessibility
+
+**When to Use:**
+- Any dropdown with 10+ options where users might need to scroll
+- Forms where quick selection improves user experience
+- Replace existing `<select>` elements that users find cumbersome
 
 ### Error Handling
 Use the standardized error handling in `apiHandler.ts` which provides consistent error responses and handles MongoDB-specific errors (validation, duplicate keys, cast errors).
@@ -316,11 +357,12 @@ db.starshipv5.aggregate([{ $out: "starshipv5_backup_" + Date.now() }])
 - **Check**: Verify `/api/starships` returns `statusCounts` object with `{owned, wishlist, onOrder, notOwned}`
 - **Implementation**: Components should use `statusCounts?.owned ?? fallback` pattern
 
-**Gallery/Overview modes showing only 50 items:**
+**Gallery/Overview/Price Vault modes showing only 50 items:**
 - **Cause**: View mode not triggering appropriate API limit parameter
 - **Solution**: Verify `fetchStarships()` uses different limits based on `viewMode` state
-- **Check**: Table view should use `limit=50`, Gallery/Overview should use `limit=1000`
+- **Check**: Table view should use `limit=50`, Gallery/Overview/Price Vault should use `limit=1000`
 - **Testing**: Switch between view modes and verify network requests in browser dev tools
+- **Common Fix**: Add `queryParams.push('limit=1000');` to API calls that need all data
 
 **"Failed to update item" errors:**
 - **Cause**: ID format mismatch between frontend and API

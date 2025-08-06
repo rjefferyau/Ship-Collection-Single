@@ -121,9 +121,9 @@ function DataTable<T>({
                 <tr
                   key={String(item[keyField])}
                   onClick={() => onRowClick && onRowClick(item)}
-                  className={`group transition-all duration-300 ${
+                  className={`group transition-colors duration-200 ${
                     onRowClick 
-                      ? 'hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 cursor-pointer hover:shadow-lg hover:scale-[1.01] hover:z-10' 
+                      ? 'hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 cursor-pointer' 
                       : ''
                   } ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
                 >

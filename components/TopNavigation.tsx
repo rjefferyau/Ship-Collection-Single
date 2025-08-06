@@ -148,7 +148,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
               </div>
               {isSettingsMenuOpen && (
                 <div
-                  className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                  className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="settings-menu-button"
@@ -239,6 +239,14 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
                     Import/Export
                   </Link>
                   <Link 
+                    href="/manage-images" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
+                    role="menuitem"
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                  >
+                    Manage Images
+                  </Link>
+                  <Link 
                     href="/database-check" 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" 
                     role="menuitem"
@@ -280,7 +288,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
               </div>
               {isUserMenuOpen && (
                 <div
-                  className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10"
+                  className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="user-menu-button"
@@ -393,6 +401,9 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
               </Link>
               <Link href="/import-export" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
                 Import/Export
+              </Link>
+              <Link href="/manage-images" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
+                Manage Images
               </Link>
               <Link href="/other-tools" className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 text-base font-medium">
                 Other Tools

@@ -16,6 +16,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   const [selectedCollectionType, setSelectedCollectionType] = useState<string>('');
   const [selectedFranchise, setSelectedFranchise] = useState<string>('');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Dropdown state
   const [collectionTypeDropdownOpen, setCollectionTypeDropdownOpen] = useState(false);
@@ -27,9 +28,17 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
 
   // Fetch collection types and franchises on component mount
   useEffect(() => {
-    fetchCollectionTypes();
-    fetchFranchises();
-    fetchItemCounts();
+    const loadData = async () => {
+      setIsLoading(true);
+      await Promise.all([
+        fetchCollectionTypes(),
+        fetchFranchises(),
+        fetchItemCounts()
+      ]);
+      setIsLoading(false);
+    };
+    
+    loadData();
     
     // Add click outside handler
     const handleClickOutside = (event: MouseEvent) => {
@@ -65,7 +74,8 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
       const response = await fetch('/api/starships/counts');
       
       if (!response.ok) {
-        throw new Error('Failed to fetch item counts');
+        console.warn('Failed to fetch item counts:', response.status);
+        return;
       }
       
       const data = await response.json();
@@ -88,7 +98,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
         setIsInitialLoad(false);
       }
     } catch (err) {
-      console.error('Error fetching item counts:', err);
+      console.warn('Error fetching item counts:', err);
     }
   };
 
@@ -97,13 +107,16 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
       const response = await fetch('/api/collection-types');
       
       if (!response.ok) {
-        throw new Error('Failed to fetch collection types');
+        console.warn('Failed to fetch collection types:', response.status);
+        setCollectionTypes([]);
+        return;
       }
       
       const data = await response.json();
       setCollectionTypes(data.data || []);
     } catch (err) {
-      console.error('Error fetching collection types:', err);
+      console.warn('Error fetching collection types:', err);
+      setCollectionTypes([]);
     }
   };
 
@@ -112,13 +125,16 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
       const response = await fetch('/api/franchises');
       
       if (!response.ok) {
-        throw new Error('Failed to fetch franchises');
+        console.warn('Failed to fetch franchises:', response.status);
+        setFranchises([]);
+        return;
       }
       
       const data = await response.json();
       setFranchises(data.data || []);
     } catch (err) {
-      console.error('Error fetching franchises:', err);
+      console.warn('Error fetching franchises:', err);
+      setFranchises([]);
     }
   };
 
@@ -128,6 +144,17 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
   };
 
   const hasActiveFilters = selectedCollectionType || selectedFranchise;
+
+  if (isLoading) {
+    return (
+      <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 ${className}`}>
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
+          <span className="text-sm text-gray-500">Loading filters...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-3 ${className}`}>

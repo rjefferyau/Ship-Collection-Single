@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCubes } from '@fortawesome/free-solid-svg-icons';
+import { faCubes, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { Starship } from '../types';
 
 interface NavItem {
   name: string;
@@ -19,12 +20,18 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Starship[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   
-  // Create refs for the menus
+  // Create refs for the menus and search
   const settingsMenuRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchResultsRef = useRef<HTMLDivElement>(null);
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
@@ -38,6 +45,65 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Search functionality
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    try {
+      const response = await fetch(`/api/starships?limit=1000`);
+      if (response.ok) {
+        const data = await response.json();
+        const allStarships = data.data || [];
+        
+        // Filter starships based on search query
+        const filtered = allStarships.filter((starship: Starship) => 
+          (starship.shipName || '').toLowerCase().includes(query.toLowerCase()) ||
+          (starship.faction || '').toLowerCase().includes(query.toLowerCase()) ||
+          (starship.edition || '').toLowerCase().includes(query.toLowerCase()) ||
+          (starship.issue || '').toLowerCase().includes(query.toLowerCase()) ||
+          (starship.franchise || '').toLowerCase().includes(query.toLowerCase())
+        );
+        
+        setSearchResults(filtered.slice(0, 10)); // Limit to 10 results
+        setIsSearchOpen(true);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      performSearch(value);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setSearchResults([]);
+    setIsSearchOpen(false);
+  };
+
+  const handleSearchResultClick = (starship: Starship) => {
+    // Navigate to home page with the starship selected
+    router.push(`/?select=${starship._id}`);
+    clearSearch();
   };
   
   // Close menus when route changes
@@ -57,7 +123,7 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
     };
   }, [router]);
   
-  // Add click outside handler
+  // Add click outside handler and keyboard shortcuts
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       // Close settings menu if clicked outside
@@ -81,16 +147,42 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
       ) {
         setIsUserMenuOpen(false);
       }
+
+      // Close search results if clicked outside
+      if (
+        isSearchOpen &&
+        searchResultsRef.current &&
+        searchInputRef.current &&
+        !searchResultsRef.current.contains(event.target as Node) &&
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
     };
 
-    // Add event listener
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K to focus search
+      if (e.ctrlKey && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      
+      // Escape to close search
+      if (e.key === 'Escape' && isSearchOpen) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    // Add event listeners
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
     
     // Clean up
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isSettingsMenuOpen, isUserMenuOpen]);
+  }, [isSettingsMenuOpen, isUserMenuOpen, isSearchOpen]);
 
   return (
     <nav className="bg-white shadow">
@@ -126,6 +218,96 @@ const TopNavigation: React.FC<TopNavigationProps> = ({ navItems }) => {
           
           {/* Right side icons */}
           <div className="hidden sm:flex sm:items-center space-x-4">
+            {/* Global Search */}
+            <div className="relative">
+              <div className="relative">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  placeholder="Search starships..."
+                  className="w-64 pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FontAwesomeIcon icon={faSearch} className="h-4 w-4 text-gray-400" />
+                </div>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
+                  {searchTerm ? (
+                    <button
+                      onClick={clearSearch}
+                      className="hover:text-gray-600 focus:outline-none"
+                    >
+                      <FontAwesomeIcon icon={faTimes} className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <span className="text-xs">Ctrl+K</span>
+                  )}
+                </div>
+                {isSearching && (
+                  <div className="absolute inset-y-0 right-8 pr-3 flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-500"></div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Search Results Dropdown */}
+              {isSearchOpen && searchResults.length > 0 && (
+                <div
+                  ref={searchResultsRef}
+                  className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-md shadow-lg border border-gray-200 max-h-96 overflow-y-auto"
+                >
+                  <div className="py-1">
+                    {searchResults.map((starship) => (
+                      <button
+                        key={starship._id}
+                        onClick={() => handleSearchResultClick(starship)}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {starship.imageUrl ? (
+                            <img
+                              src={starship.imageUrl}
+                              alt={starship.shipName}
+                              className="h-10 w-10 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                              <FontAwesomeIcon icon={faCubes} className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {starship.shipName}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate">
+                              {starship.faction} • {starship.edition} • Issue {starship.issue}
+                            </p>
+                            <div className="flex space-x-2 mt-1">
+                              {starship.owned && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  Owned
+                                </span>
+                              )}
+                              {starship.wishlist && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  Wishlist
+                                </span>
+                              )}
+                              {starship.onOrder && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  On Order
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             {/* Settings Menu Button */}
             <div className="relative">
               <div>

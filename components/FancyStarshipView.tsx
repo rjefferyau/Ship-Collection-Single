@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes, faSearch, faFilter, faSort, faSortUp, faSortDown, faTrash, faMagnifyingGlass, faPlus, faFilePdf, faImage, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faTimes, faSearch, faFilter, faSort, faSortUp, faSortDown, faTrash, faMagnifyingGlass, faPlus, faFilePdf, faImage, faLayerGroup, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import PdfViewer from './PdfViewer';
 import ModalContainer from './ModalContainer';
 import { Starship, SortConfig, Filters } from '../types';
@@ -540,9 +540,28 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
           
           {/* Grid View */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-4">
-            {filteredStarships.map(starship => (
-              <div key={starship._id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="relative">
+            {filteredStarships.map(starship => {
+              // Check for missing essential data
+              const getMissingData = () => {
+                const missing: string[] = [];
+                
+                if (!starship.imageUrl || starship.imageUrl === '') missing.push('Image');
+                if (!starship.retailPrice || starship.retailPrice === 0) missing.push('Price');
+                if (!starship.releaseDate) missing.push('Release Date');
+                if (!starship.faction || starship.faction === '') missing.push('Faction');
+                if (!starship.manufacturer || starship.manufacturer === '') missing.push('Manufacturer');
+                
+                return missing;
+              };
+
+              const missingData = getMissingData();
+              const hasIncompleteData = missingData.length > 0;
+
+              return (
+                <div key={starship._id} className={`bg-white rounded-lg shadow-sm overflow-hidden ${
+                  hasIncompleteData ? 'ring-2 ring-yellow-400' : ''
+                }`}>
+                  <div className="relative">
                   {starship.imageUrl ? (
                     <div 
                       className="h-48 flex items-center justify-center p-4 cursor-pointer"
@@ -561,6 +580,17 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   ) : (
                     <div className="h-48 bg-gray-100 flex items-center justify-center">
                       <span className="text-gray-500">No image available</span>
+                    </div>
+                  )}
+                  {hasIncompleteData && (
+                    <div 
+                      className="absolute top-2 left-2 bg-yellow-100 text-yellow-800 rounded-full p-1"
+                      title={`Missing: ${missingData.join(', ')}`}
+                    >
+                      <FontAwesomeIcon 
+                        icon={faExclamationTriangle} 
+                        className="h-3 w-3"
+                      />
                     </div>
                   )}
                   <span 
@@ -618,7 +648,8 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
           
           {filteredStarships.length === 0 && (

@@ -58,11 +58,22 @@ const Home: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  // Load saved view mode from localStorage on mount
+  // Load saved view mode and preferences from localStorage on mount
   useEffect(() => {
     const savedViewMode = localStorage.getItem('preferredViewMode') as ViewMode;
     if (savedViewMode && ['table', 'gallery', 'overview'].includes(savedViewMode)) {
       setViewMode(savedViewMode);
+    }
+
+    // Load saved collection type and franchise
+    const savedCollectionType = localStorage.getItem('preferredCollectionType');
+    if (savedCollectionType) {
+      setSelectedCollectionType(savedCollectionType);
+    }
+
+    const savedFranchise = localStorage.getItem('preferredFranchise');
+    if (savedFranchise) {
+      setSelectedFranchise(savedFranchise);
     }
   }, []);
 
@@ -72,12 +83,93 @@ const Home: React.FC = () => {
     localStorage.setItem('preferredViewMode', newViewMode);
   };
 
+  // Save collection type preference
+  const handleCollectionTypeChange = (collectionType: string) => {
+    setSelectedCollectionType(collectionType);
+    localStorage.setItem('preferredCollectionType', collectionType);
+  };
+
+  // Save franchise preference
+  const handleFranchiseChange = (franchise: string) => {
+    setSelectedFranchise(franchise);
+    localStorage.setItem('preferredFranchise', franchise);
+  };
+
+  // Function to update starship status
+  const updateStarshipStatus = async (starship: Starship, updates: Partial<Starship>) => {
+    try {
+      const response = await fetch(`/api/starships/${starship._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setStarships(prev => prev.map(s => 
+          s._id === starship._id ? { ...s, ...updates } : s
+        ));
+        
+        // Update selected starship if it's the same one
+        if (selectedStarship && selectedStarship._id === starship._id) {
+          setSelectedStarship({ ...selectedStarship, ...updates });
+        }
+        
+        // Refresh the data to get updated counts
+        fetchStarships(currentPage);
+      }
+    } catch (error) {
+      console.error('Failed to update starship:', error);
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger shortcuts if user is typing in an input field
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
+      }
+
+      // Quick status changes for selected starship
+      if (selectedStarship) {
+        if (e.key === 'w' || e.key === 'W') {
+          e.preventDefault();
+          updateStarshipStatus(selectedStarship, { 
+            wishlist: !selectedStarship.wishlist,
+            owned: false,
+            onOrder: false 
+          });
+        }
+        
+        if (e.key === 'o' || e.key === 'O') {
+          e.preventDefault();
+          updateStarshipStatus(selectedStarship, { 
+            owned: !selectedStarship.owned,
+            wishlist: false,
+            onOrder: false 
+          });
+        }
+        
+        if (e.key === 'r' || e.key === 'R') {
+          e.preventDefault();
+          updateStarshipStatus(selectedStarship, { 
+            onOrder: !selectedStarship.onOrder,
+            owned: false,
+            wishlist: false 
+          });
+        }
+
+        if (e.key === 'n' || e.key === 'N') {
+          e.preventDefault();
+          updateStarshipStatus(selectedStarship, { 
+            owned: false,
+            wishlist: false,
+            onOrder: false 
+          });
+        }
       }
 
       // Ctrl+Shift+A - Open Add Item modal
@@ -90,6 +182,23 @@ const Home: React.FC = () => {
       if (e.ctrlKey && e.key === 'f') {
         e.preventDefault();
         // Let the StarshipList component handle this
+      }
+
+      // ? - Show keyboard shortcuts help
+      if (e.key === '?') {
+        e.preventDefault();
+        alert(`Keyboard Shortcuts:
+
+🔍 Global Search: Ctrl+K
+➕ Add Item: Ctrl+Shift+A
+🔄 When item selected:
+  • W = Toggle Wishlist
+  • O = Toggle Owned  
+  • R = Toggle On Order
+  • N = Mark Not Owned
+🚪 Escape = Close modals/deselect
+
+💡 Tip: Yellow indicators show items with missing data!`);
       }
 
       // Escape - Close any open modal
@@ -106,7 +215,7 @@ const Home: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showAddModal, selectedStarship, showSettingsModal]);
+  }, [showAddModal, selectedStarship, showSettingsModal, currentPage]);
 
   // Fetch default edition on component mount
   useEffect(() => {
@@ -125,6 +234,21 @@ const Home: React.FC = () => {
       });
     }
   }, [selectedFranchise]);
+
+  // Handle search selection from URL parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectId = urlParams.get('select');
+    
+    if (selectId && starships.length > 0) {
+      const foundStarship = starships.find(s => s._id === selectId);
+      if (foundStarship) {
+        setSelectedStarship(foundStarship);
+        // Clear the URL parameter
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [starships]);
 
   const fetchDefaultEdition = async (franchise?: string) => {
     try {
@@ -299,8 +423,8 @@ const Home: React.FC = () => {
   }, [viewMode]);
 
   const handleFilterChange = (collectionType: string, franchise: string) => {
-    setSelectedCollectionType(collectionType);
-    setSelectedFranchise(franchise);
+    handleCollectionTypeChange(collectionType);
+    handleFranchiseChange(franchise);
   };
 
   const handlePageChange = (page: number) => {

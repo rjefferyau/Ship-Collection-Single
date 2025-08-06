@@ -36,6 +36,30 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Load saved filter preferences on mount
+  useEffect(() => {
+    const savedFilters = localStorage.getItem('starshipFilters');
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        onFiltersChange({ ...filters, ...parsed });
+      } catch (error) {
+        console.error('Failed to load saved filters:', error);
+      }
+    }
+  }, []);
+
+  // Save filter preferences when they change
+  useEffect(() => {
+    const filtersToSave = {
+      search: filters.search,
+      faction: filters.faction,
+      collectionType: filters.collectionType,
+      franchise: filters.franchise
+    };
+    localStorage.setItem('starshipFilters', JSON.stringify(filtersToSave));
+  }, [filters.search, filters.faction, filters.collectionType, filters.franchise]);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -1,4 +1,6 @@
 import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 import { Starship } from '../types';
 
 interface StarshipTableRowProps {
@@ -32,6 +34,22 @@ const StarshipTableRow: React.FC<StarshipTableRowProps> = React.memo(({
   columns,
   formatCurrency = (amount: number) => `$${amount.toFixed(2)}`
 }) => {
+  // Check for missing essential data
+  const getMissingData = () => {
+    const missing: string[] = [];
+    
+    if (!starship.imageUrl || starship.imageUrl === '') missing.push('Image');
+    if (!starship.retailPrice || starship.retailPrice === 0) missing.push('Price');
+    if (!starship.releaseDate) missing.push('Release Date');
+    if (!starship.faction || starship.faction === '') missing.push('Faction');
+    if (!starship.manufacturer || starship.manufacturer === '') missing.push('Manufacturer');
+    
+    return missing;
+  };
+
+  const missingData = getMissingData();
+  const hasIncompleteData = missingData.length > 0;
+
   const handleRowClick = (e: React.MouseEvent) => {
     // Don't trigger row click if clicking on interactive elements
     const target = e.target as HTMLElement;
@@ -104,15 +122,29 @@ const StarshipTableRow: React.FC<StarshipTableRowProps> = React.memo(({
 
   return (
     <tr 
-      className={`hover:bg-gray-50 transition-colors cursor-pointer ${isSelected ? 'bg-indigo-50' : ''}`}
+      className={`hover:bg-gray-50 transition-colors cursor-pointer ${isSelected ? 'bg-indigo-50' : ''} ${
+        hasIncompleteData ? 'border-l-4 border-yellow-400' : ''
+      }`}
       onClick={handleRowClick}
+      title={hasIncompleteData ? `Missing: ${missingData.join(', ')}` : ''}
     >
-      {columns.map((column) => (
+      {columns.map((column, index) => (
         <td 
           key={column.key} 
-          className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${getAlignmentClass(column.alignment)}`}
+          className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${getAlignmentClass(column.alignment)} ${
+            index === 0 && hasIncompleteData ? 'relative' : ''
+          }`}
           style={{ width: column.width }}
         >
+          {index === 0 && hasIncompleteData && (
+            <div className="absolute -left-1 top-1/2 transform -translate-y-1/2">
+              <FontAwesomeIcon 
+                icon={faExclamationTriangle} 
+                className="h-3 w-3 text-yellow-500"
+                title={`Incomplete data: ${missingData.join(', ')}`}
+              />
+            </div>
+          )}
           {renderCellContent(column)}
         </td>
       ))}

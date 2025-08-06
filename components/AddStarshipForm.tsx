@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSpinner, faSave, faUndo } from '@fortawesome/free-solid-svg-icons';
+import SearchableFactionSelect from './SearchableFactionSelect';
+import SearchableManufacturerSelect from './SearchableManufacturerSelect';
 
 interface Faction {
   _id: string;
@@ -662,22 +664,17 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                     Race/Faction <span className="text-red-500">*</span>
                   </label>
                   <div className="flex">
-                    <select
-                      id="faction"
-                      name="faction"
+                    <SearchableFactionSelect
+                      factions={availableFactions}
                       value={formData.faction}
-                      onChange={handleChange}
-                      required={showStarshipFields}
+                      onChange={(value) => setFormData(prev => ({ ...prev, faction: value }))}
+                      loading={loadingFactions}
                       disabled={loadingFactions || !formData.franchise}
-                      className={`block w-full rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2 ${!formData.faction && showStarshipFields ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
-                    >
-                      <option value="">Select a faction</option>
-                      {availableFactions.map(faction => (
-                        <option key={faction._id} value={faction.name}>
-                          {faction.name}
-                        </option>
-                      ))}
-                    </select>
+                      required={showStarshipFields}
+                      error={!formData.faction && showStarshipFields}
+                      placeholder="Select a faction"
+                      className="flex-1 mr-2"
+                    />
                     <button
                       type="button"
                       onClick={() => window.open('/setup?tab=factions', '_blank')}
@@ -703,21 +700,15 @@ const AddStarshipForm: React.FC<AddStarshipFormProps> = ({
                     Manufacturer
                   </label>
                   <div className="flex">
-                    <select
-                      id="manufacturer"
-                      name="manufacturer"
+                    <SearchableManufacturerSelect
+                      manufacturers={availableManufacturers}
                       value={formData.manufacturer || ''}
-                      onChange={handleChange}
+                      onChange={(value) => setFormData(prev => ({ ...prev, manufacturer: value }))}
+                      loading={loadingManufacturers}
                       disabled={loadingManufacturers || !formData.franchise}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
-                    >
-                      <option value="">Select a manufacturer</option>
-                      {availableManufacturers.map(manufacturer => (
-                        <option key={manufacturer._id} value={manufacturer.name}>
-                          {manufacturer.name}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Select a manufacturer"
+                      className="flex-1 mr-2"
+                    />
                     <button
                       type="button"
                       onClick={() => window.open('/manufacturer-setup', '_blank')}

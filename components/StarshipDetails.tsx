@@ -5,6 +5,8 @@ import { faCheck, faTimes, faUpload, faSpinner, faEdit, faSave, faUndo, faPlus, 
 import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons';
 import PdfViewer from './PdfViewer';
 import SightingsModal from './modals/SightingsModal';
+import SearchableFactionSelect from './SearchableFactionSelect';
+import SearchableManufacturerSelect from './SearchableManufacturerSelect';
 import { useCurrency } from '../contexts/CurrencyContext';
 
 interface Faction {
@@ -84,6 +86,8 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
   const [factions, setFactions] = useState<Faction[]>([]);
   const [loadingFactions, setLoadingFactions] = useState(false);
   const [showSightingsModal, setShowSightingsModal] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState(starship.imageUrl);
+  const [dragActive, setDragActive] = useState(false);
   
   // Add state for editable fields
   const [editedValues, setEditedValues] = useState({
@@ -213,15 +217,47 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     }
   };
 
-  // Handle image upload
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
+  // Handle drag events
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragIn = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setDragActive(true);
+    }
+  };
+
+  const handleDragOut = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
     
-    const file = e.target.files[0];
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        uploadImageFile(file);
+      } else {
+        setUploadError('Please drop an image file');
+      }
+    }
+  };
+
+  // Handle image file upload (used by both file input and drag-drop)
+  const uploadImageFile = async (file: File) => {
     const formData = new FormData();
     formData.append('image', file);
     formData.append('starshipId', starship._id);
-    
+
     setUploadingImage(true);
     setUploadError(null);
     setUploadSuccess(null);
@@ -239,12 +275,24 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
       
       const data = await response.json();
       setUploadSuccess('Image uploaded successfully');
+      // Update the image URL immediately for instant visual feedback
+      if (data.data && data.data.imageUrl) {
+        setCurrentImageUrl(data.data.imageUrl);
+      }
       onRefresh(currentEdition);
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  // Handle image upload from file input
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    await uploadImageFile(file);
   };
 
   // Handle PDF upload
@@ -299,6 +347,11 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
     onRefresh();
   };
 
+  // Update currentImageUrl when starship prop changes
+  useEffect(() => {
+    setCurrentImageUrl(starship.imageUrl);
+  }, [starship.imageUrl]);
+
   // Add this useEffect near the top of the component
   useEffect(() => {
     if (starship.wishlist && !starship.owned) {
@@ -316,10 +369,10 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
         {/* Item image or placeholder */}
         <div className="relative flex items-center justify-between p-6 z-10">
           <div className="flex items-center">
-            {starship.imageUrl ? (
+            {currentImageUrl ? (
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-md mr-4">
                 <img 
-                  src={starship.imageUrl} 
+                  src={currentImageUrl} 
                   alt={starship.shipName}
                   className="w-full h-full object-cover"
                 />
@@ -449,41 +502,77 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Image Upload */}
+              {/* Image Upload with Drag & Drop */}
               <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Item Image
                 </label>
-                <div className="flex items-center">
-                  {starship.imageUrl ? (
-                    <div className="w-16 h-16 mr-3 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
-                      <img 
-                        src={starship.imageUrl} 
-                        alt={starship.shipName}
-                        className="w-full h-full object-contain"
-                      />
+                
+                {/* Drag & Drop Area */}
+                <div
+                  className={`relative border-2 border-dashed rounded-lg p-4 transition-colors ${
+                    dragActive 
+                      ? 'border-indigo-500 bg-indigo-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragEnter={handleDragIn}
+                  onDragLeave={handleDragOut}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <div className="flex items-center space-x-4">
+                    {/* Image Preview */}
+                    {currentImageUrl ? (
+                      <div className="w-16 h-16 flex-shrink-0 rounded-md overflow-hidden border border-gray-200">
+                        <img 
+                          src={currentImageUrl} 
+                          alt={starship.shipName}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 flex-shrink-0 rounded-md bg-gray-100 flex items-center justify-center border border-gray-200">
+                        <FontAwesomeIcon icon={faCube} className="text-gray-400 text-xl" />
+                      </div>
+                    )}
+                    
+                    {/* Upload Instructions */}
+                    <div className="flex-grow text-center">
+                      {dragActive ? (
+                        <div>
+                          <FontAwesomeIcon icon={faUpload} className="text-indigo-500 text-2xl mb-2" />
+                          <p className="text-sm text-indigo-600 font-medium">Drop the image here!</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <FontAwesomeIcon icon={faUpload} className="text-gray-400 text-2xl mb-2" />
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Drag & drop an image</span> or{' '}
+                            <label className="text-indigo-600 hover:text-indigo-700 cursor-pointer font-medium">
+                              click to browse
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                disabled={uploadingImage}
+                              />
+                            </label>
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="w-16 h-16 mr-3 flex-shrink-0 rounded-md bg-gray-100 flex items-center justify-center border border-gray-200">
-                      <FontAwesomeIcon icon={faCube} className="text-gray-400 text-xl" />
+                  </div>
+                  
+                  {uploadingImage && (
+                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-indigo-500" />
+                        <span className="text-sm font-medium text-gray-700">Uploading image...</span>
+                      </div>
                     </div>
                   )}
-                  <div className="flex-grow">
-                    <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                      <FontAwesomeIcon 
-                        icon={uploadingImage ? faSpinner : faUpload} 
-                        className={`mr-2 ${uploadingImage ? 'animate-spin' : ''} text-indigo-500`}
-                      />
-                      {uploadingImage ? 'Uploading...' : 'Upload Image'}
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        disabled={uploadingImage}
-                      />
-                    </label>
-                  </div>
                 </div>
               </div>
               
@@ -582,19 +671,14 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                 </dt>
                 <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
-                    <select
-                      name="faction"
+                    <SearchableFactionSelect
+                      factions={factions}
                       value={editedValues.faction}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="">Select a faction</option>
-                      {factions.map(faction => (
-                        <option key={faction._id} value={faction.name}>
-                          {faction.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setEditedValues(prev => ({ ...prev, faction: value }))}
+                      loading={loadingFactions}
+                      placeholder="Select a faction"
+                      className="w-full"
+                    />
                   ) : (
                     starship.faction
                   )}
@@ -607,19 +691,13 @@ const StarshipDetails: React.FC<StarshipDetailsProps> = ({
                 </dt>
                 <dd className="w-3/5 text-gray-900">
                   {isEditing ? (
-                    <select
-                      name="manufacturer"
+                    <SearchableManufacturerSelect
+                      manufacturers={manufacturers}
                       value={editedValues.manufacturer}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="">Select a manufacturer</option>
-                      {manufacturers.map(manufacturer => (
-                        <option key={manufacturer._id} value={manufacturer.name}>
-                          {manufacturer.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(value) => setEditedValues(prev => ({ ...prev, manufacturer: value }))}
+                      placeholder="Select a manufacturer"
+                      className="w-full"
+                    />
                   ) : (
                     starship.manufacturer || '-'
                   )}

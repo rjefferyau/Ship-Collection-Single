@@ -56,7 +56,7 @@ const PriceVaultPage: React.FC = () => {
   // Function to fetch all available franchises and collection types
   const fetchAllOptions = async () => {
     try {
-      const response = await fetch('/api/starships');
+      const response = await fetch('/api/starships?limit=1000');
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -90,6 +90,9 @@ const PriceVaultPage: React.FC = () => {
       // Build the API URL with filters
       let apiUrl = '/api/starships';
       const queryParams = [];
+      
+      // Use high limit to fetch all ships for Price Vault
+      queryParams.push('limit=1000');
       
       if (selectedCollectionType) {
         queryParams.push(`collectionType=${encodeURIComponent(selectedCollectionType)}`);

@@ -54,8 +54,8 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
     }
     
     return (
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="py-4">
+        <nav className="flex space-x-2">
           {availableEditions.map(edition => {
             const displayName = editionDisplayNames[edition] || edition;
             
@@ -64,10 +64,10 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
                 key={edition}
                 data-edition={edition}
                 onClick={() => onEditionSelect(edition)}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`whitespace-nowrap py-2 px-3 rounded-md font-medium text-sm transition-colors ${
                   activeEdition === edition
-                    ? 'border-indigo-500 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 {displayName}

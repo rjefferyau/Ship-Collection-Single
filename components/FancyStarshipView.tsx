@@ -19,13 +19,13 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   onToggleOwned,
   onSelectStarship,
   onEditionChange,
-  currentEdition = 'Regular'
+  currentEdition = 'regular-star-trek'
 }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'issue', direction: 'asc' });
   const [filters, setFilters] = useState<Filters>({
     search: '',
     faction: [],
-    edition: [currentEdition],
+    edition: [], // Not used for filtering - parent already filters by edition
     owned: 'all',
     collectionType: [],
     franchise: []
@@ -33,6 +33,7 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   const [filteredStarships, setFilteredStarships] = useState<Starship[]>(starships || []);
   const [availableFactions, setAvailableFactions] = useState<string[]>([]);
   const [availableEditions, setAvailableEditions] = useState<string[]>([]);
+  const [editionDisplayNames, setEditionDisplayNames] = useState<Record<string, string>>({});
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
   
   // Add state for image modal
@@ -45,19 +46,47 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | undefined>(undefined);
   const [selectedPdfTitle, setSelectedPdfTitle] = useState<string>('');
 
-  // Extract unique factions and editions
+  // Fetch available editions from API (like StarshipList does)
+  useEffect(() => {
+    const fetchEditions = async () => {
+      try {
+        const response = await fetch('/api/editions');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            const editions = data.data.map((edition: any) => edition.internalName).sort();
+            const displayNames: Record<string, string> = {};
+            data.data.forEach((edition: any) => {
+              displayNames[edition.internalName] = edition.name;
+            });
+            setAvailableEditions(editions);
+            setEditionDisplayNames(displayNames);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching editions:', error);
+        // Fallback to deriving from starships if API fails
+        if (starships && starships.length > 0) {
+          const editions = Array.from(new Set(
+            starships.map(ship => ship.editionInternalName || ship.edition)
+          )).filter(Boolean).sort();
+          setAvailableEditions(editions);
+        }
+      }
+    };
+    
+    fetchEditions();
+  }, []); // Only run once on mount
+
+  // Extract unique factions from starships data  
   useEffect(() => {
     if (!starships || starships.length === 0) {
       setAvailableFactions([]);
-      setAvailableEditions([]);
       return;
     }
     
     const factions = Array.from(new Set(starships.map(ship => ship.faction))).filter(Boolean).sort();
-    const editions = Array.from(new Set(starships.map(ship => ship.edition))).filter(Boolean).sort();
-    
     setAvailableFactions(factions);
-    setAvailableEditions(editions);
   }, [starships]);
 
   // Apply filters and sorting
@@ -83,10 +112,8 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
       result = result.filter(ship => filters.faction.includes(ship.faction));
     }
     
-    // Apply edition filter
-    if (filters.edition.length > 0) {
-      result = result.filter(ship => filters.edition.includes(ship.edition));
-    }
+    // Don't apply edition filter here - the parent already filters by edition
+    // The starships prop already contains only ships from the selected edition
     
     // Apply owned filter
     if (filters.owned === 'owned') {
@@ -140,12 +167,12 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
     setFilteredStarships(result);
   }, [starships, filters, sortConfig]);
 
-  // Initialize with default sorting and filtering
+  // Initialize with default sorting and active edition
   useEffect(() => {
     // Set default sorting to issue ascending
     setSortConfig({ key: 'issue', direction: 'asc' });
     
-    // Set filter to current edition, or first available edition if current edition is not available
+    // Set active edition for display purposes (not filtering)
     if (availableEditions.length > 0) {
       let editionToUse = currentEdition;
       
@@ -159,7 +186,6 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
         }
       }
       
-      setFilters(prev => ({ ...prev, edition: [editionToUse] }));
       setActiveEdition(editionToUse);
     }
   }, [availableEditions, currentEdition, onEditionChange]);
@@ -167,7 +193,7 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
   // Update activeEdition when currentEdition prop changes
   useEffect(() => {
     setActiveEdition(currentEdition);
-    setFilters(prev => ({ ...prev, edition: [currentEdition] }));
+    // Don't set edition filter - parent already filters by edition
   }, [currentEdition]);
 
   const handleSort = (key: keyof Starship) => {
@@ -200,9 +226,8 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
 
   const handleEditionSelect = (edition: string) => {
     setActiveEdition(edition);
-    setFilters(prev => ({ ...prev, edition: [edition] }));
     
-    // Call the parent component's edition change handler if provided
+    // Call the parent component's edition change handler to refetch data
     if (onEditionChange) {
       onEditionChange(edition);
     }
@@ -458,21 +483,25 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
           </div>
           
           {/* Edition Tabs */}
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
-              {availableEditions.map(edition => (
-                <button
-                  key={edition}
-                  onClick={() => handleEditionSelect(edition)}
-                  className={`py-4 px-6 text-center border-b-2 font-medium text-sm ${
-                    activeEdition === edition
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  {edition}
-                </button>
-              ))}
+          <div className="py-4">
+            <nav className="flex space-x-2">
+              {availableEditions.map(edition => {
+                const displayName = editionDisplayNames[edition] || edition;
+                
+                return (
+                  <button
+                    key={edition}
+                    onClick={() => handleEditionSelect(edition)}
+                    className={`whitespace-nowrap py-2 px-3 rounded-md font-medium text-sm transition-colors ${
+                      activeEdition === edition
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {displayName}
+                  </button>
+                );
+              })}
             </nav>
           </div>
           

@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faPlus, faTrash, faEdit, faColumns, faStar as faStarSolid, faStar as faStarRegular, faArrowsAlt } from '@fortawesome/free-solid-svg-icons';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import dynamic from 'next/dynamic';
+// Client-only DnD components to avoid SSR issues
+const DragDropContext = dynamic(() => import('react-beautiful-dnd').then(m => m.DragDropContext), { ssr: false });
+const Droppable = dynamic(() => import('react-beautiful-dnd').then(m => m.Droppable), { ssr: false });
+const Draggable = dynamic(() => import('react-beautiful-dnd').then(m => m.Draggable), { ssr: false });
 import Alert from './Alert';
 
 interface ColumnConfig {

@@ -20,7 +20,11 @@ export default function handler(
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
-  const form = new IncomingForm();
+  const form = new IncomingForm({
+    keepExtensions: true,
+    multiples: false,
+    maxFileSize: 10 * 1024 * 1024 // 10MB
+  });
   
   form.parse(req, async (err, fields, files) => {
     try {
@@ -49,8 +53,27 @@ export default function handler(
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
       
+      // Basic MIME/type whitelist (png,jpg,jpeg,webp)
+      const allowedExts = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+      const fileExt = path.extname(file.originalFilename || 'image.jpg').toLowerCase();
+      if (!allowedExts.has(fileExt)) {
+        return res.status(400).json({ success: false, error: 'Invalid file type. Allowed: png, jpg, jpeg, webp' });
+      }
+
+      // Reject suspicious filenames
+      if ((file.originalFilename || '').includes('..')) {
+        return res.status(400).json({ success: false, error: 'Invalid filename' });
+      }
+
+      // Enforce size limit (also configured in form parser)
+      try {
+        const stat = fs.statSync(file.filepath);
+        if (stat.size > 10 * 1024 * 1024) {
+          return res.status(400).json({ success: false, error: 'File too large (max 10MB)' });
+        }
+      } catch {}
+
       // Generate a unique filename
-      const fileExt = path.extname(file.originalFilename || 'image.jpg');
       const fileName = `${starshipId}-${Date.now()}${fileExt}`;
       const filePath = path.join(uploadsDir, fileName);
       

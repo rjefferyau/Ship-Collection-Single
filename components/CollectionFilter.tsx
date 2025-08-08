@@ -71,7 +71,7 @@ const CollectionFilter: React.FC<CollectionFilterProps> = ({
 
   const fetchItemCounts = async () => {
     try {
-      const response = await fetch('/api/starships/counts');
+      const response = await fetch(`/api/starships/counts?_t=${Date.now()}`, { cache: 'no-store' });
       
       if (!response.ok) {
         console.warn('Failed to fetch item counts:', response.status);

@@ -47,7 +47,7 @@ const StatisticsPage: React.FC = () => {
   // Function to fetch all available franchises and collection types
   const fetchAllOptions = async () => {
     try {
-      const response = await fetch('/api/starships?limit=1000');
+      const response = await fetch(`/api/starships?limit=1000&fields=_id,issue,edition,editionInternalName,shipName,faction,franchise,collectionType,owned,wishlist,onOrder,marketValue,retailPrice&_t=${Date.now()}` , { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch items');
@@ -97,7 +97,7 @@ const StatisticsPage: React.FC = () => {
         apiUrl += `?${queryParams.join('&')}`;
       }
       
-      const response = await fetch(apiUrl);
+      const response = await fetch(`${apiUrl}${apiUrl.includes('?') ? '&' : '?'}_t=${Date.now()}`, { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch items');

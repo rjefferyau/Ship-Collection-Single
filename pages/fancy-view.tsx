@@ -48,12 +48,10 @@ const FancyViewPage: React.FC = () => {
         queryParams.append('franchise', selectedFranchise);
       }
       
-      // Only append query string if we have parameters
-      if (queryParams.toString()) {
-        url = `${url}?${queryParams.toString()}`;
-      }
-      
-      const response = await fetch(url);
+      // Always add cache-busting param
+      queryParams.append('_t', Date.now().toString());
+      url = `${url}?${queryParams.toString()}`;
+      const response = await fetch(url, { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');

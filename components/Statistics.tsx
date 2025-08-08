@@ -129,7 +129,8 @@ const Statistics: React.FC<StatisticsProps> = ({
     setMissingItemsError(null);
     
     try {
-      const response = await fetch('/api/starships?limit=1000');
+      const url = `/api/starships?limit=1000&fields=_id,issue,edition,shipName,faction,owned,imageUrl&_t=${Date.now()}`;
+      const response = await fetch(url, { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch items');

@@ -18,7 +18,7 @@ const ManagementPage: React.FC = () => {
     const fetchStarships = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/starships');
+      const response = await fetch(`/api/starships?_t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error('Failed to fetch starships');
         }

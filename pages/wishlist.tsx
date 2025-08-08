@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { DragDropContext, Draggable, DropResult, DroppableProvided, DraggableProvided, DroppableStateSnapshot, DraggableStateSnapshot } from 'react-beautiful-dnd';
+import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import type { DropResult, DroppableProvided, DraggableProvided, DroppableStateSnapshot, DraggableStateSnapshot } from 'react-beautiful-dnd';
 import { StrictModeDroppable } from '../components/StrictModeDroppable';
 import CollectionFilter from '../components/CollectionFilter';
 import { Starship } from '../types';
@@ -7,6 +8,10 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faShoppingCart, faBoxOpen, faCalendarAlt, faDollarSign, faMapMarkerAlt, faStore, faExternalLinkAlt, faTimes } from '@fortawesome/free-solid-svg-icons';
 import SightingsModal from '../components/modals/SightingsModal';
+
+// Client-only DnD components to avoid SSR issues
+const DragDropContext = dynamic(() => import('react-beautiful-dnd').then(mod => mod.DragDropContext), { ssr: false });
+const Draggable = dynamic(() => import('react-beautiful-dnd').then(mod => mod.Draggable), { ssr: false });
 
 const WishlistPage: React.FC = () => {
   const [starships, setStarships] = useState<Starship[]>([]);
@@ -29,15 +34,17 @@ const WishlistPage: React.FC = () => {
   const [allCollectionTypes, setAllCollectionTypes] = useState<string[]>([]);
   const [showSightingsModal, setShowSightingsModal] = useState(false);
   const [selectedStarshipForSightings, setSelectedStarshipForSightings] = useState<Starship | null>(null);
+  const fetchControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     fetchStarships();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCollectionType, selectedFranchise]);
 
 
   const fetchAllOptions = async () => {
     try {
-      const response = await fetch('/api/starships');
+      const response = await fetch(`/api/starships?_t=${Date.now()}`, { cache: 'no-store' });
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -67,7 +74,16 @@ const WishlistPage: React.FC = () => {
     setError(null);
     
     try {
-      const response = await fetch('/api/starships?limit=1000');
+      // Add cache-busting param to avoid 304 Not Modified with empty body
+      let url = '/api/starships?limit=1000&fields=_id,shipName,issue,edition,faction,wishlist,wishlistPriority,owned,onOrder,imageUrl,marketValue,retailPrice,orderDate,pricePaid';
+      url += `&_t=${Date.now()}`;
+      // Abort any in-flight request to prevent race conditions
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      fetchControllerRef.current = controller;
+      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
@@ -77,6 +93,10 @@ const WishlistPage: React.FC = () => {
       console.log('Fetched', data.data?.length, 'starships');
       setStarships(data.data || []);
     } catch (err) {
+      if ((err as any)?.name === 'AbortError') {
+        // Ignore aborted requests
+        return;
+      }
       console.error('Error fetching starships:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setStarships([]);
@@ -197,6 +217,42 @@ const WishlistPage: React.FC = () => {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setTimeout(() => setError(null), 3000);
       await fetchStarships(); // Revert to original order on error
+    }
+  };
+
+  // Quick bump priority controls
+  const bumpPriority = async (id: string, delta: number) => {
+    // Compute new priority locally based on current ordered list
+    const index = wishlistItems.findIndex(s => s._id === id);
+    if (index === -1) return;
+    const targetIndex = Math.max(0, Math.min(wishlistItems.length - 1, index + delta));
+    if (targetIndex === index) return;
+
+    const items = Array.from(wishlistItems);
+    const [moved] = items.splice(index, 1);
+    items.splice(targetIndex, 0, moved);
+
+    const updatedItems = items.map((item, idx) => ({ ...item, wishlistPriority: idx + 1 }));
+
+    // Optimistic UI update
+    setStarships(prev => prev.map(s => {
+      const upd = updatedItems.find(u => u._id === s._id);
+      return upd ? { ...s, wishlistPriority: upd.wishlistPriority } : s;
+    }));
+
+    try {
+      const response = await fetch('/api/starships/update-wishlist-priorities', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: updatedItems.map(u => ({ id: u._id, priority: u.wishlistPriority })) })
+      });
+      if (!response.ok) throw new Error('Failed to update priorities');
+      setSuccess('Priority updated');
+      setTimeout(() => setSuccess(null), 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setTimeout(() => setError(null), 3000);
+      await fetchStarships();
     }
   };
 
@@ -430,6 +486,7 @@ const WishlistPage: React.FC = () => {
                                               src={starship.imageUrl} 
                                               alt={starship.shipName}
                                               className="h-16 w-16 object-contain rounded-md border border-gray-200"
+                                              loading="lazy"
                                             />
                                           </div>
                                         )}
@@ -449,6 +506,22 @@ const WishlistPage: React.FC = () => {
                                         </div>
                                         
                                         <div className="flex items-center space-x-2">
+                                          {/* Priority bump controls */}
+                                          <div className="flex items-center mr-2" title="Adjust priority">
+                                            <button
+                                              onClick={(e) => { e.preventDefault(); bumpPriority(starship._id, -1); }}
+                                              className="h-6 w-6 flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200 mr-1"
+                                            >
+                                              ▲
+                                            </button>
+                                            <span className="text-xs text-gray-600">{starship.wishlistPriority ?? '-'}</span>
+                                            <button
+                                              onClick={(e) => { e.preventDefault(); bumpPriority(starship._id, +1); }}
+                                              className="h-6 w-6 flex items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200 ml-1"
+                                            >
+                                              ▼
+                                            </button>
+                                          </div>
                                           <button 
                                             onClick={(e) => { e.preventDefault(); handleOpenOrderModal(starship); }}
                                             className="flex items-center justify-center h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 hover:bg-indigo-200"
@@ -522,6 +595,7 @@ const WishlistPage: React.FC = () => {
                                   src={starship.imageUrl} 
                                   alt={starship.shipName}
                                   className="h-16 w-16 object-contain rounded-md border border-gray-200"
+                                  loading="lazy"
                                 />
                               </div>
                             )}

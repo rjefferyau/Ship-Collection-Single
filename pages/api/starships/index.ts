@@ -109,92 +109,100 @@ export default async function handler(
         const limitNum = parseInt(limit as string) || 50; // Default to 50 items per page
         const skip = (pageNum - 1) * limitNum;
         
-        // Get total count for pagination info
-        const totalCount = await Starship.countDocuments(filter);
-        console.log('Total count with filter:', totalCount);
-        console.log('Complete filter object:', JSON.stringify(filter, null, 2));
-        
-        // Get status counts for badges (using same filter)
-        const statusCounts = await Starship.aggregate([
+        // Optional fields selection
+        const fieldsParam = (req.query.fields as string) || '';
+        const fieldList = fieldsParam
+          ? fieldsParam.split(',').map(f => f.trim()).filter(Boolean)
+          : [];
+        const projectFields: any = {};
+        if (fieldList.length > 0) {
+          for (const f of fieldList) projectFields[f] = 1;
+        }
+
+        // Single $facet aggregation for counts, total and page data
+        const [result] = await Starship.aggregate([
           { $match: filter },
           {
-            $group: {
-              _id: null,
-              ownedCount: { $sum: { $cond: [{ $eq: ["$owned", true] }, 1, 0] } },
-              wishlistCount: { $sum: { $cond: [{ $eq: ["$wishlist", true] }, 1, 0] } },
-              onOrderCount: { $sum: { $cond: [{ $eq: ["$onOrder", true] }, 1, 0] } },
-              notOwnedCount: { 
-                $sum: { 
-                  $cond: [
-                    { 
-                      $and: [
-                        { $ne: ["$owned", true] },
-                        { $ne: ["$wishlist", true] },
-                        { $ne: ["$onOrder", true] }
-                      ]
-                    }, 
-                    1, 
-                    0
-                  ] 
+            $facet: {
+              total: [{ $count: 'count' }],
+              counts: [
+                {
+                  $group: {
+                    _id: null,
+                    ownedCount: { $sum: { $cond: [{ $eq: ["$owned", true] }, 1, 0] } },
+                    wishlistCount: { $sum: { $cond: [{ $eq: ["$wishlist", true] }, 1, 0] } },
+                    onOrderCount: { $sum: { $cond: [{ $eq: ["$onOrder", true] }, 1, 0] } },
+                    notOwnedCount: {
+                      $sum: {
+                        $cond: [
+                          {
+                            $and: [
+                              { $ne: ["$owned", true] },
+                              { $ne: ["$wishlist", true] },
+                              { $ne: ["$onOrder", true] }
+                            ]
+                          },
+                          1,
+                          0
+                        ]
+                      }
+                    }
+                  }
                 }
-              }
+              ],
+              last: [
+                { $group: { _id: null, latest: { $max: '$updatedAt' } } }
+              ],
+              pageData: [
+                {
+                  $addFields: {
+                    issuePrefix: { $regexFind: { input: "$issue", regex: /^([A-Za-z]*)/ } },
+                    issueNumericPart: { $regexFind: { input: "$issue", regex: /(\d+)/ } }
+                  }
+                },
+                {
+                  $addFields: {
+                    sortPrefix: { $ifNull: [{ $arrayElemAt: ["$issuePrefix.captures", 0] }, ""] },
+                    sortNumeric: { $convert: { input: { $ifNull: [{ $arrayElemAt: ["$issueNumericPart.captures", 0] }, "0"] }, to: 'int', onError: 0 } }
+                  }
+                },
+                { $sort: { sortPrefix: 1, sortNumeric: 1, shipName: 1 } },
+                { $skip: skip },
+                { $limit: limitNum },
+                // Avoid mixing include and exclude in projection
+                { $project: fieldList.length > 0 
+                    ? projectFields 
+                    : { issuePrefix: 0, issueNumericPart: 0, sortPrefix: 0, sortNumeric: 0 } 
+                }
+              ]
             }
           }
         ]);
-        
-        const counts = statusCounts.length > 0 ? statusCounts[0] : {
-          ownedCount: 0,
-          wishlistCount: 0,
-          onOrderCount: 0,
-          notOwnedCount: 0
-        };
-        
-        // Use aggregation pipeline for proper alphanumeric sorting of issue numbers
-        const starships = await Starship.aggregate([
-          { $match: filter },
-          {
-            $addFields: {
-              // Extract prefix and numeric parts for proper sorting
-              issuePrefix: {
-                $regexFind: { input: "$issue", regex: /^([A-Za-z]*)/ }
-              },
-              issueNumericPart: {
-                $regexFind: { input: "$issue", regex: /(\d+)/ }
-              }
-            }
-          },
-          {
-            $addFields: {
-              // Clean prefix (empty string if no match)
-              sortPrefix: {
-                $ifNull: [{ $arrayElemAt: ["$issuePrefix.captures", 0] }, ""]
-              },
-              // Convert numeric part to integer (0 if no match)
-              sortNumeric: {
-                $convert: {
-                  input: { $ifNull: [{ $arrayElemAt: ["$issueNumericPart.captures", 0] }, "0"] },
-                  to: "int",
-                  onError: 0
-                }
-              }
-            }
-          },
-          { $sort: { sortPrefix: 1, sortNumeric: 1, shipName: 1 } },
-          { $skip: skip },
-          { $limit: limitNum },
-          { $project: { issuePrefix: 0, issueNumericPart: 0, sortPrefix: 0, sortNumeric: 0 } } // Remove temporary fields
-        ]);
-        
-        console.log(`Found ${starships.length} starships on page ${pageNum} of ${Math.ceil(totalCount / limitNum)} (total: ${totalCount})`);
-        
+
+        const totalCount = (result?.total?.[0]?.count as number) || 0;
+        const counts = (result?.counts?.[0] as any) || { ownedCount: 0, wishlistCount: 0, onOrderCount: 0, notOwnedCount: 0 };
+        const pageData = (result?.pageData as any[]) || [];
+        const latest = result?.last?.[0]?.latest as Date | undefined;
+
+        // Conditional GET support (bypass when cache-busting param present)
+        const bypassCache = typeof req.query._t !== 'undefined';
+        if (latest && !bypassCache) {
+          const lastModified = new Date(latest).toUTCString();
+          const ifModifiedSince = req.headers['if-modified-since'];
+          if (ifModifiedSince && new Date(ifModifiedSince) >= new Date(lastModified)) {
+            res.status(304).end();
+            return;
+          }
+          res.setHeader('Last-Modified', lastModified);
+          res.setHeader('Cache-Control', 'no-cache');
+        }
+
         // Ensure all IDs are strings and transform image URLs for frontend compatibility
-        const sanitizedStarships = starships.map(ship => {
-          return {
-            ...ship,
-            _id: ship._id.toString(),
-            imageUrl: getImageUrl(ship.imageUrl)
-          };
-        });
+        const sanitizedStarships = pageData.map((ship: any) => ({
+          ...ship,
+          _id: ship._id.toString(),
+          imageUrl: getImageUrl(ship.imageUrl)
+        }));
         
         res.status(200).json({ 
           success: true, 

@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Droppable, DroppableProps } from 'react-beautiful-dnd';
+import dynamic from 'next/dynamic';
+import type { DroppableProps } from 'react-beautiful-dnd';
+
+// Client-only import of Droppable to avoid SSR issues
+const Droppable = dynamic(() => import('react-beautiful-dnd').then(mod => mod.Droppable), {
+  ssr: false
+});
 
 /**
  * Wrapper component for Droppable to make it work with React 18's Strict Mode

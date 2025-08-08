@@ -29,7 +29,7 @@ const ExcelViewPage: React.FC = () => {
 
   const fetchStarships = async () => {
     try {
-      const response = await fetch('/api/starships');
+      const response = await fetch(`/api/starships?_t=${Date.now()}`, { cache: 'no-store' });
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
       }

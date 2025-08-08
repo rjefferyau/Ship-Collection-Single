@@ -157,6 +157,8 @@ StarshipSchema.index({ manufacturer: 1 });
 StarshipSchema.index({ owned: 1 });
 StarshipSchema.index({ notInterested: 1 });
 StarshipSchema.index({ editionObjectId: 1 });
+// Compound index to accelerate common filtered counts and list queries
+StarshipSchema.index({ editionInternalName: 1, franchise: 1, owned: 1, wishlist: 1, onOrder: 1 });
 
 // Check if the model already exists to prevent overwriting during hot reloads
 let Starship: Model<IStarship>;

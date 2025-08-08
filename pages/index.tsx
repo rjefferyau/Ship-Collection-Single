@@ -59,6 +59,7 @@ const Home: React.FC = () => {
   const [excelViewWindow, setExcelViewWindow] = useState<Window | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [appliedView, setAppliedView] = useState<any | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
   const fetchControllerRef = useRef<AbortController | null>(null);
@@ -349,6 +350,11 @@ const Home: React.FC = () => {
         queryParams.append('limit', '200');
       }
       
+      // Add fields selection to trim payloads in certain views
+      if (viewMode === 'gallery' || viewMode === 'overview') {
+        queryParams.append('fields', '_id,shipName,issue,edition,editionInternalName,faction,imageUrl,releaseDate,owned,wishlist,onOrder');
+      }
+
       // Add cache-busting parameter to force fresh data
       queryParams.append('_t', Date.now().toString());
       
@@ -847,6 +853,7 @@ const Home: React.FC = () => {
                     onClearSearch={handleClearSearch}
                     searchTerm={searchTerm}
                     statusCounts={statusCounts}
+                    appliedView={appliedView}
                   />
                   {pagination && (
                     <Pagination
@@ -968,7 +975,7 @@ const Home: React.FC = () => {
               { key: 'marketValue', label: 'Market Value' },
             ]}
             onViewSelect={(view) => {
-              // Handle view selection - this would need to be passed to the StarshipList component
+              setAppliedView(view);
               setShowSettingsModal(false);
             }}
             currentColumns={['issue', 'shipName', 'faction', 'edition', 'owned']}

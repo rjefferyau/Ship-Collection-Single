@@ -23,11 +23,15 @@ export default async function handler(
 
     console.log(`Looking for starship with ID: ${id}`);
     const starship = await DatabaseService.findStarshipById(id);
+    if (!starship) {
+      console.log(`Starship not found for ID: ${id}`);
+      return res.status(404).json({ success: false, message: 'Starship not found' });
+    }
     
-    console.log(`Found starship: ${starship._id}`);
+    console.log(`Found starship: ${String(starship._id)}`);
     
     // Toggle the wishlist status
-    console.log(`Current wishlist status: ${starship.wishlist}, toggling to: ${!starship.wishlist}`);
+    console.log(`Current wishlist status: ${Boolean(starship.wishlist)}, toggling to: ${!starship.wishlist}`);
     const newWishlistStatus = !starship.wishlist;
     
     // Prepare update fields
@@ -62,7 +66,11 @@ export default async function handler(
     
     return res.status(200).json({ 
       success: true, 
-      data: updatedStarship,
+      data: {
+        ...updatedStarship,
+        wishlist: Boolean(updatedStarship.wishlist),
+        wishlistPriority: updatedStarship.wishlistPriority ?? null
+      },
       message: newWishlistStatus ? 'Added to wishlist' : 'Removed from wishlist'
     });
   } catch (error: any) {

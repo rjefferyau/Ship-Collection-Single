@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment, Suspense } from 'react';
+import React, { useState, useEffect, Fragment, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { Dialog, Transition } from '@headlessui/react';
 import dynamic from 'next/dynamic';
@@ -7,6 +7,8 @@ import CollectionFilter from '../components/CollectionFilter';
 import ModalContainer from '../components/ModalContainer';
 import CustomViewManager from '../components/CustomViewManager';
 import Pagination from '../components/Pagination';
+import ShortcutsOverlay from '../components/ShortcutsOverlay';
+import CommandPalette from '../components/CommandPalette';
 
 // Dynamically import large components
 const StarshipList = dynamic(() => import('../components/StarshipList'), {
@@ -57,6 +59,9 @@ const Home: React.FC = () => {
   const [excelViewWindow, setExcelViewWindow] = useState<Window | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showPalette, setShowPalette] = useState(false);
+  const fetchControllerRef = useRef<AbortController | null>(null);
 
   // Load saved view mode and preferences from localStorage on mount
   useEffect(() => {
@@ -133,6 +138,13 @@ const Home: React.FC = () => {
         return;
       }
 
+      // Command palette Ctrl+K
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setShowPalette(true);
+        return;
+      }
+
       // Quick status changes for selected starship
       if (selectedStarship) {
         if (e.key === 'w' || e.key === 'W') {
@@ -187,18 +199,7 @@ const Home: React.FC = () => {
       // ? - Show keyboard shortcuts help
       if (e.key === '?') {
         e.preventDefault();
-        alert(`Keyboard Shortcuts:
-
-🔍 Global Search: Ctrl+K
-➕ Add Item: Ctrl+Shift+A
-🔄 When item selected:
-  • W = Toggle Wishlist
-  • O = Toggle Owned  
-  • R = Toggle On Order
-  • N = Mark Not Owned
-🚪 Escape = Close modals/deselect
-
-💡 Tip: Yellow indicators show items with missing data!`);
+        setShowShortcuts(true);
       }
 
       // Escape - Close any open modal
@@ -312,7 +313,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const fetchStarships = async (page = 1, resetPage = false) => {
+  const fetchStarships = async (page = 1, resetPage = false, append = false) => {
     setLoading(true);
     setError(null);
     
@@ -343,9 +344,9 @@ const Home: React.FC = () => {
         queryParams.append('page', resetPage ? '1' : page.toString());
         queryParams.append('limit', '50'); // Items per page for table view
       } else {
-        // For gallery and overview modes, fetch all items
-        queryParams.append('page', '1');
-        queryParams.append('limit', '1000'); // Large limit to get all items
+        // For gallery and overview, paginate with smaller chunks
+        queryParams.append('page', resetPage ? '1' : page.toString());
+        queryParams.append('limit', '200');
       }
       
       // Add cache-busting parameter to force fresh data
@@ -354,14 +355,25 @@ const Home: React.FC = () => {
       // Append query string 
       url = `${url}?${queryParams.toString()}`;
       
-      const response = await fetch(url);
+      // Abort previous in-flight request
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      fetchControllerRef.current = controller;
+
+      const response = await fetch(url, { signal: controller.signal });
       
       if (!response.ok) {
         throw new Error('Failed to fetch starships');
       }
       
       const data = await response.json();
-      setStarships(data.data || []);
+      if (append) {
+        setStarships(prev => ([...(prev || []), ...((data.data as Starship[]) || [])]));
+      } else {
+        setStarships(data.data || []);
+      }
       setPagination(data.pagination || null);
       setStatusCounts(data.statusCounts || null);
       
@@ -371,6 +383,10 @@ const Home: React.FC = () => {
         setCurrentPage(page);
       }
     } catch (err) {
+      if ((err as any)?.name === 'AbortError') {
+        // Swallow abort errors
+        return;
+      }
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setStarships([]);
       setPagination(null);
@@ -391,12 +407,12 @@ const Home: React.FC = () => {
       return;
     }
 
-    // Debounce search input - wait 1200ms after user stops typing
+    // Debounce search input - shorter delay for snappier feel
     console.log('Setting search timeout for:', searchTerm);
     const searchTimeout = setTimeout(() => {
       console.log('Executing search for:', searchTerm);
       fetchStarships(1, true);
-    }, 1200);
+    }, 450);
 
     return () => {
       console.log('Clearing search timeout for:', searchTerm);
@@ -585,6 +601,27 @@ const Home: React.FC = () => {
     setCurrentEdition(edition);
     // Clear search when switching editions/tabs
     setSearchTerm('');
+  };
+
+  // Load more handler for gallery/overview
+  const handleLoadMore = () => {
+    if (pagination?.hasNext) {
+      const nextPage = (pagination.page || 1) + 1;
+      fetchStarships(nextPage, false, true);
+    }
+  };
+
+  // Command palette handlers
+  const handlePaletteAction = (action: string, payload?: any) => {
+    if (action === 'view:table') handleViewModeChange('table');
+    if (action === 'view:gallery') handleViewModeChange('gallery');
+    if (action === 'view:overview') handleViewModeChange('overview');
+    if (action === 'jump:edition' && typeof payload === 'string') handleEditionChange(payload);
+  };
+
+  const handlePaletteSelectStarship = (id: string) => {
+    const ship = starships.find(s => s._id === id);
+    if (ship) setSelectedStarship(ship);
   };
 
   // Function to open Excel view in a new window
@@ -838,6 +875,16 @@ const Home: React.FC = () => {
                   statusCounts={statusCounts}
                 />
               )}
+              {(viewMode === 'gallery' || viewMode === 'overview') && pagination?.hasNext && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={handleLoadMore}
+                    className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    Load more
+                  </button>
+                </div>
+              )}
             </div>
           )}
       </div>
@@ -930,6 +977,19 @@ const Home: React.FC = () => {
           />
         </div>
       </ModalContainer>
+
+      {/* Keyboard Shortcuts Overlay */}
+      <ShortcutsOverlay isOpen={showShortcuts} onClose={() => setShowShortcuts(false)} />
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={showPalette}
+        onClose={() => setShowPalette(false)}
+        starships={starships}
+        onSelectStarship={handlePaletteSelectStarship}
+        onAction={handlePaletteAction}
+        currentEdition={currentEdition}
+      />
     </div>
   );
 };

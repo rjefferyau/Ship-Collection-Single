@@ -25,6 +25,7 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
   const [editionDisplayNames, setEditionDisplayNames] = useState<Record<string, string>>({});
   const [activeEdition, setActiveEdition] = useState<string>(currentEdition);
   const [localStatusCounts, setLocalStatusCounts] = useState<{owned: number, wishlist: number, onOrder: number, notOwned: number} | null>(statusCounts || null);
+  const [localSearch, setLocalSearch] = useState('');
 
   // Fetch available editions from the API, filtered by franchise
   useEffect(() => {
@@ -68,12 +69,16 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
     
     // Apply initial filtering based on currentEdition
     if (currentEdition) {
-      const initialFiltered = starships.filter(ship => {
+      let initialFiltered = starships.filter(ship => {
         if (ship.editionInternalName) {
           return ship.editionInternalName === currentEdition;
         }
         return ship.edition === currentEdition;
       });
+      if (localSearch) {
+        const term = localSearch.toLowerCase();
+        initialFiltered = initialFiltered.filter(s => (s.shipName || '').toLowerCase().includes(term) || (s.issue || '').toLowerCase().includes(term));
+      }
       
       // Sort by issue number if possible
       initialFiltered.sort((a, b) => {
@@ -107,6 +112,16 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
       setFilteredStarships(initialFiltered);
     }
   }, [starships, currentEdition]);
+
+  // Search open behavior: Enter opens first result
+  const handleSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredStarships && filteredStarships.length > 0) {
+        onSelectStarship(filteredStarships[0]);
+      }
+    }
+  };
 
   // Select the default edition tab when editions become available
   useEffect(() => {
@@ -265,6 +280,16 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
 
       {/* Collection Stats */}
       <div className="mb-6 flex flex-wrap gap-4 justify-center">
+        <div className="bg-white rounded-lg px-4 py-2 shadow-sm border-2 border-gray-300 flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Search ships..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={handleSearchKey}
+            className="px-2 py-1 border border-gray-200 rounded"
+          />
+        </div>
         <div className="bg-white rounded-lg px-4 py-2 shadow-sm border-2 border-green-500">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium text-gray-700">
@@ -305,11 +330,12 @@ const CollectionOverview: React.FC<CollectionOverviewProps> = ({
              title={`${starship.shipName} (${starship.faction})`}
            >
              <div className="p-2">
-               {starship.imageUrl ? (
+                {starship.imageUrl ? (
                  <img 
                    src={starship.imageUrl} 
                    alt={starship.shipName}
                    className={getImageClassName(starship)}
+                   loading="lazy"
                  />
                ) : (
                  <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-gray-400">

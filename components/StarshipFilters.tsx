@@ -15,6 +15,7 @@ interface StarshipFiltersProps {
   onFactionToggle: (faction: string) => void;
   onOwnedFilterChange: (value: 'all' | 'owned' | 'not-owned' | 'wishlist' | 'on-order' | 'not-interested') => void;
   statusCounts?: {owned: number, wishlist: number, onOrder: number, notOwned: number} | null;
+  onOpenStarship: (starship: Starship) => void;
 }
 
 const StarshipFilters: React.FC<StarshipFiltersProps> = ({
@@ -30,7 +31,8 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
   onClearSearch,
   onFactionToggle,
   onOwnedFilterChange,
-  statusCounts
+  statusCounts,
+  onOpenStarship
 }) => {
   const [factionMenuOpen, setFactionMenuOpen] = useState(false);
   const [ownedMenuOpen, setOwnedMenuOpen] = useState(false);
@@ -190,6 +192,14 @@ const StarshipFilters: React.FC<StarshipFiltersProps> = ({
               placeholder="Search ships... (Ctrl+F to focus)"
               value={filters.search}
               onChange={onSearchChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (filteredStarships && filteredStarships.length > 0) {
+                    onOpenStarship(filteredStarships[0]);
+                  }
+                }
+              }}
               className="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
             {/* Clear Search Button - Always show when there's text */}

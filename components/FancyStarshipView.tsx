@@ -284,6 +284,14 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   placeholder="Search ships..."
                   value={filters.search}
                   onChange={handleSearchChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (filteredStarships && filteredStarships.length > 0) {
+                        onSelectStarship(filteredStarships[0]);
+                      }
+                    }
+                  }}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm w-48"
                 />
               </div>
@@ -575,6 +583,7 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                         alt={starship.shipName}
                         className="h-full object-contain"
                         title="Click to view larger image"
+                        loading="lazy"
                       />
                     </div>
                   ) : (
@@ -684,6 +693,7 @@ const FancyStarshipView: React.FC<FancyStarshipViewProps> = ({
                   src={selectedImage} 
                   alt={selectedShipName} 
                   className="max-h-[60vh] object-contain rounded-md shadow-lg"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-64 bg-gray-200 rounded-md flex items-center justify-center">

@@ -1018,6 +1018,7 @@ const StarshipList: React.FC<StarshipListProps> = ({
         onFactionToggle={toggleFactionFilter}
         onOwnedFilterChange={setOwnedFilter}
         statusCounts={statusCounts}
+        onOpenStarship={(ship) => onSelectStarship(ship)}
       />
       
       {/* Data Table */}
